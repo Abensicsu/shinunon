@@ -1,0 +1,68 @@
+﻿@using DataModels.Models
+<h3>TestA</h3>
+<h3>Hello I'm here</h3>
+@inject HttpClient Http
+@if (subjects == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>Name</th>
+                <th>Ordinal</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var subj in subjects)
+            {
+                <tr>
+                    <td>@subj.SubjectType</td>
+                    <td>@subj.SubjectName</td>
+                    <td>@subj.Ordinal</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+Add new:
+
+<b>Subject Type</b>
+<InputSelect @bind-Value="@newSubject.SubjectType">
+
+    @foreach (var sType in Enum.GetValues(typeof(SubjectTypeEnum)))
+    {
+
+        <option value="@sType">@sType</option>
+    }
+</InputSelect>
+<b>Name</b>
+<input @bind="newSubject.SubjectName" />
+<b>Ordinal</b>
+<input @bind="newSubject.Ordinal" />
+<button @onclick="AddSubject">Add</button>
+
+<p>Click Count: @ClickCount</p> <!-- Display ClickCount here -->
+
+@code {
+    public Subject[] subjects { get; set; }
+
+    public int ClickCount { get; set; }
+
+    public Subject newSubject { get; set; } = new Subject();
+
+    protected override async Task OnInitializedAsync()
+    {
+        subjects = await Http.GetFromJsonAsync<Subject[]>("api/Subject/AllSubjects");
+    }
+
+    protected async Task AddSubject()
+    {
+        ClickCount++;
+        await Http.PostAsJsonAsync<Subject>("api/Subject/Add", newSubject);
+    }
+}

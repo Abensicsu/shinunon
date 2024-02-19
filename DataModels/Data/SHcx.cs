@@ -1,0 +1,28 @@
+﻿using DataModels.Models;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices.Marshalling;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace DataModels.Data
+{
+    public class SHcx : DbContext
+    {
+        public DbSet<User> Users { get; set; }
+        public DbSet<Answer> Answers { get; set; }
+        public DbSet<Question> Questions { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
+        public DbSet<ExamAnswer> ExamAnswers { get; set; }
+        public DbSet<ExamExecution> ExamExecutions { get; set; }
+        public DbSet<ForumQuestion> ForumQuestions { get; set; }
+        public DbSet<ForumComment> ForumComments { get; set; }
+
+        public SHcx(DbContextOptions<SHcx> dbContextOptions) : base(dbContextOptions)
+        {
+
+        }
+    }
+}
