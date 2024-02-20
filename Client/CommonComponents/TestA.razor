@@ -46,6 +46,8 @@ Add new:
 <input @bind="newSubject.Ordinal" />
 <button @onclick="AddSubject">Add</button>
 
+@newSubject.Ordinal
+
 <p>Click Count: @ClickCount</p> <!-- Display ClickCount here -->
 
 @code {
@@ -63,6 +65,6 @@ Add new:
     protected async Task AddSubject()
     {
         ClickCount++;
-        await Http.PostAsJsonAsync<Subject>("api/Subject/Add", newSubject);
+       // await Http.PostAsJsonAsync<Subject>("api/Subject/Add", newSubject);
     }
 }
