@@ -1,7 +1,10 @@
-﻿@using DataModels.Models
-<h3>TestA</h3>
-<h3>Hello I'm here</h3>
+﻿@rendermode InteractiveServer
+
+<h3>ComponentSubject</h3>
+
+@using DataModels.Models
 @inject HttpClient Http
+
 @if (subjects == null)
 {
     <p><em>Loading...</em></p>
@@ -29,14 +32,13 @@ else
     </table>
 }
 
-Add new:
+<h2>Add Subject</h2>
 
 <b>Subject Type</b>
 <InputSelect @bind-Value="@newSubject.SubjectType">
 
     @foreach (var sType in Enum.GetValues(typeof(SubjectTypeEnum)))
     {
-
         <option value="@sType">@sType</option>
     }
 </InputSelect>
@@ -44,27 +46,35 @@ Add new:
 <input @bind="newSubject.SubjectName" />
 <b>Ordinal</b>
 <input @bind="newSubject.Ordinal" />
+
+<p>Current count: @clickCounter</p>
 <button @onclick="AddSubject">Add</button>
 
+<br />
+<b>ordinal entered: </b>
 @newSubject.Ordinal
-
-<p>Click Count: @ClickCount</p> <!-- Display ClickCount here -->
 
 @code {
     public Subject[] subjects { get; set; }
 
-    public int ClickCount = 0;
+    public int clickCounter = 0;
 
     public Subject newSubject { get; set; } = new Subject();
 
     protected override async Task OnInitializedAsync()
     {
-        subjects = await Http.GetFromJsonAsync<Subject[]>("api/Subject/AllSubjects");
+        getSubjects();
     }
 
     protected async Task AddSubject()
     {
-        ClickCount++;
-       // await Http.PostAsJsonAsync<Subject>("api/Subject/Add", newSubject);
+        clickCounter++;
+        await Http.PostAsJsonAsync<Subject>("api/Subject/Add", newSubject);
+        getSubjects();
+    }
+
+    public async void getSubjects()
+    {
+        subjects = await Http.GetFromJsonAsync<Subject[]>("api/Subject/AllSubjects");
     }
 }
