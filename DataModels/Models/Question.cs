@@ -7,18 +7,17 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
-    public enum QuestionType
+    public enum QuestionTypeEnum
     {
         OpenQuestion,
         SelectQuestion
     }
 
-
     public class Question
     {
         public int QuestionId { get; set; }
         public string QuestionText { get; set; }
-        public QuestionType QuestionType { get; set; }
+        public QuestionTypeEnum QuestionType { get; set; }
 
         public int SubjectId { get; set; }
 

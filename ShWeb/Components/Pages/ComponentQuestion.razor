@@ -1,0 +1,115 @@
+﻿@rendermode InteractiveServer
+
+<h3>ComponentQuestion</h3>
+
+@inject HttpClient Http
+@using DataModels.Models
+@using Npgsql
+@using System.Collections.Generic
+
+@if (questions == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>SubjectName</th>
+                <th>SubjectId</th>
+                <th>QuestionType</th>
+                <th>QuestionText</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var question in questions)
+            {
+                <tr>
+                    <td>@question.Subject?.SubjectName? :" "</td>
+                    <td>@question.Subject.SubjectId==0 ? "אין "</td>
+                    <td>@question.QuestionType</td>
+                    <td>@question.QuestionText</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h4>Add Question</h4>
+
+<!-- Display dropdown list with subjects -->
+<div>
+    <label for="subject">Select a subject:</label>
+    <select id="subject" @onchange="OnSelectionChange">
+        <option value="0">Select</option>
+        @if (subjects != null)
+        {
+            @foreach (var subject in subjects)
+            {
+                <option value="@subject.SubjectId">@subject.SubjectName</option>
+            }
+        }
+    </select>
+</div>
+
+<b>Question Text</b>
+<input @bind="newQuestion.QuestionText" />
+
+<b>Question Type</b>
+<InputSelect @bind-Value="@newQuestion.QuestionType">
+
+    @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
+    {
+        <option value="@qType">@qType</option>
+    }
+</InputSelect>
+
+
+<p>Current count: @clickCounter</p>
+<button @onclick="AddQuestion">Add</button>
+
+<!-- Display the selected subject -->
+@if (selectedSubject != null)
+{
+    <div>
+        <h5>Selected Subject:</h5>
+        <p>@selectedSubject.SubjectName</p>
+    </div>
+}
+
+@code {
+    public Question[] questions { get; set; }
+
+    public int clickCounter = 0;
+
+    public Question newQuestion { get; set; } = new Question();
+
+    public Subject[] subjects { get; set; }
+    private Subject selectedSubject;
+
+    protected override async Task OnInitializedAsync()
+    {
+        questions = await Http.GetFromJsonAsync<Question[]>("api/Question/AllQuestions");
+        subjects = await Http.GetFromJsonAsync<Subject[]>("api/Subject/AllSubjects");
+    }
+
+    protected async Task AddQuestion()
+    {
+        // Set the SubjectId of the new question to the selected subject's ID
+        newQuestion.SubjectId = selectedSubject.SubjectId;
+
+        // Send the new question data to the server
+        await Http.PostAsJsonAsync<Question>("api/Question/Add", newQuestion);
+
+        // Refresh the list of questions
+        questions = await Http.GetFromJsonAsync<Question[]>("api/Question/AllQuestions");
+    }
+
+    // Method to handle selection change
+    private void OnSelectionChange(ChangeEventArgs e)
+    {
+        int selectedId = Convert.ToInt32(e.Value);
+        selectedSubject = subjects.FirstOrDefault(s => s.SubjectId == selectedId);
+    }
+}

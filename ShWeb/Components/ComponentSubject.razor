@@ -42,8 +42,10 @@ else
         <option value="@sType">@sType</option>
     }
 </InputSelect>
+
 <b>Name</b>
 <input @bind="newSubject.SubjectName" />
+
 <b>Ordinal</b>
 <input @bind="newSubject.Ordinal" />
 
@@ -63,18 +65,13 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        getSubjects();
+        subjects = await Http.GetFromJsonAsync<Subject[]>("api/Subject/AllSubjects");
     }
 
     protected async Task AddSubject()
     {
         clickCounter++;
         await Http.PostAsJsonAsync<Subject>("api/Subject/Add", newSubject);
-        getSubjects();
-    }
-
-    public async void getSubjects()
-    {
         subjects = await Http.GetFromJsonAsync<Subject[]>("api/Subject/AllSubjects");
     }
 }
