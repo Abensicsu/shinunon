@@ -13,14 +13,12 @@ namespace DataModels.Models
         public string Comment { get; set; }
 
         public int ForumQuestionId { get; set; }
-
         [ForeignKey(nameof(ForumQuestionId))]
         public ForumQuestion ForumQuestion { get; set; }
 
         public int? ParentCommentId { get; set; }
         [ForeignKey(nameof(ParentCommentId))]
         public ForumComment ParentComment { get; set; }
-
 
         public int UserId { get; set; }
         [ForeignKey(nameof(UserId))]

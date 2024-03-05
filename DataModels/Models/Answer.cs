@@ -13,7 +13,6 @@ namespace DataModels.Models
         public string AnswerText  { get; set; }
 
         public int QuestionId { get; set; }
-
         [ForeignKey(nameof(QuestionId))]
         public Question Question { get; set; }
 

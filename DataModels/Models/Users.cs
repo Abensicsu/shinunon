@@ -16,6 +16,5 @@ namespace DataModels.Models
         public string Password { get; set; }
 
         public ICollection<ExamExecution> ExamExecutions { get; set; }
-
     }
 }

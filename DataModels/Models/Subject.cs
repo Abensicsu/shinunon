@@ -15,6 +15,7 @@ namespace DataModels.Models
         Mishna 
     }
 
+
    public class Subject
     {
         public int SubjectId { get; set; }

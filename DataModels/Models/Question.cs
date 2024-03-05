@@ -20,7 +20,6 @@ namespace DataModels.Models
         public QuestionTypeEnum QuestionType { get; set; }
 
         public int SubjectId { get; set; }
-
         [ForeignKey(nameof(SubjectId))]
         public Subject Subject { get; set; }
 

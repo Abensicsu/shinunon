@@ -12,15 +12,22 @@ namespace DataModels.Models
         public int ExamExecutionId { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
+        public int QuestionsAnswered { get; set; }
+        public int CorrectAnswers { get; set; }
+        public int WrongAnswers { get; set; }
+
+        public int QuestionId { get; set; }
+        [ForeignKey(nameof(QuestionId))]
+        public Question CurrentQuestion { get; set; }
 
         public int SubjectId { get; set; }
-
         [ForeignKey(nameof(SubjectId))]
         public Subject Subject { get; set; }
 
         public int UserId { get; set; }
         [ForeignKey(nameof(UserId))]
         public User User { get; set; }
+
         public ICollection<ExamAnswer> ExamAnswers { get; set; }
     }
 }

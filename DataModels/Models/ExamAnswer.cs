@@ -20,7 +20,6 @@ namespace DataModels.Models
         public string TextAnswer { get; set; }       
 
         public int ExamExecutionId { get; set; }
-
         [ForeignKey(nameof(ExamExecutionId))]
         public ExamExecution ExamExecution { get; set; }
     }

@@ -14,6 +14,7 @@ namespace DataModels.Models
         Discussion
     }
 
+
     public class ForumQuestion
     {
         public int ForumQuestionId { get; set; }
@@ -21,12 +22,10 @@ namespace DataModels.Models
         public string Question { get; set; }
 
         public int? SubjectId { get; set; }
-
         [ForeignKey(nameof(SubjectId))]
         public Subject Subject { get; set; }
 
         public ICollection<ForumComment> Comments { get; set; }
-
 
         public int UserId { get; set; }
         [ForeignKey(nameof(UserId))]
