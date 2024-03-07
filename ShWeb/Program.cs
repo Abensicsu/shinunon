@@ -1,4 +1,5 @@
 using DataModels.Data;
+using DataModels.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ShWeb.Components;
@@ -9,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers();
+builder.Services.AddRazorPages();
+
+builder.Services.AddScoped<PlanExamService>();
 
 builder.Services.AddScoped(sp => new HttpClient
 {

@@ -1,25 +1,23 @@
-﻿using DataModels.Models;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace ShWeb.WebDataModels
+namespace DataModels.Models
 {
-    public enum ExamFrequency
+    public enum ExamFrequencyEnum
     {
         Daily,
         Weekly,
         Monthly
     }
 
-
     public class PlanExam
     {
         public int PlanExamId { get; set; }
 
-        public ExamFrequency ExamFrequency { get; set; }
+        public ExamFrequencyEnum ExamFrequency { get; set; }
 
-        //ordinal part - Which ordinal in every frequency
-        public int OrdinalPerFrequency { get; set; }
+        public int SubjectNum { get; set; }
 
+        public int QuestionsAmount { get; set; }
         public int FromSubjectId { get; set; }
         [ForeignKey(nameof(FromSubjectId))]
         public Subject FromSubject { get; set; }
