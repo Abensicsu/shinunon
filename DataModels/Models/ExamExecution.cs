@@ -23,7 +23,7 @@ namespace DataModels.Models
         public int SubjectId { get; set; }
         [ForeignKey(nameof(SubjectId))]
         public Subject Subject { get; set; }
-
+         
         public int UserId { get; set; }
         [ForeignKey(nameof(UserId))]
         public User User { get; set; }

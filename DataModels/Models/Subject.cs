@@ -6,20 +6,9 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
-    public enum SubjectTypeEnum
-    {
-        Chumash,
-        Neviim,
-        Ketuvim,
-        Gemara,
-        Mishna 
-    }
-
-
-   public class Subject
+    public class Subject
     {
         public int SubjectId { get; set; }
-        public SubjectTypeEnum SubjectType { get; set; }
         public string SubjectName { get; set; }
         public int? Ordinal { get; set; } //like perek / daf
 

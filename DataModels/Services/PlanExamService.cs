@@ -6,6 +6,7 @@ namespace DataModels.Services
     public class PlanExamService
     {
         public SHcx Cx { get; }
+
         public PlanExamService(SHcx cx)
         {
             Cx = cx;
@@ -14,9 +15,11 @@ namespace DataModels.Services
         //create examExecutions according to planExam
         public ICollection<ExamExecution> CreateExamExecutions(PlanExam planExam)
         {
-            int count = Cx.Subjects.Count(subject => subject.SubjectName == planExam.FromSubject.SubjectName);
+            int countFrom = Cx.Subjects.Count(subject => subject.SubjectName == planExam.FromSubject.SubjectName);
+            int countTo = Cx.Subjects.Count(subject => subject.SubjectName == planExam.ToSubject.SubjectName);
+
             //planExam.ExamFrequency ??
-            int numOfExecutions = count / planExam.SubjectNum;
+            int numOfExecutions = (countFrom + countTo) / planExam.SubjectNum;
             for (int i = 0; i < numOfExecutions; i++)
             {
                 planExam.ExamExecutions.Add(new ExamExecution
@@ -27,14 +30,14 @@ namespace DataModels.Services
                     CorrectAnswers = 0,
                     WrongAnswers = 0,
                     CurrentQuestion = null,
-                    Subject = planExam.FromSubject,
+                    //Subject = planExam.FromSubject,
                     User = planExam.User
                 });
             }
             return planExam.ExamExecutions;
         }
 
-        //select questions for exams
+        //select questions for examExecutions
         public void SelectQuestions(ICollection<ExamExecution> examExecutions)
         {
             for (int i = 0; i < examExecutions.Count(); i++)

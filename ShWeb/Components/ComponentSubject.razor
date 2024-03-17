@@ -37,7 +37,7 @@ else
 <b>Subject Type</b>
 <InputSelect @bind-Value="@newSubject.SubjectType">
 
-    @foreach (var sType in Enum.GetValues(typeof(SubjectTypeEnum)))
+    @foreach (var sType in Enum.GetValues(typeof(BookTypeEnum)))
     {
         <option value="@sType">@sType</option>
     }

@@ -19,6 +19,8 @@ namespace DataModels.Data
         public DbSet<ExamExecution> ExamExecutions { get; set; }
         public DbSet<ForumQuestion> ForumQuestions { get; set; }
         public DbSet<ForumComment> ForumComments { get; set; }
+        public DbSet<PlanExam> PlanExams { get; set; }
+        public DbSet<Book> Books { get; set; }
 
         public SHcx(DbContextOptions<SHcx> dbContextOptions) : base(dbContextOptions)
         {
