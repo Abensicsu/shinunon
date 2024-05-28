@@ -20,7 +20,7 @@ else
             @foreach (var subj in subjects)
             {
                 <tr>
-                    <td>@subj.SubjectType</td>
+                    @* <td>@subj.SubjectType</td> *@
                     <td>@subj.SubjectName</td>
                     <td>@subj.Ordinal</td>
                 </tr>
@@ -32,14 +32,14 @@ else
 Add new:
 
 <b>Subject Type</b>
-<InputSelect @bind-Value="@newSubject.SubjectType">
+@* <InputSelect @bind-Value="@newSubject.SubjectType">
 
     @foreach (var sType in Enum.GetValues(typeof(BookTypeEnum)))
     {
 
         <option value="@sType">@sType</option>
     }
-</InputSelect>
+</InputSelect> *@
 <b>Name</b>
 <input @bind="newSubject.SubjectName" />
 <b>Ordinal</b>
@@ -49,7 +49,6 @@ Add new:
 @newSubject.Ordinal
 
 <p>Click Count: @ClickCount</p> <!-- Display ClickCount here -->
-
 @code {
     public Subject[] subjects { get; set; }
 
@@ -65,6 +64,6 @@ Add new:
     protected async Task AddSubject()
     {
         ClickCount++;
-       // await Http.PostAsJsonAsync<Subject>("api/Subject/Add", newSubject);
+        // await Http.PostAsJsonAsync<Subject>("api/Subject/Add", newSubject);
     }
 }

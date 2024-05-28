@@ -1,0 +1,334 @@
+﻿@rendermode InteractiveServer
+
+@using DataModels.Data
+@using DataModels.Models
+@inject SHcx cx;
+@inject CustomHttpClientService Http
+
+<h3>ExamComponent</h3>
+
+@if (currentQuestion != null)
+{
+    <div class="question-container">
+        <h4>@currentQuestion.QuestionText</h4>
+        <div>
+            @if (currentQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+            {
+                @foreach (var answer in currentQuestion.Answers)
+                {
+                    <div class="option">
+                        <input type="radio" name="option" id="@answer.AnswerId" value="@answer.AnswerId" checked="@IsAnswerSelected(answer.AnswerId)" @onchange="SelectAnswer" />
+                        <label>@answer.AnswerText</label>
+                    </div>
+                }
+            }
+            else if (currentQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+            {
+                <textarea class="large-textarea" value="@currentOpenAnswerText" @oninput="UpdateOpenAnswerText" @onchange="openAnswer"></textarea>
+            }
+        </div>
+        <button @onclick="PrevQuestion" disabled="@isFirstQuestion">Previous</button>
+        <button @onclick="NextQuestion" disabled="@isLastQuestion">Next</button>
+        @* <button @onclick="EndTest">End Test</button> *@
+    </div>
+}
+
+<div class="question-number-table">
+    <table>
+        <thead>
+            <tr>
+                @for (int i = 1; i <= questionNum; i++)
+                {
+                    <th>@i</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                @for (int i = 0; i < questionNum; i++)
+                {
+                    <td>
+                        <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" />
+                    </td>
+                }
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="timer-container">
+    <div class="elapsed-timer">
+        <span>Elapsed Time:</span>
+        <span>@elapsedTime</span>
+    </div>
+    <div class="remaining-timer">
+        <span>Remaining Time:</span>
+        <span>@remainingTime</span>
+    </div>
+</div>
+
+@if (isTestEnded)
+{
+    <div class="result-container">
+        <h4>Test Results</h4>
+        <p>Total Questions: @questionNum</p>
+        <p>Correct Answers: @correctAnswers</p>
+        <p>Wrong Answers: @wrongAnswers</p>
+        <p>Total Time: @elapsedTime</p>
+        <h5>Time Taken Per Question:</h5>
+        <ul>
+            @foreach (var answer in examAnswers)
+            {
+                <li>Question @answer.QuestionId: @answer.TimeSpent</li>
+            }
+        </ul>
+    </div>
+}
+
+<style>
+    .question-container {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .option {
+        margin-bottom: 10px;
+    }
+
+        .option input[type="radio"] {
+            margin-right: 5px;
+        }
+
+    .timer-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .elapsed-timer,
+    .remaining-timer {
+        background-color: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 0 10px;
+    }
+
+    .question-number-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .question-number-table th,
+    .question-number-table td {
+        padding: 8px;
+        text-align: center;
+        border: 1px solid #ddd;
+    }
+
+    button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+    .large-textarea {
+        width: 600px; /* Full width */
+        height: 150px; /* Increased height */
+        padding: 10px; /* Some padding */
+        border-radius: 5px; /* Rounded corners */
+        border: 1px solid #ccc; /* Border color */
+        font-size: 16px; /* Font size */
+    }
+</style>
+@code {
+    public ExamExecution examExecution;
+    public int examExecutionId = 17;
+    public int questionNum;
+    public int currentQuestionIndex = 0;
+    public ICollection<ExamAnswer> examAnswers;
+    public Question currentQuestion;
+    public string currentOpenAnswerText;
+
+    public string elapsedTime = "00:00:00";
+    public string remainingTime = "00:15:00";
+    private System.Timers.Timer elapsedTimer;
+    private System.Timers.Timer remainingTimer;
+    private DateTime startTime;
+    private TimeSpan examDuration = TimeSpan.FromMinutes(15);
+    private DateTime questionStartTime; // Question Time
+
+    public bool isTestEnded = false;
+    public int correctAnswers = 0;
+    public int wrongAnswers = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/GetExamExecution?ExamExecutionId={examExecutionId}");
+        examAnswers = await Http.GetAsync<ICollection<ExamAnswer>>($"api/Exam/GetExamAnswers?ExamExecutionId={examExecutionId}");
+        questionNum = examAnswers.Count;
+        SetCurrentQuestion();
+
+        // Initialize timers
+        startTime = DateTime.Now;
+        elapsedTimer = new System.Timers.Timer(1000);
+        elapsedTimer.Elapsed += UpdateElapsedTime;
+        elapsedTimer.Start();
+
+        remainingTimer = new System.Timers.Timer(1000);
+        remainingTimer.Elapsed += UpdateRemainingTime;
+        remainingTimer.Start();
+
+        questionStartTime = DateTime.Now;
+    }
+
+    private void SetCurrentQuestion()
+    {
+        if (examAnswers != null && examAnswers.Any())
+        {
+            currentQuestion = examAnswers.ElementAt(currentQuestionIndex).Question;
+            questionStartTime = DateTime.Now;
+        }
+    }
+
+    private bool IsAnswerSelected(int answerId)
+    {
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        return existingAnswer != null && existingAnswer.AnswerId == answerId;
+    }
+
+    private void SelectAnswer(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value.ToString(), out int selectedAnswerId))
+        {
+            var selectedAnswer = currentQuestion.Answers.FirstOrDefault(a => a.AnswerId == selectedAnswerId);
+            if (selectedAnswer != null)
+            {
+                var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+                if (existingAnswer != null)
+                {
+                    existingAnswer.Answer = selectedAnswer;
+                    existingAnswer.AnswerId = selectedAnswer.AnswerId;
+                }
+                // else
+                // {
+                //     examAnswers.Add(new ExamAnswer
+                //         {
+                //             QuestionId = currentQuestion.QuestionId,
+                //             AnswerId = selectedAnswer.AnswerId,
+                //             ExamExecutionId = examExecutionId,
+                //             TimeSpent = TimeSpan.Zero
+                //         });
+                // }
+            }
+        }
+    }
+
+    private void UpdateOpenAnswerText(ChangeEventArgs e)
+    {
+        currentOpenAnswerText = e.Value.ToString();
+    }
+
+    private void openAnswer(ChangeEventArgs e)
+    {
+        currentOpenAnswerText = e.Value.ToString();
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        if (existingAnswer != null)
+        {
+            existingAnswer.TextAnswer = currentOpenAnswerText;
+        }
+    }
+
+    private void PrevQuestion()
+    {
+        if (currentQuestionIndex > 0)
+        {
+            UpdateTimeSpent();
+            currentQuestionIndex--;
+            SetCurrentQuestion();
+        }
+    }
+
+    private void NextQuestion()
+    {
+        if (currentQuestionIndex < questionNum - 1)
+        {
+            UpdateTimeSpent();
+            currentQuestionIndex++;
+            SetCurrentQuestion();
+        }
+    }
+
+    private void GoToQuestion(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value.ToString(), out int selectedIndex))
+        {
+            UpdateTimeSpent();
+            currentQuestionIndex = selectedIndex;
+            SetCurrentQuestion();
+        }
+    }
+
+    private void UpdateTimeSpent()
+    {
+        var currentTime = DateTime.Now;
+        var timeSpent = currentTime - questionStartTime;
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        if (existingAnswer != null)
+        {
+            existingAnswer.TimeSpent += timeSpent;
+        }
+    }
+
+    private bool isFirstQuestion => currentQuestionIndex == 0;
+    private bool isLastQuestion => currentQuestionIndex == questionNum - 1;
+
+    private void UpdateElapsedTime(object sender, System.Timers.ElapsedEventArgs e)
+    {
+        var elapsed = DateTime.Now - startTime;
+        elapsedTime = elapsed.ToString(@"hh\:mm\:ss");
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void UpdateRemainingTime(object sender, System.Timers.ElapsedEventArgs e)
+    {
+        var remaining = examDuration - (DateTime.Now - startTime);
+        if (remaining <= TimeSpan.Zero)
+        {
+            remaining = TimeSpan.Zero;
+            remainingTimer.Stop();
+            // Handle exam end (e.g., submit answers)
+        }
+        remainingTime = remaining.ToString(@"hh\:mm\:ss");
+        InvokeAsync(StateHasChanged);
+    }
+
+    // private async void EndTest()
+    // {
+    //     // Stop the timers
+    //     elapsedTimer.Stop();
+    //     remainingTimer.Stop();
+
+    //     // Calculate correct and wrong answers
+    //     correctAnswers = examAnswers.Count(ea => ea.Answer != null && ea.Answer.IsCorrectAnswer);
+    //     wrongAnswers = questionNum - correctAnswers;
+
+    //     // Update exam execution with end time and save it
+    //     examExecution.EndTime = DateTime.Now;
+    //     await Http.PutAsync<ExamExecution, object>("api/Exam/UpdateExamExecution", examExecution);
+
+    //     isTestEnded = true;
+    //     InvokeAsync(StateHasChanged);
+    // }
+}

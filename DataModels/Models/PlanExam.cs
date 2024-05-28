@@ -12,12 +12,11 @@ namespace DataModels.Models
     public class PlanExam
     {
         public int PlanExamId { get; set; }
-
         public ExamFrequencyEnum ExamFrequency { get; set; }
 
         //How many per ExamFrequency, can choose both.
         public int SubjectNum { get; set; } //per subject
-        public int SubSubjectNum { get; set; }//per sub-subject
+        public int SubSubjectNum { get; set; } //per sub-subject
 
         public int QuestionsAmount { get; set; }
         public int FromSubjectId { get; set; }

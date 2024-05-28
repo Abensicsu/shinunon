@@ -22,7 +22,7 @@ namespace DataModels.Models
         public string BookName { get; set; }
         public BookTypeEnum BookType { get; set; }
         public bool HasSubSubject { get; set; } //True if has sub-subject
-        public int? BookOrder { get; set; } //Order in subject list
-        public int SubjectNum { get; set; } //Amount of sub-subjects
+        public int BookOrder { get; set; } //Order in Book list
+        public ICollection<Subject> Subjects { get; set; }
     }
 }

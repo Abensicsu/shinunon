@@ -1,17 +1,155 @@
 ﻿@page "/"
+@using DataModels.Data
+@using DataModels.Models
+@using DataModels.Services
+@inject SHcx cx;
+
+@inject PlanExamService planExamService;
 
 <PageTitle>Home</PageTitle>
 
 
-<ComponentSubject>
+@* <ComponentSubject>
 
-</ComponentSubject>
+</ComponentSubject> *@
 
 
-@*<ComponentQuestion>
+@*@<ComponentQuestion>
 
-</ComponentQuestion>    *@
+</ComponentQuestion>*@
 
-@* <DailyExamComponent>
 
-</DailyExamComponent> *@
+<ExamComponent /> 
+
+
+@code {
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        //check CreateExamExecutions
+        /*var books = new List<Book>
+        {
+        new Book { BookName = "Book1", BookType = BookTypeEnum.Chumash, HasSubSubject = false, BookOrder = 1 },
+        new Book { BookName = "Book2", BookType = BookTypeEnum.Neviim, HasSubSubject = true, BookOrder = 2 },
+        new Book { BookName = "Book3", BookType = BookTypeEnum.Ketuvim, HasSubSubject = false, BookOrder = 3 },
+        new Book { BookName = "Book4", BookType = BookTypeEnum.Gemara, HasSubSubject = true, BookOrder = 4 },
+        new Book { BookName = "Book5", BookType = BookTypeEnum.Mishna, HasSubSubject = false, BookOrder = 5 }
+        };
+
+        // Add the books to the context
+        cx.Books.AddRange(books);
+        cx.SaveChanges();
+
+        var subjects = new List<Subject>
+        {
+            new Subject { SubjectName = "Subject1", Ordinal = 0, SubSubjectCount = 8, BookId = 1 },
+            new Subject { SubjectName = "Subject2", Ordinal = 8, SubSubjectCount = 7, BookId = 1 },
+            new Subject { SubjectName = "Subject3", Ordinal = 15, SubSubjectCount = 6, BookId = 1 },
+            new Subject { SubjectName = "Subject4", Ordinal = 21, SubSubjectCount = 8, BookId =2 },
+            new Subject { SubjectName = "Subject5", Ordinal = 29, SubSubjectCount = 5, BookId = 2 },
+            new Subject { SubjectName = "Subject6", Ordinal = 34, SubSubjectCount = 10, BookId = 2 },
+            new Subject { SubjectName = "Subject7", Ordinal = 44, SubSubjectCount = 2, BookId = 3 },
+            new Subject { SubjectName = "Subject8", Ordinal = 46, SubSubjectCount = 2, BookId = 3 },
+            new Subject { SubjectName = "Subject9", Ordinal = 48, SubSubjectCount = 1, BookId = 3 }
+        };
+
+        // Add the subjects to the context
+        cx.Subjects.AddRange(subjects);
+        cx.SaveChanges();
+
+        var users = new List<User>
+        {
+        new User { UserName = "User1", Email = "user1@example.com", Password = "password" },
+        new User { UserName = "User2", Email = "user2@example.com", Password = "password" },
+        new User { UserName = "User3", Email = "user3@example.com", Password = "password" },
+        new User { UserName = "User4", Email = "user4@example.com", Password = "password" },
+        };
+        cx.Users.AddRange(users);
+        cx.SaveChanges();
+        
+        var subjectFrom = cx.Subjects
+            .Where(sub => sub.SubjectId == 2).FirstOrDefault();
+        
+        var subjectTo = cx.Subjects
+                .Where(sub => sub.SubjectId == 7).FirstOrDefault();
+
+        var exPl = new PlanExam()
+            {
+                ExamFrequency = 0,
+                SubjectNum = 0,
+                SubSubjectNum = 5,
+                QuestionsAmount = 10,
+                FromSubject = subjectFrom,
+                FromSubjectId = 1,
+                ToSubjectId = 9,
+                ToSubject = subjectTo,
+                UserId = 1
+            };
+
+        cx.Add(exPl);
+        cx.SaveChanges();
+        planExamService.CreateExamExecutions(exPl);
+
+        //check SelectQuestions
+        var questions = new List<Question>();
+
+        for (int j = 1; j <= 9; j++)
+        {
+            for (int i = 1; i <= 8; i++)
+            {
+                questions.Add(new Question
+                    {
+                        QuestionText = $"q{i}subj{j}",
+                        QuestionType = QuestionTypeEnum.OpenQuestion,
+                        SubjectId = j
+                    });
+            }
+        }
+        cx.Questions.AddRange(questions);
+        cx.SaveChanges();
+
+        //var subjectFrom = cx.Subjects
+        //      .Where(sub => sub.SubjectId == 2).FirstOrDefault();
+        //var subjectTo = cx.Subjects
+        //      .Where(sub => sub.SubjectId == 4).FirstOrDefault();
+
+        ExamExecution newExamExecution = new ExamExecution
+            {
+                StartTime = null,
+                EndTime = null,
+                CorrectAnswers = 0,
+                WrongAnswers = 0,
+                QuestionsAnswered = 0,
+                QuestionId = 0,
+                FromSubjectId = subjectFrom.SubjectId,
+                ToSubjectId = subjectTo.SubjectId,
+                PlanExamId = 1,
+                UserId = 1
+            };
+        cx.ExamExecutions.Add(newExamExecution);
+        cx.SaveChanges();
+        planExamService.SelectQuestions(newExamExecution);
+        
+        //var questions = cx.Questions.ToArray();
+        var answers = new List<Answer>();
+
+        foreach (var question in questions)
+        {
+            //int numberOfAnswers = (question.QuestionId % 5 == 0) ? 5 : 4;
+            int numberOfAnswers = (question.QuestionId % 5 == 0) ? 5 : 4;
+            int correctAnswerIndex = (question.QuestionId % 5 == 0) ? 5 : question.QuestionId % 5;
+
+            for (int i = 1; i <= numberOfAnswers; i++)
+            {
+                answers.Add(new Answer
+                    {
+                        AnswerText = $"a{i}q{question.QuestionId}",
+                        IsCorrectAnswer = (i == correctAnswerIndex),
+                        QuestionId = question.QuestionId
+                    });
+            }
+        }
+        cx.Answers.AddRange(answers);
+        cx.SaveChanges();*/
+    }
+}

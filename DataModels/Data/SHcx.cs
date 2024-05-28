@@ -26,5 +26,34 @@ namespace DataModels.Data
         {
 
         }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            // Define relationships here
+            modelBuilder.Entity<ExamExecution>()
+                .HasOne(e => e.FromSubject)
+                .WithMany(s => s.ExamExecutions)
+                .HasForeignKey(e => e.FromSubjectId)
+                .OnDelete(DeleteBehavior.Restrict); // or whatever delete behavior you prefer
+
+            modelBuilder.Entity<ExamExecution>()
+                .HasOne(e => e.ToSubject)
+                .WithMany()
+                .HasForeignKey(e => e.ToSubjectId)
+                .OnDelete(DeleteBehavior.Restrict); // or whatever delete behavior you prefer
+
+            modelBuilder.Entity<PlanExam>()
+                .HasOne(p => p.FromSubject)
+                .WithMany()
+                .HasForeignKey(p => p.FromSubjectId)
+                .OnDelete(DeleteBehavior.Restrict); // or whatever delete behavior you prefer
+
+            modelBuilder.Entity<PlanExam>()
+                .HasOne(p => p.ToSubject)
+                .WithMany()
+                .HasForeignKey(p => p.ToSubjectId)
+                .OnDelete(DeleteBehavior.Restrict); // or whatever delete behavior you prefer
+        }
+
     }
 }

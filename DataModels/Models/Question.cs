@@ -9,8 +9,8 @@ namespace DataModels.Models
 {
     public enum QuestionTypeEnum
     {
-        OpenQuestion,
-        SelectQuestion
+        SelectQuestion,
+        OpenQuestion
     }
 
     public class Question

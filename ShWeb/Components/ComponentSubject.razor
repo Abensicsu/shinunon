@@ -23,7 +23,7 @@ else
             @foreach (var subj in subjects)
             {
                 <tr>
-                    <td>@subj.SubjectType</td>
+                    <td>@* @subj.SubjectType *@</td>
                     <td>@subj.SubjectName</td>
                     <td>@subj.Ordinal</td>
                 </tr>
@@ -35,13 +35,13 @@ else
 <h2>Add Subject</h2>
 
 <b>Subject Type</b>
-<InputSelect @bind-Value="@newSubject.SubjectType">
+@* <InputSelect @bind-Value="@newSubject.SubjectType">
 
     @foreach (var sType in Enum.GetValues(typeof(BookTypeEnum)))
     {
         <option value="@sType">@sType</option>
     }
-</InputSelect>
+</InputSelect> *@
 
 <b>Name</b>
 <input @bind="newSubject.SubjectName" />

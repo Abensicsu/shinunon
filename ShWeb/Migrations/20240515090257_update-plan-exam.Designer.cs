@@ -3,6 +3,7 @@ using System;
 using DataModels.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
-    partial class SHcxModelSnapshot : ModelSnapshot
+    [Migration("20240515090257_update-plan-exam")]
+    partial class Updateplanexam
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -107,10 +110,6 @@ namespace ShWeb.Migrations
                     b.Property<string>("TextAnswer")
                         .HasColumnType("text")
                         .HasColumnName("text_answer");
-
-                    b.Property<TimeSpan>("TimeSpent")
-                        .HasColumnType("interval")
-                        .HasColumnName("time_spent");
 
                     b.HasKey("ExamAnswerId")
                         .HasName("pk_exam_answers");

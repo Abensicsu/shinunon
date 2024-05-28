@@ -9,12 +9,11 @@ namespace ShWeb.Controllers
     [ApiController]
     public class SubjectController : ControllerBase
     {
+        public SHcx Cx { get; }
         public SubjectController(SHcx cx)
         {
             Cx = cx;
         }
-
-        public SHcx Cx { get; }
 
         [HttpGet]
         public Subject[] AllSubjects()

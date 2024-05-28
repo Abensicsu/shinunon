@@ -13,7 +13,7 @@ namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
     [Migration("20240218075648_init")]
-    partial class init
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

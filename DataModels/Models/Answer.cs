@@ -11,11 +11,10 @@ namespace DataModels.Models
     {
         public int AnswerId { get; set; }
         public string AnswerText  { get; set; }
+        public bool IsCorrectAnswer { get; set; }
 
         public int QuestionId { get; set; }
         [ForeignKey(nameof(QuestionId))]
         public Question Question { get; set; }
-
-        public bool IsCorrectAnswer { get; set; }
     }
 }

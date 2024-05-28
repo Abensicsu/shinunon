@@ -3,6 +3,7 @@ using System;
 using DataModels.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
-    partial class SHcxModelSnapshot : ModelSnapshot
+    [Migration("20240320094523_changeSubjects")]
+    partial class changeSubjects
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -65,7 +68,7 @@ namespace ShWeb.Migrations
                         .HasColumnType("text")
                         .HasColumnName("book_name");
 
-                    b.Property<int>("BookOrder")
+                    b.Property<int?>("SubjeckOrder")
                         .HasColumnType("integer")
                         .HasColumnName("book_order");
 
@@ -76,6 +79,10 @@ namespace ShWeb.Migrations
                     b.Property<bool>("HasSubSubject")
                         .HasColumnType("boolean")
                         .HasColumnName("has_sub_subject");
+
+                    b.Property<int>("SubjectNum")
+                        .HasColumnType("integer")
+                        .HasColumnName("subject_num");
 
                     b.HasKey("BookId")
                         .HasName("pk_books");
@@ -107,10 +114,6 @@ namespace ShWeb.Migrations
                     b.Property<string>("TextAnswer")
                         .HasColumnType("text")
                         .HasColumnName("text_answer");
-
-                    b.Property<TimeSpan>("TimeSpent")
-                        .HasColumnType("interval")
-                        .HasColumnName("time_spent");
 
                     b.HasKey("ExamAnswerId")
                         .HasName("pk_exam_answers");
@@ -144,10 +147,6 @@ namespace ShWeb.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_time");
 
-                    b.Property<int>("FromSubjectId")
-                        .HasColumnType("integer")
-                        .HasColumnName("from_subject_id");
-
                     b.Property<int?>("PlanExamId")
                         .HasColumnType("integer")
                         .HasColumnName("plan_exam_id");
@@ -164,9 +163,9 @@ namespace ShWeb.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("start_time");
 
-                    b.Property<int>("ToSubjectId")
+                    b.Property<int>("SubjectId")
                         .HasColumnType("integer")
-                        .HasColumnName("to_subject_id");
+                        .HasColumnName("subject_id");
 
                     b.Property<int>("UserId")
                         .HasColumnType("integer")
@@ -179,17 +178,14 @@ namespace ShWeb.Migrations
                     b.HasKey("ExamExecutionId")
                         .HasName("pk_exam_executions");
 
-                    b.HasIndex("FromSubjectId")
-                        .HasDatabaseName("ix_exam_executions_from_subject_id");
-
                     b.HasIndex("PlanExamId")
                         .HasDatabaseName("ix_exam_executions_plan_exam_id");
 
                     b.HasIndex("QuestionId")
                         .HasDatabaseName("ix_exam_executions_question_id");
 
-                    b.HasIndex("ToSubjectId")
-                        .HasDatabaseName("ix_exam_executions_to_subject_id");
+                    b.HasIndex("SubjectId")
+                        .HasDatabaseName("ix_exam_executions_subject_id");
 
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_exam_executions_user_id");
@@ -373,10 +369,6 @@ namespace ShWeb.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("ordinal");
 
-                    b.Property<int?>("SubSubjectCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("sub_subject_count");
-
                     b.Property<string>("SubjectName")
                         .HasColumnType("text")
                         .HasColumnName("subject_name");
@@ -402,6 +394,10 @@ namespace ShWeb.Migrations
                     b.Property<string>("Email")
                         .HasColumnType("text")
                         .HasColumnName("email");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("text")
+                        .HasColumnName("name");
 
                     b.Property<string>("Password")
                         .HasColumnType("text")
@@ -459,14 +455,7 @@ namespace ShWeb.Migrations
 
             modelBuilder.Entity("DataModels.Models.ExamExecution", b =>
                 {
-                    b.HasOne("DataModels.Models.Subject", "FromSubject")
-                        .WithMany("ExamExecutions")
-                        .HasForeignKey("FromSubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_exam_executions_subjects_from_subject_id");
-
-                    b.HasOne("DataModels.Models.PlanExam", "PlanExam")
+                    b.HasOne("DataModels.Models.PlanExam", null)
                         .WithMany("ExamExecutions")
                         .HasForeignKey("PlanExamId")
                         .HasConstraintName("fk_exam_executions_plan_exams_plan_exam_id");
@@ -478,12 +467,12 @@ namespace ShWeb.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_exam_executions_questions_question_id");
 
-                    b.HasOne("DataModels.Models.Subject", "ToSubject")
-                        .WithMany()
-                        .HasForeignKey("ToSubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("DataModels.Models.Subject", "Subject")
+                        .WithMany("ExamExecutions")
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_exam_executions_subjects_to_subject_id");
+                        .HasConstraintName("fk_exam_executions_subjects_subject_id");
 
                     b.HasOne("DataModels.Models.User", "User")
                         .WithMany("ExamExecutions")
@@ -494,11 +483,7 @@ namespace ShWeb.Migrations
 
                     b.Navigation("CurrentQuestion");
 
-                    b.Navigation("FromSubject");
-
-                    b.Navigation("PlanExam");
-
-                    b.Navigation("ToSubject");
+                    b.Navigation("Subject");
 
                     b.Navigation("User");
                 });
@@ -555,14 +540,14 @@ namespace ShWeb.Migrations
                     b.HasOne("DataModels.Models.Subject", "FromSubject")
                         .WithMany()
                         .HasForeignKey("FromSubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_plan_exams_subjects_from_subject_id");
 
                     b.HasOne("DataModels.Models.Subject", "ToSubject")
                         .WithMany()
                         .HasForeignKey("ToSubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_plan_exams_subjects_to_subject_id");
 
