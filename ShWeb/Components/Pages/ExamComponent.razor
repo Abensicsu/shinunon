@@ -4,6 +4,7 @@
 @using DataModels.Models
 @inject SHcx cx;
 @inject CustomHttpClientService Http
+@inject IJSRuntime JS
 
 <h3>ExamComponent</h3>
 
@@ -29,7 +30,7 @@
         </div>
         <button @onclick="PrevQuestion" disabled="@isFirstQuestion">Previous</button>
         <button @onclick="NextQuestion" disabled="@isLastQuestion">Next</button>
-        @* <button @onclick="EndTest">End Test</button> *@
+        <button @onclick="EndTest">End Test</button>
     </div>
 }
 
@@ -152,6 +153,7 @@
         font-size: 16px; /* Font size */
     }
 </style>
+
 @code {
     public ExamExecution examExecution;
     public int examExecutionId = 17;
@@ -160,6 +162,9 @@
     public ICollection<ExamAnswer> examAnswers;
     public Question currentQuestion;
     public string currentOpenAnswerText;
+
+    // private const string LocalStorageKey = "ExamExecutionState";
+    // private bool isInitialized = false;
 
     public string elapsedTime = "00:00:00";
     public string remainingTime = "00:15:00";
@@ -180,7 +185,6 @@
         questionNum = examAnswers.Count;
         SetCurrentQuestion();
 
-        // Initialize timers
         startTime = DateTime.Now;
         elapsedTimer = new System.Timers.Timer(1000);
         elapsedTimer.Elapsed += UpdateElapsedTime;
@@ -221,16 +225,6 @@
                     existingAnswer.Answer = selectedAnswer;
                     existingAnswer.AnswerId = selectedAnswer.AnswerId;
                 }
-                // else
-                // {
-                //     examAnswers.Add(new ExamAnswer
-                //         {
-                //             QuestionId = currentQuestion.QuestionId,
-                //             AnswerId = selectedAnswer.AnswerId,
-                //             ExamExecutionId = examExecutionId,
-                //             TimeSpent = TimeSpan.Zero
-                //         });
-                // }
             }
         }
     }
@@ -244,9 +238,12 @@
     {
         currentOpenAnswerText = e.Value.ToString();
         var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        var currentAnswer = currentQuestion.Answers.FirstOrDefault();
         if (existingAnswer != null)
         {
             existingAnswer.TextAnswer = currentOpenAnswerText;
+            existingAnswer.Answer = currentAnswer;
+            existingAnswer.AnswerId = currentAnswer.AnswerId;
         }
     }
 
@@ -314,21 +311,25 @@
         InvokeAsync(StateHasChanged);
     }
 
-    // private async void EndTest()
-    // {
-    //     // Stop the timers
-    //     elapsedTimer.Stop();
-    //     remainingTimer.Stop();
+    private async void EndTest()
+    {
+        UpdateTimeSpent();
+        // Stop the timers
+        elapsedTimer.Stop();
+        remainingTimer.Stop();
 
-    //     // Calculate correct and wrong answers
-    //     correctAnswers = examAnswers.Count(ea => ea.Answer != null && ea.Answer.IsCorrectAnswer);
-    //     wrongAnswers = questionNum - correctAnswers;
+        // Calculate correct and wrong answers
+        correctAnswers = examAnswers.Count(ea => ea.Answer != null && ea.Answer.IsCorrectAnswer);
+        wrongAnswers = questionNum - correctAnswers;
 
-    //     // Update exam execution with end time and save it
-    //     examExecution.EndTime = DateTime.Now;
-    //     await Http.PutAsync<ExamExecution, object>("api/Exam/UpdateExamExecution", examExecution);
+        // Add updated answers to examExecution
+        examExecution.ExamAnswers = examAnswers;
 
-    //     isTestEnded = true;
-    //     InvokeAsync(StateHasChanged);
-    // }
+        // Update exam execution with end time and save it
+        examExecution.EndTime = DateTime.Now;
+        await Http.PutAsync<ExamExecution, object>("api/Exam/UpdateExamExecution", examExecution);
+
+        isTestEnded = true;
+        InvokeAsync(StateHasChanged);
+    }
 }

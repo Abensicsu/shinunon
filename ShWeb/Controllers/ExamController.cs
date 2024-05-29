@@ -44,9 +44,28 @@ namespace ShWeb.Controllers
             var existingExecution = await Cx.ExamExecutions
                 .Where(x => x.ExamExecutionId == examExecution.ExamExecutionId)
                 .Include(x => x.ExamAnswers)
+                .ThenInclude(x => x.Question)
+                .ThenInclude(q => q.Answers)
                 .FirstOrDefaultAsync();
 
-            existingExecution.EndTime = examExecution.EndTime;
+            if (existingExecution == null)
+            {
+                return NotFound();
+            }
+
+            // Update the ExamAnswers
+            foreach (var examAanswer in examExecution.ExamAnswers)
+            {
+                var existingAnswer = existingExecution.ExamAnswers.FirstOrDefault(a => a.ExamAnswerId == examAanswer.ExamAnswerId);
+                if (existingAnswer != null)
+                {
+                    // Update existing answer
+                    existingAnswer.Answer = examAanswer.Answer;
+                    existingAnswer.AnswerId = examAanswer.AnswerId;
+                    existingAnswer.TextAnswer = examAanswer.TextAnswer;
+                    existingAnswer.TimeSpent = examAanswer.TimeSpent;
+                }
+            }
 
             await Cx.SaveChangesAsync();
             return Ok();
