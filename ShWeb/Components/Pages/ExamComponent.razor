@@ -17,6 +17,56 @@
 
 <h3>ExamComponent</h3>
     
+@if (currentQuestion != null)
+{
+    <div class="question-container">
+        <h4>@currentQuestion.QuestionText</h4>
+        <div>
+            @if (currentQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+            {
+                @foreach (var answer in currentQuestion.Answers)
+                {
+                    <div class="option">
+                        <input type="radio" name="option" id="@answer.AnswerId" value="@answer.AnswerId" checked="@IsAnswerSelected(answer.AnswerId)" @onchange="SelectAnswer" />
+                        <label for="@answer.AnswerId">@answer.AnswerText</label>
+                    </div>
+                }
+            }
+            else if (currentQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+            {
+                <textarea value="@examAnswers.ElementAt(currentQuestionIndex).TextAnswer" @oninput="UpdateOpenAnswerText" @onchange="openAnswer"></textarea>
+                @* <label>@</label> *@
+            }
+        </div>
+        <button @onclick="PrevQuestion" disabled="@isFirstQuestion">Previous</button>
+        <button @onclick="NextQuestion" disabled="@isLastQuestion">Next</button>
+        <button @onclick="EndTest">End Test</button>
+    </div>
+}
+
+<div class="question-number-table">
+    <table>
+        <thead>
+            <tr>
+                @for (int i = 1; i <= questionNum; i++)
+                {
+                    <th>@i</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                @for (int i = 0; i < questionNum; i++)
+                {
+                    <td>
+                        <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" />
+                    </td>
+                }
+            </tr>
+        </tbody>
+    </table>
+</div>
+
 <div class="timer-container">
     <div class="elapsed-timer">
         <span>Elapsed Time:</span>
