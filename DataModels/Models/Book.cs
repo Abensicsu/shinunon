@@ -7,14 +7,6 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
-    public enum BookTypeEnum
-    {
-        Chumash,
-        Neviim,
-        Ketuvim,
-        Gemara,
-        Mishna
-    }
 
     public class Book
     {
@@ -24,5 +16,13 @@ namespace DataModels.Models
         public bool HasSubSubject { get; set; } //True if has sub-subject
         public int BookOrder { get; set; } //Order in Book list
         public ICollection<Subject> Subjects { get; set; }
+    }
+    public enum BookTypeEnum
+    {
+        Chumash,
+        Neviim,
+        Ketuvim,
+        Gemara,
+        Mishna
     }
 }

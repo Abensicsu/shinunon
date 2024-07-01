@@ -53,7 +53,9 @@ namespace DataModels.Data
                 .WithMany()
                 .HasForeignKey(p => p.ToSubjectId)
                 .OnDelete(DeleteBehavior.Restrict); // or whatever delete behavior you prefer
-        }
 
+            modelBuilder.Entity<User>()
+                .OwnsOne(u => u.UserSettings);
+        }
     }
 }

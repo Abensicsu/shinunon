@@ -3,6 +3,7 @@ using DataModels.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ShWeb.Components;
+using ShWeb.Components.BAServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,8 @@ builder.Services.AddControllers()
 builder.Services.AddRazorPages();
 
 builder.Services.AddScoped<PlanExamService>();
+builder.Services.AddScoped<ExamExecutionService>();
+
 
 builder.Services.AddScoped(sp => new HttpClient
 {
@@ -26,6 +29,7 @@ builder.Services.AddScoped(sp => new HttpClient
 });
 
 builder.Services.AddScoped<CustomHttpClientService>();
+builder.Services.AddScoped<LocalStorageService>();
 
 builder.Services.AddDbContext<SHcx>(options =>
 {

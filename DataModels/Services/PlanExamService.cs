@@ -154,7 +154,7 @@ namespace DataModels.Services
 
             while (shuffledIndices.Count < amount)
             {
-                shuffledIndices.Add(random.Next(minId,maxId));
+                shuffledIndices.Add(random.Next(minId, maxId));
             }
 
             ICollection<Question> selectedQuestions = questions

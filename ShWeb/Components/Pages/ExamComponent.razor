@@ -1,62 +1,22 @@
 ﻿@rendermode InteractiveServer
 
+@implements IDisposable
+
+@page "/exam-component/{examExecutionId:int}"
+
+@inject SHcx cx
+@inject CustomHttpClientService Http
+@inject LocalStorageService LocalStorageService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+@using System.Text.Json
+@using ShWeb.Components.BAServices
 @using DataModels.Data
 @using DataModels.Models
-@inject SHcx cx;
-@inject CustomHttpClientService Http
-@inject IJSRuntime JS
 
 <h3>ExamComponent</h3>
-
-@if (currentQuestion != null)
-{
-    <div class="question-container">
-        <h4>@currentQuestion.QuestionText</h4>
-        <div>
-            @if (currentQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
-            {
-                @foreach (var answer in currentQuestion.Answers)
-                {
-                    <div class="option">
-                        <input type="radio" name="option" id="@answer.AnswerId" value="@answer.AnswerId" checked="@IsAnswerSelected(answer.AnswerId)" @onchange="SelectAnswer" />
-                        <label>@answer.AnswerText</label>
-                    </div>
-                }
-            }
-            else if (currentQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
-            {
-                <textarea class="large-textarea" value="@currentOpenAnswerText" @oninput="UpdateOpenAnswerText" @onchange="openAnswer"></textarea>
-            }
-        </div>
-        <button @onclick="PrevQuestion" disabled="@isFirstQuestion">Previous</button>
-        <button @onclick="NextQuestion" disabled="@isLastQuestion">Next</button>
-        <button @onclick="EndTest">End Test</button>
-    </div>
-}
-
-<div class="question-number-table">
-    <table>
-        <thead>
-            <tr>
-                @for (int i = 1; i <= questionNum; i++)
-                {
-                    <th>@i</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                @for (int i = 0; i < questionNum; i++)
-                {
-                    <td>
-                        <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" />
-                    </td>
-                }
-            </tr>
-        </tbody>
-    </table>
-</div>
-
+    
 <div class="timer-container">
     <div class="elapsed-timer">
         <span>Elapsed Time:</span>
@@ -68,7 +28,7 @@
     </div>
 </div>
 
-@if (isTestEnded)
+@* @if (isTestEnded)
 {
     <div class="result-container">
         <h4>Test Results</h4>
@@ -84,7 +44,7 @@
             }
         </ul>
     </div>
-}
+} *@
 
 <style>
     .question-container {
@@ -144,27 +104,27 @@
             cursor: not-allowed;
         }
 
-    .large-textarea {
-        width: 600px; /* Full width */
-        height: 150px; /* Increased height */
-        padding: 10px; /* Some padding */
-        border-radius: 5px; /* Rounded corners */
-        border: 1px solid #ccc; /* Border color */
-        font-size: 16px; /* Font size */
+    textarea {
+        width: 600px;
+        height: 150px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 16px;
     }
 </style>
 
 @code {
+    [Parameter]
+    public int examExecutionId { get; set; } 
     public ExamExecution examExecution;
-    public int examExecutionId = 17;
     public int questionNum;
     public int currentQuestionIndex = 0;
     public ICollection<ExamAnswer> examAnswers;
     public Question currentQuestion;
     public string currentOpenAnswerText;
 
-    // private const string LocalStorageKey = "ExamExecutionState";
-    // private bool isInitialized = false;
+    private bool isFirstRender = true;
 
     public string elapsedTime = "00:00:00";
     public string remainingTime = "00:15:00";
@@ -175,26 +135,135 @@
     private DateTime questionStartTime; // Question Time
 
     public bool isTestEnded = false;
-    public int correctAnswers = 0;
-    public int wrongAnswers = 0;
+    private string previousLocation;//location before navigate to other page in app
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/GetExamExecution?ExamExecutionId={examExecutionId}");
-        examAnswers = await Http.GetAsync<ICollection<ExamAnswer>>($"api/Exam/GetExamAnswers?ExamExecutionId={examExecutionId}");
-        questionNum = examAnswers.Count;
-        SetCurrentQuestion();
+        Navigation.LocationChanged += OnLocationChanged;
+        previousLocation = Navigation.Uri; // Initialize with the current location on load
+    }
 
-        startTime = DateTime.Now;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (isFirstRender)
+            {
+                // First render, check if examExecution is in local storage
+                currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
+                elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime") ?? "00:00:00";
+                remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime") ?? "00:15:00";
+
+                examExecution = await LocalStorageService.GetFromLocalStorageAsync<ExamExecution>("examExecution");
+                if (examExecution == null)
+                {
+                    // If not found in local storage, fetch from the database
+                    examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
+                    examAnswers = examExecution.ExamAnswers;
+                    // examAnswers = await Http.GetAsync<ICollection<ExamAnswer>>($"api/Exam/ExamAnswers?ExamExecutionId={examExecutionId}"); ??
+
+                    questionNum = examAnswers.Count;
+                    SetCurrentQuestion();
+                    startTime = DateTime.Now;
+                    InitializeTimers();
+                }
+                else
+                {
+                    examAnswers = examExecution.ExamAnswers;
+                    questionNum = examAnswers.Count;
+                    SetCurrentQuestion();
+                    startTime = DateTime.Now.Add(TimeSpan.Parse(elapsedTime).Negate());//why not DateTime.Now??
+                    InitializeTimers(); // TimeSpan.Parse(remainingTime));
+                }
+                isFirstRender = false; // Update the flag
+            }
+            else
+            {
+                // Subsequent renders, load examExecution from local storage
+                examExecution = await LocalStorageService.GetFromLocalStorageAsync<ExamExecution>("examExecution");
+
+                // Restore state from local storage
+                currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
+                elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime");// ?? "00:00:00";
+                remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime");// ?? "00:15:00";
+
+                if (examExecution != null)
+                {
+                    examAnswers = examExecution.ExamAnswers;
+                    questionNum = examAnswers.Count;
+                    SetCurrentQuestion();
+                    startTime = DateTime.Now.Add(TimeSpan.Parse(elapsedTime).Negate());
+                    InitializeTimers();
+                }
+            }
+            StateHasChanged(); // Trigger a re-render
+        }
+    }
+
+    private async void OnLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        string currentLocation = e.Location;
+
+        Console.WriteLine($"Navigated from: {previousLocation} to: {currentLocation}");
+
+        // Check if the previous location or new location is "/" - BaseUri
+        if (previousLocation == Navigation.BaseUri)
+        {
+            await SaveDataToLocalStorage();
+        }
+        // Update the previous location
+        previousLocation = currentLocation;
+    }
+
+    public void Dispose()
+    {
+        elapsedTimer?.Dispose();
+        remainingTimer?.Dispose();
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private void InitializeTimers(TimeSpan? remaining = null)
+    {
         elapsedTimer = new System.Timers.Timer(1000);
-        elapsedTimer.Elapsed += UpdateElapsedTime;
+        elapsedTimer.Elapsed += (sender, e) =>
+        {
+            elapsedTime = (DateTime.Now - startTime).ToString(@"hh\:mm\:ss");
+            InvokeAsync(StateHasChanged);
+        };
         elapsedTimer.Start();
 
         remainingTimer = new System.Timers.Timer(1000);
-        remainingTimer.Elapsed += UpdateRemainingTime;
+        remainingTimer.Elapsed += (sender, e) =>
+        {
+            var remainingTimeSpan = remaining.HasValue ? remaining.Value : examDuration - (DateTime.Now - startTime);
+            remainingTime = remainingTimeSpan.ToString(@"hh\:mm\:ss");
+            if (remainingTimeSpan <= TimeSpan.Zero)
+            {
+                remainingTimer.Stop();
+                EndTest();
+            }
+            InvokeAsync(StateHasChanged);
+        };
         remainingTimer.Start();
+    }
 
-        questionStartTime = DateTime.Now;
+    private async Task SaveDataToLocalStorage() //index, timers, examExecution
+    {
+        elapsedTimer?.Stop();
+        remainingTimer?.Stop();
+        await LocalStorageService.StoreInLocalStorageAsync("currentQuestionIndex", currentQuestionIndex);
+        await LocalStorageService.StoreInLocalStorageAsync("elapsedTime", elapsedTime);
+        await LocalStorageService.StoreInLocalStorageAsync("remainingTime", remainingTime);
+        await LocalStorageService.StoreInLocalStorageAsync("examExecution", examExecution);
+        Console.WriteLine("data saved to local storage.");
+    }
+
+    private async Task LoadDataToLocalStorage() //index, timers, examExecution
+    {
+        currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
+        elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime") ?? "00:00:00";
+        remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime") ?? "00:15:00";
+        Console.WriteLine("data loaded from local storage.");
     }
 
     private void SetCurrentQuestion()
@@ -203,6 +272,7 @@
         {
             currentQuestion = examAnswers.ElementAt(currentQuestionIndex).Question;
             questionStartTime = DateTime.Now;
+            examExecution.CurrentQuestion = currentQuestion;
         }
     }
 
@@ -225,6 +295,8 @@
                     existingAnswer.Answer = selectedAnswer;
                     existingAnswer.AnswerId = selectedAnswer.AnswerId;
                 }
+                // Add updated answers to examExecution
+                examExecution.ExamAnswers = examAnswers;
             }
         }
     }
@@ -243,15 +315,17 @@
         {
             existingAnswer.TextAnswer = currentOpenAnswerText;
             existingAnswer.Answer = currentAnswer;
-            existingAnswer.AnswerId = currentAnswer.AnswerId;
+            existingAnswer.AnswerId = currentAnswer?.AnswerId;
         }
+        // Add updated answers to examExecution
+        examExecution.ExamAnswers = examAnswers;
     }
 
     private void PrevQuestion()
     {
         if (currentQuestionIndex > 0)
         {
-            UpdateTimeSpent();
+            UpdateCurrentQuestionTime();
             currentQuestionIndex--;
             SetCurrentQuestion();
         }
@@ -261,7 +335,7 @@
     {
         if (currentQuestionIndex < questionNum - 1)
         {
-            UpdateTimeSpent();
+            UpdateCurrentQuestionTime();
             currentQuestionIndex++;
             SetCurrentQuestion();
         }
@@ -271,13 +345,13 @@
     {
         if (int.TryParse(e.Value.ToString(), out int selectedIndex))
         {
-            UpdateTimeSpent();
+            UpdateCurrentQuestionTime();
             currentQuestionIndex = selectedIndex;
             SetCurrentQuestion();
         }
     }
 
-    private void UpdateTimeSpent()
+    private void UpdateCurrentQuestionTime()
     {
         var currentTime = DateTime.Now;
         var timeSpent = currentTime - questionStartTime;
@@ -291,45 +365,23 @@
     private bool isFirstQuestion => currentQuestionIndex == 0;
     private bool isLastQuestion => currentQuestionIndex == questionNum - 1;
 
-    private void UpdateElapsedTime(object sender, System.Timers.ElapsedEventArgs e)
-    {
-        var elapsed = DateTime.Now - startTime;
-        elapsedTime = elapsed.ToString(@"hh\:mm\:ss");
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void UpdateRemainingTime(object sender, System.Timers.ElapsedEventArgs e)
-    {
-        var remaining = examDuration - (DateTime.Now - startTime);
-        if (remaining <= TimeSpan.Zero)
-        {
-            remaining = TimeSpan.Zero;
-            remainingTimer.Stop();
-            // Handle exam end (e.g., submit answers)
-        }
-        remainingTime = remaining.ToString(@"hh\:mm\:ss");
-        InvokeAsync(StateHasChanged);
-    }
-
     private async void EndTest()
     {
-        UpdateTimeSpent();
+        UpdateCurrentQuestionTime();
+
         // Stop the timers
         elapsedTimer.Stop();
         remainingTimer.Stop();
-
-        // Calculate correct and wrong answers
-        correctAnswers = examAnswers.Count(ea => ea.Answer != null && ea.Answer.IsCorrectAnswer);
-        wrongAnswers = questionNum - correctAnswers;
 
         // Add updated answers to examExecution
         examExecution.ExamAnswers = examAnswers;
 
         // Update exam execution with end time and save it
         examExecution.EndTime = DateTime.Now;
-        await Http.PutAsync<ExamExecution, object>("api/Exam/UpdateExamExecution", examExecution);
+        await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
 
         isTestEnded = true;
-        InvokeAsync(StateHasChanged);
+        // Navigate to the ExamResultComponent
+        Navigation.NavigateTo($"/exams-component/{examExecution.UserId}");
     }
 }

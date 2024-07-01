@@ -3,6 +3,7 @@ using System;
 using DataModels.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
-    partial class SHcxModelSnapshot : ModelSnapshot
+    [Migration("20240623150519_UserSettings")]
+    partial class UserSettings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -144,14 +147,6 @@ namespace ShWeb.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_time");
 
-                    b.Property<int?>("ExamRepeatNumber")
-                        .HasColumnType("integer")
-                        .HasColumnName("exam_repeat_number");
-
-                    b.Property<int>("ExamType")
-                        .HasColumnType("integer")
-                        .HasColumnName("exam_type");
-
                     b.Property<int>("FromSubjectId")
                         .HasColumnType("integer")
                         .HasColumnName("from_subject_id");
@@ -160,7 +155,7 @@ namespace ShWeb.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("plan_exam_id");
 
-                    b.Property<int?>("QuestionId")
+                    b.Property<int>("QuestionId")
                         .HasColumnType("integer")
                         .HasColumnName("question_id");
 
@@ -482,6 +477,8 @@ namespace ShWeb.Migrations
                     b.HasOne("DataModels.Models.Question", "CurrentQuestion")
                         .WithMany()
                         .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("fk_exam_executions_questions_question_id");
 
                     b.HasOne("DataModels.Models.Subject", "ToSubject")

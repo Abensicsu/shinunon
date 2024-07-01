@@ -1,0 +1,177 @@
+﻿@rendermode InteractiveServer
+
+@page "/check-exam/{examExecutionId:int}"
+
+@inject SHcx cx
+@inject CustomHttpClientService Http
+@inject LocalStorageService LocalStorageService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+@using System.Text.Json
+@using ShWeb.Components.BAServices
+@using DataModels.Data
+@using DataModels.Models
+
+<h3>CheckExamComponent</h3>
+@*
+<div >
+    <h3>Check Exam</h3>
+    @if (examExecution != null)
+    {
+        @foreach (var examAnswer in examAnswers)
+        {
+            <div>
+                @if (examAnswer.Question.QuestionType == QuestionTypeEnum.OpenQuestion)
+                {
+                    <h4>@examAnswer.Question.QuestionText</h4>
+                    <p>Your Answer: @examAnswer.Answer?.AnswerText</p>
+                    <p>Correct Answer: @examAnswer.TextAnswer</p>
+                    <p>Choose your answer level:</p>
+                    <label>
+                        <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, true)" /> Correct
+                    </label>
+                    <label>
+                        <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, false)" /> Wrong
+                    </label>
+                }
+            </div>
+        }
+        <button @onclick="CheckAnswers">Submit</button>
+    }
+</div> *@
+
+<div class="check-exam-container">
+    @if (examExecution != null)
+    {
+        @foreach (var examAnswer in examAnswers)
+        {
+            @if (examAnswer.Question.QuestionType == QuestionTypeEnum.OpenQuestion)
+            {
+                <div class="exam-answer">
+                    <h4 class="question-text">@examAnswer.Question.QuestionText</h4>
+                    <div class="answer-section">
+                        <div class="user-answer">
+                            <p class="label">Your Answer:</p>
+                            <p>@examAnswer.TextAnswer</p>
+                        </div>
+                        <div class="correct-answer">
+                            <p class="label">Correct Answer:</p>
+                            <p>@examAnswer.Answer?.AnswerText</p>
+                        </div>
+                    </div>
+                    <div class="answer-level">
+                        <p>Choose your answer level:</p>
+                        <label>
+                            <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, true)" /> Correct
+                        </label>
+                        <label>
+                            <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, false)" /> Wrong
+                        </label>
+                    </div>
+                </div>
+            }
+        }
+        <button class="submit-button" @onclick="CheckAnswers">Submit</button>
+    }
+</div>
+
+<style>
+    .check-exam-container {
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .exam-answer {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+
+    .question-text {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+    }
+
+    .answer-section {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+    }
+
+        .answer-section div {
+            width: 48%;
+        }
+
+    .label {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .answer-level {
+        margin-top: 10px;
+    }
+
+    .submit-button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+        .submit-button:hover {
+            background-color: #0056b3;
+        }
+</style>
+
+@code {
+    [Parameter]
+    public int examExecutionId { get; set; }
+
+    public ExamExecution examExecution;
+    public ICollection<ExamAnswer> examAnswers;
+
+    public int correctAnswers = 0;
+    public int wrongAnswers = 0;
+    public int questionNum;
+
+    protected override async Task OnInitializedAsync()
+    {
+        examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
+        examAnswers = examExecution.ExamAnswers;
+        questionNum = examAnswers.Count;
+    }
+
+    private void CheckAnswers()
+    {
+        // Calculate correct and wrong answers
+        correctAnswers = examAnswers.Count(ea => ea.Answer != null && ea.Answer.IsCorrectAnswer);
+        wrongAnswers = questionNum - correctAnswers;
+
+        examExecution.CorrectAnswers = correctAnswers;
+        examExecution.WrongAnswers = wrongAnswers;
+
+        cx.Update(examExecution);
+        cx.SaveChanges();
+
+        // Navigate to Exam Results
+        Navigation.NavigateTo($"/exam-results/{examExecution.ExamExecutionId}");
+    }
+
+    private void SetUserMarkedCorrect(ExamAnswer examAnswer, bool isCorrect)
+    {
+        examAnswer.Answer.IsCorrectAnswer = isCorrect;
+    }
+}

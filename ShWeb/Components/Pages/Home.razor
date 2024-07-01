@@ -5,9 +5,9 @@
 @inject SHcx cx;
 
 @inject PlanExamService planExamService;
+@inject ExamExecutionService ExamExecutionService;
 
 <PageTitle>Home</PageTitle>
-
 
 @* <ComponentSubject>
 
@@ -18,7 +18,9 @@
 
 </ComponentQuestion>*@
 
-<ExamComponent /> 
+@* <ExamComponent /> *@
+
+@* <ExamsComponent /> *@
 
 @code {
     protected override void OnInitialized()
@@ -64,10 +66,10 @@
         };
         cx.Users.AddRange(users);
         cx.SaveChanges();
-        
+
         var subjectFrom = cx.Subjects
             .Where(sub => sub.SubjectId == 2).FirstOrDefault();
-        
+
         var subjectTo = cx.Subjects
                 .Where(sub => sub.SubjectId == 7).FirstOrDefault();
 
@@ -127,7 +129,7 @@
         cx.ExamExecutions.Add(newExamExecution);
         cx.SaveChanges();
         planExamService.SelectQuestions(newExamExecution);
-        
+
         //var questions = cx.Questions.ToArray();
         var answers = new List<Answer>();
 
@@ -149,5 +151,11 @@
         }
         cx.Answers.AddRange(answers);
         cx.SaveChanges();*/
+
+
+
+        // var exam = cx.ExamExecutions.SingleOrDefault(e => e.ExamExecutionId == 17);
+
+        // ExamExecutionService.ProcessExamExecution(exam);
     }
 }

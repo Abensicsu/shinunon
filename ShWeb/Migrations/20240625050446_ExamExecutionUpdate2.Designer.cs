@@ -3,6 +3,7 @@ using System;
 using DataModels.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
-    partial class SHcxModelSnapshot : ModelSnapshot
+    [Migration("20240625050446_ExamExecutionUpdate2")]
+    partial class ExamExecutionUpdate2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -148,25 +151,29 @@ namespace ShWeb.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("exam_repeat_number");
 
-                    b.Property<int>("ExamType")
-                        .HasColumnType("integer")
-                        .HasColumnName("exam_type");
-
                     b.Property<int>("FromSubjectId")
                         .HasColumnType("integer")
                         .HasColumnName("from_subject_id");
+
+                    b.Property<bool>("InitiatedExam")
+                        .HasColumnType("boolean")
+                        .HasColumnName("initiated_exam");
 
                     b.Property<int?>("PlanExamId")
                         .HasColumnType("integer")
                         .HasColumnName("plan_exam_id");
 
-                    b.Property<int?>("QuestionId")
+                    b.Property<int>("QuestionId")
                         .HasColumnType("integer")
                         .HasColumnName("question_id");
 
                     b.Property<int>("QuestionsAnswered")
                         .HasColumnType("integer")
                         .HasColumnName("questions_answered");
+
+                    b.Property<bool>("RepeatExam")
+                        .HasColumnType("boolean")
+                        .HasColumnName("repeat_exam");
 
                     b.Property<DateTime?>("StartTime")
                         .HasColumnType("timestamp with time zone")
@@ -482,6 +489,8 @@ namespace ShWeb.Migrations
                     b.HasOne("DataModels.Models.Question", "CurrentQuestion")
                         .WithMany()
                         .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
                         .HasConstraintName("fk_exam_executions_questions_question_id");
 
                     b.HasOne("DataModels.Models.Subject", "ToSubject")

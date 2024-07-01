@@ -16,7 +16,7 @@ namespace ShWeb.Controllers
         }
 
         [HttpGet]
-        public ExamExecution GetExamExecution(int ExamExecutionId)
+        public ExamExecution ExamExecution(int ExamExecutionId)
         {
             var exam = Cx.ExamExecutions
                 .Include(e => e.ExamAnswers)
@@ -29,7 +29,7 @@ namespace ShWeb.Controllers
         }
 
         [HttpGet]
-        public ICollection<ExamAnswer> GetExamAnswers(int ExamExecutionId)
+        public ICollection<ExamAnswer> ExamAnswers(int ExamExecutionId)
         {
             return Cx.ExamAnswers
                 .Where(x => x.ExamExecutionId == ExamExecutionId)
@@ -39,19 +39,27 @@ namespace ShWeb.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateExamExecution([FromBody] ExamExecution examExecution)
+        public async Task<IActionResult> ExamExecution([FromBody] ExamExecution examExecution)
         {
             var existingExecution = await Cx.ExamExecutions
                 .Where(x => x.ExamExecutionId == examExecution.ExamExecutionId)
                 .Include(x => x.ExamAnswers)
                 .ThenInclude(x => x.Question)
                 .ThenInclude(q => q.Answers)
+                .AsNoTracking()
                 .FirstOrDefaultAsync();
 
             if (existingExecution == null)
             {
                 return NotFound();
             }
+
+            // Detach any existing tracked entities to avoid tracking conflicts
+            Cx.ChangeTracker.Clear();
+
+            // Attach the examExecution and update its properties
+            Cx.ExamExecutions.Attach(examExecution);
+            Cx.Entry(examExecution).State = EntityState.Modified;
 
             // Update the ExamAnswers
             foreach (var examAanswer in examExecution.ExamAnswers)
@@ -64,11 +72,46 @@ namespace ShWeb.Controllers
                     existingAnswer.AnswerId = examAanswer.AnswerId;
                     existingAnswer.TextAnswer = examAanswer.TextAnswer;
                     existingAnswer.TimeSpent = examAanswer.TimeSpent;
+
+                    Cx.Attach(examAanswer);
+                    Cx.Entry(examAanswer).State = EntityState.Modified;
                 }
             }
 
             await Cx.SaveChangesAsync();
             return Ok();
+        }
+
+        [HttpGet]
+        [Produces("application/json")]
+        public async Task<ActionResult<List<ExamExecution>>> GetExamsForUserAsync(int userId, string period)
+        {
+            DateTime today = DateTime.Today;
+            IQueryable<ExamExecution> exams = Cx.ExamExecutions.Where(e => e.UserId == userId);
+
+            switch (period.ToLower())
+            {
+                case "future":
+                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date > today);
+                    break;
+                case "present":
+                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date == today);
+                    break;
+                case "past":
+                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date < today);
+                    break;
+                default:
+                    return BadRequest("Invalid period. Use 'future', 'present' or 'past'.");
+            }
+             
+            var examsList = await exams.ToListAsync();
+
+            if (examsList == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(examsList);
         }
     }
 }

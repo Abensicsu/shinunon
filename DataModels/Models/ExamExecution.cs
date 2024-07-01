@@ -1,12 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
+    public enum ExamTypeEnum
+    {
+        InitiatedExam,
+        RepeatExam,
+        ReviewExam
+    }
+
     public class ExamExecution
     {
         public int ExamExecutionId { get; set; }
@@ -16,7 +24,10 @@ namespace DataModels.Models
         public int WrongAnswers { get; set; }
         public int QuestionsAnswered { get; set; }
 
-        public int QuestionId { get; set; }
+        public ExamTypeEnum ExamType { get; set; }
+        public int? ExamRepeatNumber { get; set; }  //How many times has the exam been done before?
+
+        public int? QuestionId { get; set; }
         [ForeignKey(nameof(QuestionId))]
         public Question CurrentQuestion { get; set; }
 

@@ -17,7 +17,7 @@ namespace DataModels.Models
         public int? AnswerId { get; set; }
         [ForeignKey(nameof(AnswerId))]
         public Answer Answer { get; set; }
-        public string TextAnswer { get; set; }
+        public string? TextAnswer { get; set; }
         public TimeSpan TimeSpent { get; set; }
         public int ExamExecutionId { get; set; }
         [ForeignKey(nameof(ExamExecutionId))]

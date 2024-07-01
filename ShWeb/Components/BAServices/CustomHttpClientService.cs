@@ -3,7 +3,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.JSInterop;
 using Newtonsoft.Json;
+using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 
 public class CustomHttpClientService
 {
@@ -50,8 +52,17 @@ public class CustomHttpClientService
 
         var json = JsonConvert.SerializeObject(request, settings);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
-        var response = await _httpClient.PutAsync(requestUri, content); // Use PutAsync for HTTP PUT request
+        var response = await _httpClient.PutAsync(requestUri, content);
         var responseJson = await response.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<TResponse>(responseJson, settings);
+    }
+
+    private JsonSerializerSettings GetJsonSerializerSettings()
+    {
+        return new JsonSerializerSettings
+        {
+            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+        };
     }
 }
