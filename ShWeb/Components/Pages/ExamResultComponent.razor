@@ -47,19 +47,19 @@
 
             </div>
         </div>
-        <div class="calendar">
+        @* <div class="calendar">
             <h5>question @i of @questionNum</h5>
             <div class="calendar-grid">
                 @for (int i = 0; i < questionNum; i++)
                 {
                     var answer = examExecution.ExamAnswers.ElementAt(i);
-                    @* <div class="calendar-item @(answer.IsCorrect ? "correct" : answer.IsPartiallyCorrect ? "partially-correct" : "incorrect")"> *@
                     <div class="calendar-item @(answer.Answer.IsCorrectAnswer ? "correct" : "incorrect")">
                         <span>@(i + 1)</span>
                     </div>
                 }
             </div>
-        </div>
+        </div> *@
+        <InnerExamComponent Permission=false examExecutionId=examExecutionId />
     </div>
 }
 

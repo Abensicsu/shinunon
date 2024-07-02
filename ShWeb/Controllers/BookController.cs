@@ -1,0 +1,25 @@
+﻿using DataModels.Data;
+using DataModels.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
+
+namespace ShWeb.Controllers
+{
+    [Route("api/[controller]/[action]")]
+    [ApiController]
+    public class BookController : Controller
+    {
+        public SHcx Cx { get; }
+        public BookController(SHcx cx)
+        {
+            Cx = cx;
+        }
+
+        [HttpGet]
+        public List<Book> AllBooks()
+        {
+            return Cx.Books.Include(b => b.Subjects).ToList();
+        }
+    }
+}

@@ -1,7 +1,450 @@
-﻿<h3>InnerExamComponent</h3>
+﻿@rendermode InteractiveServer
 
+@inject SHcx cx
+@inject CustomHttpClientService Http
+@inject LocalStorageService LocalStorageService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
 
+@using System.Text.Json
+@using ShWeb.Components.BAServices
+@using DataModels.Data
+@using DataModels.Models
+
+<h3>InnerExamComponent</h3>
+
+@if (currentQuestion != null)
+{
+    <div class="question-container">
+        <h4>@currentQuestion.QuestionText</h4>
+        <div>
+            @if (currentQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+            {
+                @foreach (var answer in currentQuestion.Answers)
+                {
+                    <div class="option @(GetAnswerClass(answer.AnswerId))">
+                        <input type="radio" name="option" id="@answer.AnswerId" value="@answer.AnswerId" checked="@IsAnswerSelected(answer.AnswerId)" @onchange="SelectAnswer" disabled="@(Permission ? null : true)" />
+                        <label for="@answer.AnswerId">@answer.AnswerText</label>
+                    </div>
+                }
+            }
+            else if (currentQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+            {
+                <textarea class="@GetAnswerClass(currentQuestion.Answers.FirstOrDefault().AnswerId)" value="@examAnswers.ElementAt(currentQuestionIndex).TextAnswer" @oninput="UpdateOpenAnswerText" @onchange="openAnswer" readonly="@(!Permission ? true : null)"></textarea>
+            }
+        </div>
+        <button @onclick="PrevQuestion" disabled="@isFirstQuestion">Previous</button>
+        <button @onclick="NextQuestion" disabled="@isLastQuestion">Next</button>
+        <button @onclick="EndTest">End Test</button>
+    </div>
+}
+
+<div class="question-number-table">
+    <table>
+        <thead>
+            <tr>
+                @for (int i = 1; i <= questionNum; i++)
+                {
+                    <th>@i</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                @for (int i = 0; i < questionNum; i++)
+                {
+                    <td>
+                        <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" />
+                    </td>
+                }
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+@if (Permission)
+{
+    <div class="timer-container">
+        <div class="elapsed-timer">
+            <span>Elapsed Time:</span>
+            <span>@elapsedTime</span>
+        </div>
+        <div class="remaining-timer">
+            <span>Remaining Time:</span>
+            <span>@remainingTime</span>
+        </div>
+    </div>
+}
+
+<style>
+    .question-container {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .option {
+        margin-bottom: 10px;
+    }
+
+        .option input[type="radio"] {
+            margin-right: 5px;
+        }
+
+    .question-number-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .question-number-table th,
+    .question-number-table td {
+        padding: 8px;
+        text-align: center;
+        border: 1px solid #ddd;
+    }
+
+    button {
+        background-color: #4CAF50;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+    textarea {
+        width: 600px;
+        height: 150px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+    }
+
+    .timer-container {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+
+    .elapsed-timer,
+    .remaining-timer {
+        background-color: #fff;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 0 10px;
+    }
+
+    .correct-answer {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .incorrect-answer {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+</style>
 
 @code {
+    [Parameter]
+    public bool Permission { get; set; }
 
+    [Parameter]
+    public int examExecutionId { get; set; }
+
+    public ExamExecution examExecution;
+    public int questionNum;
+    public int currentQuestionIndex = 0;
+    public ICollection<ExamAnswer> examAnswers;
+    public Question currentQuestion;
+    public string currentOpenAnswerText;
+
+    private bool isFirstRender = true;
+
+    public string elapsedTime = "00:00:00";
+    public string remainingTime = "00:15:00";
+    private System.Timers.Timer elapsedTimer;
+    private System.Timers.Timer remainingTimer;
+    private DateTime startTime;
+    private TimeSpan examDuration = TimeSpan.FromMinutes(15);
+    private DateTime questionStartTime; // Question Time
+
+    public bool isTestEnded = false;
+    private string previousLocation;//location before navigate to other page in app
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        previousLocation = Navigation.Uri; // Initialize with the current location on load
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            if (isFirstRender)
+            {
+                // First render, check if examExecution is in local storage
+                currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
+                elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime") ?? "00:00:00";
+                remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime") ?? "00:15:00";
+
+                examExecution = await LocalStorageService.GetFromLocalStorageAsync<ExamExecution>("examExecution");
+                if (examExecution == null)
+                {
+                    // If not found in local storage, fetch from the database
+                    examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
+                    examAnswers = examExecution.ExamAnswers;
+                    // examAnswers = await Http.GetAsync<ICollection<ExamAnswer>>($"api/Exam/ExamAnswers?ExamExecutionId={examExecutionId}"); ??
+
+                    questionNum = examAnswers.Count;
+                    SetCurrentQuestion();
+                    startTime = DateTime.Now;
+                    InitializeTimers();
+                }
+                else
+                {
+                    examAnswers = examExecution.ExamAnswers;
+                    questionNum = examAnswers.Count;
+                    SetCurrentQuestion();
+                    startTime = DateTime.Now.Add(TimeSpan.Parse(elapsedTime).Negate());//why not DateTime.Now??
+                    InitializeTimers(); // TimeSpan.Parse(remainingTime));
+                }
+                isFirstRender = false; // Update the flag
+            }
+            else
+            {
+                // Subsequent renders, load examExecution from local storage
+                examExecution = await LocalStorageService.GetFromLocalStorageAsync<ExamExecution>("examExecution");
+
+                // Restore state from local storage
+                currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
+                elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime");// ?? "00:00:00";
+                remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime");// ?? "00:15:00";
+
+                if (examExecution != null)
+                {
+                    examAnswers = examExecution.ExamAnswers;
+                    questionNum = examAnswers.Count;
+                    SetCurrentQuestion();
+                    startTime = DateTime.Now.Add(TimeSpan.Parse(elapsedTime).Negate());
+                    InitializeTimers();
+                }
+            }
+            StateHasChanged(); // Trigger a re-render
+        }
+    }
+
+    private async void OnLocationChanged(object sender, LocationChangedEventArgs e)
+    {
+        string currentLocation = e.Location;
+
+        Console.WriteLine($"Navigated from: {previousLocation} to: {currentLocation}");
+
+        // Check if the previous location is "/exam-component/" - BaseUri
+        // if (previousLocation == Navigation.BaseUri)
+        if (previousLocation.StartsWith(Navigation.BaseUri + "exam-component/"))
+        {
+            await SaveDataToLocalStorage();
+        }
+        // Update the previous location
+        previousLocation = currentLocation;
+    }
+
+    public void Dispose()
+    {
+        elapsedTimer?.Dispose();
+        remainingTimer?.Dispose();
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private void InitializeTimers(TimeSpan? remaining = null)
+    {
+        elapsedTimer = new System.Timers.Timer(1000);
+        elapsedTimer.Elapsed += (sender, e) =>
+        {
+            elapsedTime = (DateTime.Now - startTime).ToString(@"hh\:mm\:ss");
+            InvokeAsync(StateHasChanged);
+        };
+        elapsedTimer.Start();
+
+        remainingTimer = new System.Timers.Timer(1000);
+        remainingTimer.Elapsed += (sender, e) =>
+        {
+            var remainingTimeSpan = remaining.HasValue ? remaining.Value : examDuration - (DateTime.Now - startTime);
+            remainingTime = remainingTimeSpan.ToString(@"hh\:mm\:ss");
+            if (remainingTimeSpan <= TimeSpan.Zero)
+            {
+                remainingTimer.Stop();
+                EndTest();
+            }
+            InvokeAsync(StateHasChanged);
+        };
+        remainingTimer.Start();
+    }
+
+    private async Task SaveDataToLocalStorage() //index, timers, examExecution
+    {
+        elapsedTimer?.Stop();
+        remainingTimer?.Stop();
+        await LocalStorageService.StoreInLocalStorageAsync("currentQuestionIndex", currentQuestionIndex);
+        await LocalStorageService.StoreInLocalStorageAsync("elapsedTime", elapsedTime);
+        await LocalStorageService.StoreInLocalStorageAsync("remainingTime", remainingTime);
+        await LocalStorageService.StoreInLocalStorageAsync("examExecution", examExecution);
+        Console.WriteLine("data saved to local storage.");
+    }
+
+    private async Task LoadDataToLocalStorage() //index, timers, examExecution
+    {
+        currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
+        elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime") ?? "00:00:00";
+        remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime") ?? "00:15:00";
+        Console.WriteLine("data loaded from local storage.");
+    }
+
+    private void SetCurrentQuestion()
+    {
+        if (examAnswers != null && examAnswers.Any())
+        {
+            currentQuestion = examAnswers.ElementAt(currentQuestionIndex).Question;
+            questionStartTime = DateTime.Now;
+            examExecution.CurrentQuestion = currentQuestion;
+        }
+    }
+
+    private bool IsAnswerSelected(int answerId)
+    {
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        return existingAnswer != null && existingAnswer.AnswerId == answerId;
+    }
+
+    private void SelectAnswer(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value.ToString(), out int selectedAnswerId))
+        {
+            var selectedAnswer = currentQuestion.Answers.FirstOrDefault(a => a.AnswerId == selectedAnswerId);
+            if (selectedAnswer != null)
+            {
+                var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+                if (existingAnswer != null)
+                {
+                    existingAnswer.Answer = selectedAnswer;
+                    existingAnswer.AnswerId = selectedAnswer.AnswerId;
+                }
+                // Add updated answers to examExecution
+                examExecution.ExamAnswers = examAnswers;
+            }
+        }
+    }
+
+    private void UpdateOpenAnswerText(ChangeEventArgs e)
+    {
+        currentOpenAnswerText = e.Value.ToString();
+    }
+
+    private void openAnswer(ChangeEventArgs e)
+    {
+        currentOpenAnswerText = e.Value.ToString();
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        var currentAnswer = currentQuestion.Answers.FirstOrDefault();
+        if (existingAnswer != null)
+        {
+            existingAnswer.TextAnswer = currentOpenAnswerText;
+            existingAnswer.Answer = currentAnswer;
+            existingAnswer.AnswerId = currentAnswer?.AnswerId;
+        }
+        // Add updated answers to examExecution
+        examExecution.ExamAnswers = examAnswers;
+    }
+
+    private void PrevQuestion()
+    {
+        if (currentQuestionIndex > 0)
+        {
+            UpdateCurrentQuestionTime();
+            currentQuestionIndex--;
+            SetCurrentQuestion();
+        }
+    }
+
+    private void NextQuestion()
+    {
+        if (currentQuestionIndex < questionNum - 1)
+        {
+            UpdateCurrentQuestionTime();
+            currentQuestionIndex++;
+            SetCurrentQuestion();
+        }
+    }
+
+    private void GoToQuestion(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value.ToString(), out int selectedIndex))
+        {
+            UpdateCurrentQuestionTime();
+            currentQuestionIndex = selectedIndex;
+            SetCurrentQuestion();
+        }
+    }
+
+    private void UpdateCurrentQuestionTime()
+    {
+        var currentTime = DateTime.Now;
+        var timeSpent = currentTime - questionStartTime;
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        if (existingAnswer != null)
+        {
+            existingAnswer.TimeSpent += timeSpent;
+        }
+    }
+
+    private string GetAnswerClass(int answerId)
+    {
+        if (!Permission)
+        {
+            var currentExamAnswer = examAnswers.ElementAt(currentQuestionIndex);
+            if (!(currentExamAnswer.AnswerId.HasValue))
+            {
+                return "";
+            }
+
+            if (currentExamAnswer.AnswerId.Value == answerId)
+            {
+                return currentExamAnswer.Answer.IsCorrectAnswer ? "correct-answer" : "incorrect-answer";
+            }
+        }
+        return "";
+    }
+
+    private bool isFirstQuestion => currentQuestionIndex == 0;
+    private bool isLastQuestion => currentQuestionIndex == questionNum - 1;
+
+    private async void EndTest()
+    {
+        UpdateCurrentQuestionTime();
+
+        // Stop the timers
+        elapsedTimer.Stop();
+        remainingTimer.Stop();
+
+        // Add updated answers to examExecution
+        examExecution.ExamAnswers = examAnswers;
+
+        // Update exam execution with end time and save it
+        examExecution.EndTime = DateTime.Now;
+        await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
+
+        isTestEnded = true;
+        // Navigate to the ExamResultComponent
+        Navigation.NavigateTo($"/exams-component/{examExecution.UserId}");
+    }
 }
