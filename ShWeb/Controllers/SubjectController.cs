@@ -27,5 +27,11 @@ namespace ShWeb.Controllers
             Cx.Add(subject);
             Cx.SaveChanges();
         }
+
+        //[HttpGet]
+        //public Subject[] AllSubjectsByBook(Book[] books)
+        //{
+
+        //}
     }
 }

@@ -14,32 +14,6 @@
 @using DataModels.Models
 
 <h3>CheckExamComponent</h3>
-@*
-<div >
-    <h3>Check Exam</h3>
-    @if (examExecution != null)
-    {
-        @foreach (var examAnswer in examAnswers)
-        {
-            <div>
-                @if (examAnswer.Question.QuestionType == QuestionTypeEnum.OpenQuestion)
-                {
-                    <h4>@examAnswer.Question.QuestionText</h4>
-                    <p>Your Answer: @examAnswer.Answer?.AnswerText</p>
-                    <p>Correct Answer: @examAnswer.TextAnswer</p>
-                    <p>Choose your answer level:</p>
-                    <label>
-                        <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, true)" /> Correct
-                    </label>
-                    <label>
-                        <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, false)" /> Wrong
-                    </label>
-                }
-            </div>
-        }
-        <button @onclick="CheckAnswers">Submit</button>
-    }
-</div> *@
 
 <div class="check-exam-container">
     @if (examExecution != null)
@@ -72,7 +46,7 @@
                 </div>
             }
         }
-        <button class="submit-button" @onclick="CheckAnswers">Submit</button>
+        <button class="submit-button" @onclick="getExamResults">Get Exam Result</button>
     }
 </div>
 
@@ -143,35 +117,29 @@
     public ExamExecution examExecution;
     public ICollection<ExamAnswer> examAnswers;
 
-    public int correctAnswers = 0;
-    public int wrongAnswers = 0;
-    public int questionNum;
+    public int correctAnswersNum = 0;
+    public int wrongAnswersNum = 0;
 
     protected override async Task OnInitializedAsync()
     {
         examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
         examAnswers = examExecution.ExamAnswers;
-        questionNum = examAnswers.Count;
+        examExecution.IsReviewed = true;
     }
 
-    private void CheckAnswers()
+    public async Task getExamResults()
     {
-        // Calculate correct and wrong answers
-        correctAnswers = examAnswers.Count(ea => ea.Answer != null && ea.Answer.IsCorrectAnswer);
-        wrongAnswers = questionNum - correctAnswers;
+        examExecution.ExamAnswers = examAnswers;
 
-        examExecution.CorrectAnswers = correctAnswers;
-        examExecution.WrongAnswers = wrongAnswers;
-
-        cx.Update(examExecution);
-        cx.SaveChanges();
+        await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
 
         // Navigate to Exam Results
-        Navigation.NavigateTo($"/exam-results/{examExecution.ExamExecutionId}");
+        Navigation.NavigateTo($"/exam-results/{examExecutionId}");
     }
 
     private void SetUserMarkedCorrect(ExamAnswer examAnswer, bool isCorrect)
     {
         examAnswer.Answer.IsCorrectAnswer = isCorrect;
     }
+
 }

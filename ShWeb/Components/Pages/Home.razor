@@ -1,26 +1,25 @@
 ﻿@page "/"
+
 @using DataModels.Data
 @using DataModels.Models
 @using DataModels.Services
+@using ShWeb.Components.Pages
 @inject SHcx cx;
-
 @inject PlanExamService planExamService;
 @inject ExamExecutionService ExamExecutionService;
 
 <PageTitle>Home</PageTitle>
 
-@* <ComponentSubject>
+@* <ComponentSubject/> *@
 
-</ComponentSubject> *@
-
-
-@*@<ComponentQuestion>
-
-</ComponentQuestion>*@
+@* <ComponentQuestion/> *@
 
 @* <ExamComponent /> *@
 
 @* <ExamsComponent /> *@
+
+@* <ReviewExamComponent/>
+ *@
 
 @code {
     protected override void OnInitialized()

@@ -36,5 +36,10 @@ namespace ShWeb.Components.BAServices
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             };
         }
+
+         public async Task RemoveFromLocalStorageAsync(string key)
+        {
+            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", key);
+        }
     }
 }

@@ -3,6 +3,7 @@ using DataModels.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -36,7 +37,7 @@ namespace DataModels.Services
                     //if (user.UserSettings == null) throw new ArgumentException("UserSettings not found");
 
                     //When creating a user, need to set the UserSettings and then you don't need this code.
-                                        
+
                     //if (user.UserSettings == null)
                     //{
                     //    user.UserSettings = new UserSettings
@@ -76,13 +77,87 @@ namespace DataModels.Services
                     QuestionsAnswered = 0,
                     ExamType = ExamTypeEnum.RepeatExam,
                     ExamRepeatNumber = repeatNumber,
-                    //QuestionId = examExecution.QuestionId,
                     FromSubjectId = examExecution.FromSubjectId,
                     ToSubjectId = examExecution.ToSubjectId,
                     UserId = user.UserId,
                 };
-
                 Cx.ExamExecutions.Add(newExamExecution);
+            }
+            Cx.SaveChanges();
+        }
+
+        public ExamExecution createExamExecutionBySubjectsAndExamType(int userId, int fromSubjectId, int toSubjectId, ExamTypeEnum examType)
+        {
+            var newExamExecution = new ExamExecution
+            {
+                StartTime = DateTime.Now,
+                WrongAnswers = 0,
+                CorrectAnswers = 0,
+                QuestionsAnswered = 0,
+                ExamType = examType,
+                FromSubjectId = fromSubjectId,
+                ToSubjectId = toSubjectId,
+                UserId = userId,
+            };
+
+            Cx.Add(newExamExecution);
+            Cx.SaveChanges();
+
+            return newExamExecution;
+        }
+
+        //select questions for examExecution, QuestionsAmount.
+        public void SelectQuestionsCreateExamAnswers(ExamExecution examExecution)
+        {
+            var fromSubject = Cx.Subjects
+                .Where(sub => sub.SubjectId == examExecution.FromSubjectId)
+                .FirstOrDefault();
+
+            var toSubject = Cx.Subjects
+                .Where(sub => sub.SubjectId == examExecution.ToSubjectId)
+                .FirstOrDefault();
+
+            // subjects between fromSubject and toSubject
+            var subjects = Cx.Subjects
+                .Where(s => s.Ordinal >= fromSubject.Ordinal
+                        && s.Ordinal <= toSubject.Ordinal)
+                .ToList();
+
+            // Questions associated with subjects
+            var questions = Cx.Questions
+                .Where(q => subjects.Contains(q.Subject))
+                .ToList();
+
+            var user = Cx.Users.Where(u => u.UserId == examExecution.UserId)
+                .Include(user => user.UserSettings)
+                .FirstOrDefault();
+
+            // Minimum of DefaultQuestionCount from userSettings and the total number of questions available.
+            var amount = Math.Min(user.UserSettings.DefaultQuestionCount, questions.Count);
+
+            var random = new Random();
+            var shuffledIndices = new HashSet<int>();
+
+            var minId = questions.Min(q => q.QuestionId);
+            var maxId = questions.Max(q => q.QuestionId);
+
+            while (shuffledIndices.Count < amount)
+            {
+                shuffledIndices.Add(random.Next(minId, maxId));
+            }
+
+            ICollection<Question> selectedQuestions = questions
+                .Where(q => shuffledIndices.Contains(q.QuestionId))
+                .ToList();
+
+            foreach (var question in selectedQuestions)
+            {
+                var examAnswer = new ExamAnswer
+                {
+                    QuestionId = question.QuestionId,
+                    ExamExecutionId = examExecution.ExamExecutionId,
+                };
+                Cx.ExamAnswers.Add(examAnswer);
             }
             Cx.SaveChanges();
         }

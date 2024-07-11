@@ -26,7 +26,7 @@ namespace DataModels.Models
 
         public ExamTypeEnum ExamType { get; set; }
         public int? ExamRepeatNumber { get; set; }  //How many times has the exam been done before?
-
+        public bool? IsReviewed { get; set; }
         public int? QuestionId { get; set; }
         [ForeignKey(nameof(QuestionId))]
         public Question CurrentQuestion { get; set; }

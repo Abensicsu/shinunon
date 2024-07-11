@@ -61,6 +61,8 @@ namespace ShWeb.Controllers
             Cx.ExamExecutions.Attach(examExecution);
             Cx.Entry(examExecution).State = EntityState.Modified;
 
+            existingExecution.IsReviewed = examExecution.IsReviewed;
+
             // Update the ExamAnswers
             foreach (var examAanswer in examExecution.ExamAnswers)
             {
@@ -103,7 +105,7 @@ namespace ShWeb.Controllers
                 default:
                     return BadRequest("Invalid period. Use 'future', 'present' or 'past'.");
             }
-             
+
             var examsList = await exams.ToListAsync();
 
             if (examsList == null)

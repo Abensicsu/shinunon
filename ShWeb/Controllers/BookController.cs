@@ -19,7 +19,12 @@ namespace ShWeb.Controllers
         [HttpGet]
         public List<Book> AllBooks()
         {
-            return Cx.Books.Include(b => b.Subjects).ToList();
+            return Cx.Books.ToList();
+        }
+
+        public async Task<List<Book>> AllBooksIncludeSubjects()
+        {
+            return await Cx.Books.Include(b => b.Subjects).ToListAsync();
         }
     }
 }

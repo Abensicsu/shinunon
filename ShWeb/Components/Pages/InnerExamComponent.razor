@@ -3,6 +3,7 @@
 @inject SHcx cx
 @inject CustomHttpClientService Http
 @inject LocalStorageService LocalStorageService
+@inject ExamExecutionService ExamExecutionService
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
@@ -10,6 +11,7 @@
 @using ShWeb.Components.BAServices
 @using DataModels.Data
 @using DataModels.Models
+@using DataModels.Services
 
 <h3>InnerExamComponent</h3>
 
@@ -35,7 +37,14 @@
         </div>
         <button @onclick="PrevQuestion" disabled="@isFirstQuestion">Previous</button>
         <button @onclick="NextQuestion" disabled="@isLastQuestion">Next</button>
-        <button @onclick="EndTest">End Test</button>
+        @if (Permission)
+        {
+            <button @onclick="EndTest">End Test</button>
+        }
+        else
+        {
+            <button @onclick="BackToAllExams">All Exams</button>
+        }
     </div>
 }
 
@@ -161,9 +170,11 @@
     [Parameter]
     public int examExecutionId { get; set; }
 
+    [Parameter]
+    public int currentQuestionIndex { get; set; }
+
     public ExamExecution examExecution;
     public int questionNum;
-    public int currentQuestionIndex = 0;
     public ICollection<ExamAnswer> examAnswers;
     public Question currentQuestion;
     public string currentOpenAnswerText;
@@ -178,8 +189,7 @@
     private TimeSpan examDuration = TimeSpan.FromMinutes(15);
     private DateTime questionStartTime; // Question Time
 
-    public bool isTestEnded = false;
-    private string previousLocation;//location before navigate to other page in app
+    private string previousLocation; //location before navigate to other page in app
 
     protected override void OnInitialized()
     {
@@ -193,8 +203,11 @@
         {
             if (isFirstRender)
             {
+                if (Permission == true)//if false currentQuestionIndex = 0 from parameter
+                    currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
+                else
+                    currentQuestionIndex = 0;
                 // First render, check if examExecution is in local storage
-                currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
                 elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime") ?? "00:00:00";
                 remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime") ?? "00:15:00";
 
@@ -203,21 +216,37 @@
                 {
                     // If not found in local storage, fetch from the database
                     examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
-                    examAnswers = examExecution.ExamAnswers;
+                    // examAnswers = examExecution.ExamAnswers;
+                    if (examExecution.ExamAnswers.Count == 0)
+                    {
+                        ExamExecutionService.SelectQuestionsCreateExamAnswers(examExecution);
+                        examAnswers = examExecution.ExamAnswers;
+                    }
+                    else
+                        examAnswers = examExecution.ExamAnswers;
                     // examAnswers = await Http.GetAsync<ICollection<ExamAnswer>>($"api/Exam/ExamAnswers?ExamExecutionId={examExecutionId}"); ??
 
                     questionNum = examAnswers.Count;
                     SetCurrentQuestion();
                     startTime = DateTime.Now;
-                    InitializeTimers();
+                    if (Permission)
+                        InitializeTimers();
                 }
                 else
                 {
-                    examAnswers = examExecution.ExamAnswers;
+                    // examAnswers = examExecution.ExamAnswers;
+                    if (examExecution.ExamAnswers.Count == 0)
+                    {
+                        ExamExecutionService.SelectQuestionsCreateExamAnswers(examExecution);
+                        examAnswers = examExecution.ExamAnswers;
+                    }
+                    else
+                        examAnswers = examExecution.ExamAnswers;
                     questionNum = examAnswers.Count;
                     SetCurrentQuestion();
                     startTime = DateTime.Now.Add(TimeSpan.Parse(elapsedTime).Negate());//why not DateTime.Now??
-                    InitializeTimers(); // TimeSpan.Parse(remainingTime));
+                    if (Permission)
+                        InitializeTimers(); // TimeSpan.Parse(remainingTime));
                 }
                 isFirstRender = false; // Update the flag
             }
@@ -233,11 +262,19 @@
 
                 if (examExecution != null)
                 {
-                    examAnswers = examExecution.ExamAnswers;
+                    // examAnswers = examExecution.ExamAnswers;
+                    if (examExecution.ExamAnswers.Count == 0)
+                    {
+                        ExamExecutionService.SelectQuestionsCreateExamAnswers(examExecution);
+                        examAnswers = examExecution.ExamAnswers;
+                    }
+                    else
+                        examAnswers = examExecution.ExamAnswers;
                     questionNum = examAnswers.Count;
                     SetCurrentQuestion();
                     startTime = DateTime.Now.Add(TimeSpan.Parse(elapsedTime).Negate());
-                    InitializeTimers();
+                    if (Permission)
+                        InitializeTimers();
                 }
             }
             StateHasChanged(); // Trigger a re-render
@@ -250,9 +287,8 @@
 
         Console.WriteLine($"Navigated from: {previousLocation} to: {currentLocation}");
 
-        // Check if the previous location is "/exam-component/" - BaseUri
-        // if (previousLocation == Navigation.BaseUri)
-        if (previousLocation.StartsWith(Navigation.BaseUri + "exam-component/"))
+        // Check if the previous location is "/exam/" - BaseUri
+        if (previousLocation.StartsWith(Navigation.BaseUri + "exam/") && Permission)
         {
             await SaveDataToLocalStorage();
         }
@@ -301,14 +337,6 @@
         await LocalStorageService.StoreInLocalStorageAsync("remainingTime", remainingTime);
         await LocalStorageService.StoreInLocalStorageAsync("examExecution", examExecution);
         Console.WriteLine("data saved to local storage.");
-    }
-
-    private async Task LoadDataToLocalStorage() //index, timers, examExecution
-    {
-        currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
-        elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime") ?? "00:00:00";
-        remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime") ?? "00:15:00";
-        Console.WriteLine("data loaded from local storage.");
     }
 
     private void SetCurrentQuestion()
@@ -370,7 +398,8 @@
     {
         if (currentQuestionIndex > 0)
         {
-            UpdateCurrentQuestionTime();
+            if (Permission)
+                UpdateCurrentQuestionTime();
             currentQuestionIndex--;
             SetCurrentQuestion();
         }
@@ -380,7 +409,8 @@
     {
         if (currentQuestionIndex < questionNum - 1)
         {
-            UpdateCurrentQuestionTime();
+            if (Permission)
+                UpdateCurrentQuestionTime();
             currentQuestionIndex++;
             SetCurrentQuestion();
         }
@@ -390,7 +420,8 @@
     {
         if (int.TryParse(e.Value.ToString(), out int selectedIndex))
         {
-            UpdateCurrentQuestionTime();
+            if (Permission)
+                UpdateCurrentQuestionTime();
             currentQuestionIndex = selectedIndex;
             SetCurrentQuestion();
         }
@@ -443,8 +474,15 @@
         examExecution.EndTime = DateTime.Now;
         await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
 
-        isTestEnded = true;
+        //process examExecutions by memory level
+        ExamExecutionService.ProcessExamExecution(examExecution);
+
         // Navigate to the ExamResultComponent
-        Navigation.NavigateTo($"/exams-component/{examExecution.UserId}");
+        Navigation.NavigateTo($"/exams/{examExecution.UserId}");
+    }
+
+    private void BackToAllExams()
+    {
+        Navigation.NavigateTo($"/exams/{examExecution.UserId}");
     }
 }
