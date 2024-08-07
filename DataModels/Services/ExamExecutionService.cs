@@ -106,7 +106,7 @@ namespace DataModels.Services
             return newExamExecution;
         }
 
-        //select questions for examExecution, QuestionsAmount.
+        //Select questions for examExecution, QuestionsAmount.
         public void SelectQuestionsCreateExamAnswers(ExamExecution examExecution)
         {
             var fromSubject = Cx.Subjects
@@ -117,7 +117,7 @@ namespace DataModels.Services
                 .Where(sub => sub.SubjectId == examExecution.ToSubjectId)
                 .FirstOrDefault();
 
-            // subjects between fromSubject and toSubject
+            // Subjects between fromSubject and toSubject
             var subjects = Cx.Subjects
                 .Where(s => s.Ordinal >= fromSubject.Ordinal
                         && s.Ordinal <= toSubject.Ordinal)
@@ -138,8 +138,9 @@ namespace DataModels.Services
             var random = new Random();
             var shuffledIndices = new HashSet<int>();
 
-            var minId = questions.Min(q => q.QuestionId);
-            var maxId = questions.Max(q => q.QuestionId);
+            //Need to change, IDs are not always in any order!!!!!!!!!!!!!!!
+            var minId = questions.Min(q => q.BaseQuestionId);
+            var maxId = questions.Max(q => q.BaseQuestionId);
 
             while (shuffledIndices.Count < amount)
             {
@@ -147,14 +148,14 @@ namespace DataModels.Services
             }
 
             ICollection<Question> selectedQuestions = questions
-                .Where(q => shuffledIndices.Contains(q.QuestionId))
+                .Where(q => shuffledIndices.Contains(q.BaseQuestionId))
                 .ToList();
 
             foreach (var question in selectedQuestions)
             {
                 var examAnswer = new ExamAnswer
                 {
-                    QuestionId = question.QuestionId,
+                    BaseQuestionId = question.BaseQuestionId,
                     ExamExecutionId = examExecution.ExamExecutionId,
                 };
                 Cx.ExamAnswers.Add(examAnswer);

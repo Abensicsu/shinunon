@@ -1,0 +1,87 @@
+﻿@rendermode InteractiveServer
+
+<PageTitle>Books</PageTitle>
+
+@inject SHcx cx;
+@inject CustomHttpClientService Http
+@inject SefariaService SefariaService
+
+@using DataModels.Data
+@using DataModels.Models
+@using DataModels.Services
+
+@page "/books"
+
+<h3>BooksComponent</h3>
+
+@if (books == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (selectedBook == null)
+{
+    <h4>Select a Book</h4>
+    <ul>
+        @foreach (var book in books)
+        {
+            <li @onclick="() => SelectBook(book)">@book.BookName</li>
+        }
+    </ul>
+}
+else if (selectedSubject == null)
+{
+    <h4>Select a Topic in @selectedBook.BookName</h4>
+    <ul>
+        @foreach (var topic in selectedBook.Subjects)
+        {
+            <li @onclick="() => SelectTopic(topic)">@topic.SubjectName</li>
+        } 
+    </ul>
+    <button @onclick="DeselectBook">Back to Books</button>
+}
+else
+{
+    <h4>Topic Detail: @selectedSubject.SubjectName</h4>
+    <p>@selectedSubject.SubjectText?.SubjectTextContent</p>
+    <button @onclick="DeselectTopic">Back to Topics</button>
+    <button @onclick="DeselectBook">Back to Books</button>
+}
+
+@* <button @onclick="readDataFromSefaria">read data</button> *@
+
+@code {
+    public List<Book> books;
+    public Book selectedBook;
+    public Subject selectedSubject;
+
+    protected override async Task OnInitializedAsync()
+    {
+        books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjectsAndText");
+    }
+
+    public void SelectBook(Book book)
+    {
+        selectedBook = book;
+    }
+
+    public void DeselectBook()
+    {
+        selectedBook = null;
+        selectedSubject = null;
+    }
+
+    public void SelectTopic(Subject topic)
+    {
+        selectedSubject = topic;
+    }
+
+    public void DeselectTopic()
+    {
+        selectedSubject = null;
+    }
+
+    public async Task readDataFromSefaria()
+    {
+        await SefariaService.FetchAndSaveAllBooks();
+    }
+}

@@ -35,21 +35,61 @@ namespace ShWeb.Migrations
                         .HasColumnType("text")
                         .HasColumnName("answer_text");
 
+                    b.Property<int>("BaseQuestionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("base_question_id");
+
                     b.Property<bool>("IsCorrectAnswer")
                         .HasColumnType("boolean")
                         .HasColumnName("is_correct_answer");
 
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("integer")
-                        .HasColumnName("question_id");
-
                     b.HasKey("AnswerId")
                         .HasName("pk_answers");
 
-                    b.HasIndex("QuestionId")
-                        .HasDatabaseName("ix_answers_question_id");
+                    b.HasIndex("BaseQuestionId")
+                        .HasDatabaseName("ix_answers_base_question_id");
 
                     b.ToTable("answers", (string)null);
+                });
+
+            modelBuilder.Entity("DataModels.Models.BaseQuestion", b =>
+                {
+                    b.Property<int>("BaseQuestionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("base_question_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BaseQuestionId"));
+
+                    b.Property<string>("DiscriminatorRF")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("character varying(13)")
+                        .HasColumnName("discriminator_rf");
+
+                    b.Property<string>("QuestionText")
+                        .HasColumnType("text")
+                        .HasColumnName("question_text");
+
+                    b.Property<int>("QuestionType")
+                        .HasColumnType("integer")
+                        .HasColumnName("question_type");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("integer")
+                        .HasColumnName("subject_id");
+
+                    b.HasKey("BaseQuestionId")
+                        .HasName("pk_base_questions");
+
+                    b.HasIndex("SubjectId")
+                        .HasDatabaseName("ix_base_questions_subject_id");
+
+                    b.ToTable("base_questions", (string)null);
+
+                    b.HasDiscriminator<string>("DiscriminatorRF").HasValue("BaseQuestion");
+
+                    b.UseTphMappingStrategy();
                 });
 
             modelBuilder.Entity("DataModels.Models.Book", b =>
@@ -96,13 +136,13 @@ namespace ShWeb.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("answer_id");
 
+                    b.Property<int?>("BaseQuestionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("base_question_id");
+
                     b.Property<int>("ExamExecutionId")
                         .HasColumnType("integer")
                         .HasColumnName("exam_execution_id");
-
-                    b.Property<int>("QuestionId")
-                        .HasColumnType("integer")
-                        .HasColumnName("question_id");
 
                     b.Property<string>("TextAnswer")
                         .HasColumnType("text")
@@ -118,11 +158,11 @@ namespace ShWeb.Migrations
                     b.HasIndex("AnswerId")
                         .HasDatabaseName("ix_exam_answers_answer_id");
 
+                    b.HasIndex("BaseQuestionId")
+                        .HasDatabaseName("ix_exam_answers_base_question_id");
+
                     b.HasIndex("ExamExecutionId")
                         .HasDatabaseName("ix_exam_answers_exam_execution_id");
-
-                    b.HasIndex("QuestionId")
-                        .HasDatabaseName("ix_exam_answers_question_id");
 
                     b.ToTable("exam_answers", (string)null);
                 });
@@ -135,6 +175,10 @@ namespace ShWeb.Migrations
                         .HasColumnName("exam_execution_id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ExamExecutionId"));
+
+                    b.Property<int?>("BaseQuestionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("base_question_id");
 
                     b.Property<int>("CorrectAnswers")
                         .HasColumnType("integer")
@@ -164,10 +208,6 @@ namespace ShWeb.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("plan_exam_id");
 
-                    b.Property<int?>("QuestionId")
-                        .HasColumnType("integer")
-                        .HasColumnName("question_id");
-
                     b.Property<int>("QuestionsAnswered")
                         .HasColumnType("integer")
                         .HasColumnName("questions_answered");
@@ -191,14 +231,14 @@ namespace ShWeb.Migrations
                     b.HasKey("ExamExecutionId")
                         .HasName("pk_exam_executions");
 
+                    b.HasIndex("BaseQuestionId")
+                        .HasDatabaseName("ix_exam_executions_base_question_id");
+
                     b.HasIndex("FromSubjectId")
                         .HasDatabaseName("ix_exam_executions_from_subject_id");
 
                     b.HasIndex("PlanExamId")
                         .HasDatabaseName("ix_exam_executions_plan_exam_id");
-
-                    b.HasIndex("QuestionId")
-                        .HasDatabaseName("ix_exam_executions_question_id");
 
                     b.HasIndex("ToSubjectId")
                         .HasDatabaseName("ix_exam_executions_to_subject_id");
@@ -207,6 +247,58 @@ namespace ShWeb.Migrations
                         .HasDatabaseName("ix_exam_executions_user_id");
 
                     b.ToTable("exam_executions", (string)null);
+                });
+
+            modelBuilder.Entity("DataModels.Models.ExamPlan", b =>
+                {
+                    b.Property<int>("ExamPlanId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("exam_plan_id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ExamPlanId"));
+
+                    b.Property<int>("ExamFrequency")
+                        .HasColumnType("integer")
+                        .HasColumnName("exam_frequency");
+
+                    b.Property<int>("FromSubjectId")
+                        .HasColumnType("integer")
+                        .HasColumnName("from_subject_id");
+
+                    b.Property<int>("QuestionsAmount")
+                        .HasColumnType("integer")
+                        .HasColumnName("questions_amount");
+
+                    b.Property<int>("SubSubjectNum")
+                        .HasColumnType("integer")
+                        .HasColumnName("sub_subject_num");
+
+                    b.Property<int>("SubjectNum")
+                        .HasColumnType("integer")
+                        .HasColumnName("subject_num");
+
+                    b.Property<int>("ToSubjectId")
+                        .HasColumnType("integer")
+                        .HasColumnName("to_subject_id");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("ExamPlanId")
+                        .HasName("pk_plan_exams");
+
+                    b.HasIndex("FromSubjectId")
+                        .HasDatabaseName("ix_plan_exams_from_subject_id");
+
+                    b.HasIndex("ToSubjectId")
+                        .HasDatabaseName("ix_plan_exams_to_subject_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_plan_exams_user_id");
+
+                    b.ToTable("plan_exams", (string)null);
                 });
 
             modelBuilder.Entity("DataModels.Models.ForumComment", b =>
@@ -286,88 +378,6 @@ namespace ShWeb.Migrations
                     b.ToTable("forum_questions", (string)null);
                 });
 
-            modelBuilder.Entity("DataModels.Models.PlanExam", b =>
-                {
-                    b.Property<int>("PlanExamId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("plan_exam_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PlanExamId"));
-
-                    b.Property<int>("ExamFrequency")
-                        .HasColumnType("integer")
-                        .HasColumnName("exam_frequency");
-
-                    b.Property<int>("FromSubjectId")
-                        .HasColumnType("integer")
-                        .HasColumnName("from_subject_id");
-
-                    b.Property<int>("QuestionsAmount")
-                        .HasColumnType("integer")
-                        .HasColumnName("questions_amount");
-
-                    b.Property<int>("SubSubjectNum")
-                        .HasColumnType("integer")
-                        .HasColumnName("sub_subject_num");
-
-                    b.Property<int>("SubjectNum")
-                        .HasColumnType("integer")
-                        .HasColumnName("subject_num");
-
-                    b.Property<int>("ToSubjectId")
-                        .HasColumnType("integer")
-                        .HasColumnName("to_subject_id");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("PlanExamId")
-                        .HasName("pk_plan_exams");
-
-                    b.HasIndex("FromSubjectId")
-                        .HasDatabaseName("ix_plan_exams_from_subject_id");
-
-                    b.HasIndex("ToSubjectId")
-                        .HasDatabaseName("ix_plan_exams_to_subject_id");
-
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_plan_exams_user_id");
-
-                    b.ToTable("plan_exams", (string)null);
-                });
-
-            modelBuilder.Entity("DataModels.Models.Question", b =>
-                {
-                    b.Property<int>("QuestionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("question_id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("QuestionId"));
-
-                    b.Property<string>("QuestionText")
-                        .HasColumnType("text")
-                        .HasColumnName("question_text");
-
-                    b.Property<int>("QuestionType")
-                        .HasColumnType("integer")
-                        .HasColumnName("question_type");
-
-                    b.Property<int>("SubjectId")
-                        .HasColumnType("integer")
-                        .HasColumnName("subject_id");
-
-                    b.HasKey("QuestionId")
-                        .HasName("pk_questions");
-
-                    b.HasIndex("SubjectId")
-                        .HasDatabaseName("ix_questions_subject_id");
-
-                    b.ToTable("questions", (string)null);
-                });
-
             modelBuilder.Entity("DataModels.Models.Subject", b =>
                 {
                     b.Property<int>("SubjectId")
@@ -402,6 +412,22 @@ namespace ShWeb.Migrations
                     b.ToTable("subjects", (string)null);
                 });
 
+            modelBuilder.Entity("DataModels.Models.SubjectText", b =>
+                {
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("integer")
+                        .HasColumnName("subject_id");
+
+                    b.Property<string>("SubjectTextContent")
+                        .HasColumnType("text")
+                        .HasColumnName("subject_text_content");
+
+                    b.HasKey("SubjectId")
+                        .HasName("pk_subject_texts");
+
+                    b.ToTable("subject_texts", (string)null);
+                });
+
             modelBuilder.Entity("DataModels.Models.User", b =>
                 {
                     b.Property<int>("UserId")
@@ -429,16 +455,70 @@ namespace ShWeb.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("DataModels.Models.Question", b =>
+                {
+                    b.HasBaseType("DataModels.Models.BaseQuestion");
+
+                    b.Property<int?>("SubjectId1")
+                        .HasColumnType("integer")
+                        .HasColumnName("subject_id1");
+
+                    b.HasIndex("SubjectId1")
+                        .HasDatabaseName("ix_base_questions_subject_id1");
+
+                    b.HasDiscriminator().HasValue("Question");
+                });
+
+            modelBuilder.Entity("DataModels.Models.UserQuestion", b =>
+                {
+                    b.HasBaseType("DataModels.Models.BaseQuestion");
+
+                    b.Property<int?>("OriginalQuestionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("original_question_id");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id");
+
+                    b.Property<int?>("UserId1")
+                        .HasColumnType("integer")
+                        .HasColumnName("user_id1");
+
+                    b.HasIndex("OriginalQuestionId")
+                        .HasDatabaseName("ix_base_questions_original_question_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_base_questions_user_id");
+
+                    b.HasIndex("UserId1")
+                        .HasDatabaseName("ix_base_questions_user_id1");
+
+                    b.HasDiscriminator().HasValue("UserQuestion");
+                });
+
             modelBuilder.Entity("DataModels.Models.Answer", b =>
                 {
-                    b.HasOne("DataModels.Models.Question", "Question")
+                    b.HasOne("DataModels.Models.BaseQuestion", "BaseQuestion")
                         .WithMany("Answers")
-                        .HasForeignKey("QuestionId")
+                        .HasForeignKey("BaseQuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_answers_questions_question_id");
+                        .HasConstraintName("fk_answers_base_questions_base_question_id");
 
-                    b.Navigation("Question");
+                    b.Navigation("BaseQuestion");
+                });
+
+            modelBuilder.Entity("DataModels.Models.BaseQuestion", b =>
+                {
+                    b.HasOne("DataModels.Models.Subject", "Subject")
+                        .WithMany()
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_base_questions_subjects_subject_id");
+
+                    b.Navigation("Subject");
                 });
 
             modelBuilder.Entity("DataModels.Models.ExamAnswer", b =>
@@ -448,6 +528,11 @@ namespace ShWeb.Migrations
                         .HasForeignKey("AnswerId")
                         .HasConstraintName("fk_exam_answers_answers_answer_id");
 
+                    b.HasOne("DataModels.Models.BaseQuestion", "BaseQuestion")
+                        .WithMany()
+                        .HasForeignKey("BaseQuestionId")
+                        .HasConstraintName("fk_exam_answers_base_questions_base_question_id");
+
                     b.HasOne("DataModels.Models.ExamExecution", "ExamExecution")
                         .WithMany("ExamAnswers")
                         .HasForeignKey("ExamExecutionId")
@@ -455,22 +540,20 @@ namespace ShWeb.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_exam_answers_exam_executions_exam_execution_id");
 
-                    b.HasOne("DataModels.Models.Question", "Question")
-                        .WithMany()
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_exam_answers_questions_question_id");
-
                     b.Navigation("Answer");
 
-                    b.Navigation("ExamExecution");
+                    b.Navigation("BaseQuestion");
 
-                    b.Navigation("Question");
+                    b.Navigation("ExamExecution");
                 });
 
             modelBuilder.Entity("DataModels.Models.ExamExecution", b =>
                 {
+                    b.HasOne("DataModels.Models.BaseQuestion", "CurrentQuestion")
+                        .WithMany()
+                        .HasForeignKey("BaseQuestionId")
+                        .HasConstraintName("fk_exam_executions_base_questions_base_question_id");
+
                     b.HasOne("DataModels.Models.Subject", "FromSubject")
                         .WithMany("ExamExecutions")
                         .HasForeignKey("FromSubjectId")
@@ -478,15 +561,10 @@ namespace ShWeb.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_exam_executions_subjects_from_subject_id");
 
-                    b.HasOne("DataModels.Models.PlanExam", "PlanExam")
+                    b.HasOne("DataModels.Models.ExamPlan", "PlanExam")
                         .WithMany("ExamExecutions")
                         .HasForeignKey("PlanExamId")
                         .HasConstraintName("fk_exam_executions_plan_exams_plan_exam_id");
-
-                    b.HasOne("DataModels.Models.Question", "CurrentQuestion")
-                        .WithMany()
-                        .HasForeignKey("QuestionId")
-                        .HasConstraintName("fk_exam_executions_questions_question_id");
 
                     b.HasOne("DataModels.Models.Subject", "ToSubject")
                         .WithMany()
@@ -507,6 +585,36 @@ namespace ShWeb.Migrations
                     b.Navigation("FromSubject");
 
                     b.Navigation("PlanExam");
+
+                    b.Navigation("ToSubject");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DataModels.Models.ExamPlan", b =>
+                {
+                    b.HasOne("DataModels.Models.Subject", "FromSubject")
+                        .WithMany()
+                        .HasForeignKey("FromSubjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_plan_exams_subjects_from_subject_id");
+
+                    b.HasOne("DataModels.Models.Subject", "ToSubject")
+                        .WithMany()
+                        .HasForeignKey("ToSubjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_plan_exams_subjects_to_subject_id");
+
+                    b.HasOne("DataModels.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_plan_exams_users_user_id");
+
+                    b.Navigation("FromSubject");
 
                     b.Navigation("ToSubject");
 
@@ -560,48 +668,6 @@ namespace ShWeb.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("DataModels.Models.PlanExam", b =>
-                {
-                    b.HasOne("DataModels.Models.Subject", "FromSubject")
-                        .WithMany()
-                        .HasForeignKey("FromSubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_plan_exams_subjects_from_subject_id");
-
-                    b.HasOne("DataModels.Models.Subject", "ToSubject")
-                        .WithMany()
-                        .HasForeignKey("ToSubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_plan_exams_subjects_to_subject_id");
-
-                    b.HasOne("DataModels.Models.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_plan_exams_users_user_id");
-
-                    b.Navigation("FromSubject");
-
-                    b.Navigation("ToSubject");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("DataModels.Models.Question", b =>
-                {
-                    b.HasOne("DataModels.Models.Subject", "Subject")
-                        .WithMany("Questions")
-                        .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_questions_subjects_subject_id");
-
-                    b.Navigation("Subject");
-                });
-
             modelBuilder.Entity("DataModels.Models.Subject", b =>
                 {
                     b.HasOne("DataModels.Models.Book", "Book")
@@ -612,6 +678,18 @@ namespace ShWeb.Migrations
                         .HasConstraintName("fk_subjects_books_book_id");
 
                     b.Navigation("Book");
+                });
+
+            modelBuilder.Entity("DataModels.Models.SubjectText", b =>
+                {
+                    b.HasOne("DataModels.Models.Subject", "Subject")
+                        .WithOne("SubjectText")
+                        .HasForeignKey("DataModels.Models.SubjectText", "SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_subject_texts_subjects_subject_id");
+
+                    b.Navigation("Subject");
                 });
 
             modelBuilder.Entity("DataModels.Models.User", b =>
@@ -646,6 +724,43 @@ namespace ShWeb.Migrations
                     b.Navigation("UserSettings");
                 });
 
+            modelBuilder.Entity("DataModels.Models.Question", b =>
+                {
+                    b.HasOne("DataModels.Models.Subject", null)
+                        .WithMany("Questions")
+                        .HasForeignKey("SubjectId1")
+                        .HasConstraintName("fk_base_questions_subjects_subject_id1");
+                });
+
+            modelBuilder.Entity("DataModels.Models.UserQuestion", b =>
+                {
+                    b.HasOne("DataModels.Models.Question", "Question")
+                        .WithMany("DerivedUserQuestions")
+                        .HasForeignKey("OriginalQuestionId")
+                        .HasConstraintName("fk_base_questions_base_questions_original_question_id");
+
+                    b.HasOne("DataModels.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_base_questions_users_user_id");
+
+                    b.HasOne("DataModels.Models.User", null)
+                        .WithMany("UserQuestions")
+                        .HasForeignKey("UserId1")
+                        .HasConstraintName("fk_base_questions_users_user_id1");
+
+                    b.Navigation("Question");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DataModels.Models.BaseQuestion", b =>
+                {
+                    b.Navigation("Answers");
+                });
+
             modelBuilder.Entity("DataModels.Models.Book", b =>
                 {
                     b.Navigation("Subjects");
@@ -656,19 +771,14 @@ namespace ShWeb.Migrations
                     b.Navigation("ExamAnswers");
                 });
 
-            modelBuilder.Entity("DataModels.Models.ForumQuestion", b =>
-                {
-                    b.Navigation("Comments");
-                });
-
-            modelBuilder.Entity("DataModels.Models.PlanExam", b =>
+            modelBuilder.Entity("DataModels.Models.ExamPlan", b =>
                 {
                     b.Navigation("ExamExecutions");
                 });
 
-            modelBuilder.Entity("DataModels.Models.Question", b =>
+            modelBuilder.Entity("DataModels.Models.ForumQuestion", b =>
                 {
-                    b.Navigation("Answers");
+                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("DataModels.Models.Subject", b =>
@@ -676,11 +786,20 @@ namespace ShWeb.Migrations
                     b.Navigation("ExamExecutions");
 
                     b.Navigation("Questions");
+
+                    b.Navigation("SubjectText");
                 });
 
             modelBuilder.Entity("DataModels.Models.User", b =>
                 {
                     b.Navigation("ExamExecutions");
+
+                    b.Navigation("UserQuestions");
+                });
+
+            modelBuilder.Entity("DataModels.Models.Question", b =>
+                {
+                    b.Navigation("DerivedUserQuestions");
                 });
 #pragma warning restore 612, 618
         }

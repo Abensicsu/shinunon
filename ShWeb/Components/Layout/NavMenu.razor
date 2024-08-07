@@ -25,6 +25,31 @@
                 <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
             </NavLink>
         </div>
+
+        <!-- Add the new NavLink for ExamsComponent -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="@examsUrl">
+                <span class="bi bi-calendar-fill-nav-menu" aria-hidden="true"></span> Exams
+            </NavLink>
+        </div>
+
+        <!-- Add the new NavLink for BooksComponent -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="books">
+                <span class="bi bi-book-fill-nav-menu" aria-hidden="true"></span> Books
+            </NavLink>
+        </div>
     </nav>
 </div>
 
+@code {
+    [Parameter]
+    public int UserId { get; set; } = 1;
+
+    private string examsUrl;
+
+    protected override void OnInitialized()
+    {
+        examsUrl = $"exams/{UserId}";
+    }
+}

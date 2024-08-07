@@ -85,6 +85,8 @@
     </div>
 }
 
+<ConfirmationPopupComponent @ref="confirmationDialog"></ConfirmationPopupComponent>
+
 <style>
     .question-container {
         background-color: #f5f5f5;
@@ -173,23 +175,25 @@
     [Parameter]
     public int currentQuestionIndex { get; set; }
 
+    public ConfirmationPopupComponent confirmationDialog; //for popup
+
     public ExamExecution examExecution;
     public int questionNum;
     public ICollection<ExamAnswer> examAnswers;
-    public Question currentQuestion;
+    public BaseQuestion currentQuestion;
     public string currentOpenAnswerText;
 
-    private bool isFirstRender = true;
+    public bool isFirstRender = true;
 
     public string elapsedTime = "00:00:00";
     public string remainingTime = "00:15:00";
-    private System.Timers.Timer elapsedTimer;
-    private System.Timers.Timer remainingTimer;
-    private DateTime startTime;
-    private TimeSpan examDuration = TimeSpan.FromMinutes(15);
-    private DateTime questionStartTime; // Question Time
+    public System.Timers.Timer elapsedTimer;
+    public System.Timers.Timer remainingTimer;
+    public DateTime startTime;
+    public TimeSpan examDuration = TimeSpan.FromMinutes(15);
+    public DateTime questionStartTime; // Question Time
 
-    private string previousLocation; //location before navigate to other page in app
+    public string previousLocation; //location before navigate to other page in app
 
     protected override void OnInitialized()
     {
@@ -287,13 +291,31 @@
 
         Console.WriteLine($"Navigated from: {previousLocation} to: {currentLocation}");
 
-        // Check if the previous location is "/exam/" - BaseUri
+        // Check if the previous location is "/exam/"
         if (previousLocation.StartsWith(Navigation.BaseUri + "exam/") && Permission)
         {
             await SaveDataToLocalStorage();
         }
         // Update the previous location
         previousLocation = currentLocation;
+
+        //for popup-leave
+        // if (previousLocation.StartsWith(Navigation.BaseUri + "exam/") && Permission)
+        // {
+
+        //     bool confirmed = confirmationDialog.Show("Are you sure you want to navigate away? Any unsaved data will be lost.");
+        //     if (confirmed)
+        //     {
+        //         await SaveDataToLocalStorage();
+        //     }
+        //     else
+        //     {
+        //         // Cancel navigation
+        //         Navigation.NavigateTo(previousLocation);
+        //     }
+        // }
+        // // Update the previous location
+        // previousLocation = currentLocation;
     }
 
     public void Dispose()
@@ -343,7 +365,7 @@
     {
         if (examAnswers != null && examAnswers.Any())
         {
-            currentQuestion = examAnswers.ElementAt(currentQuestionIndex).Question;
+            currentQuestion = examAnswers.ElementAt(currentQuestionIndex).BaseQuestion;
             questionStartTime = DateTime.Now;
             examExecution.CurrentQuestion = currentQuestion;
         }
@@ -351,7 +373,7 @@
 
     private bool IsAnswerSelected(int answerId)
     {
-        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.BaseQuestionId == currentQuestion.BaseQuestionId);
         return existingAnswer != null && existingAnswer.AnswerId == answerId;
     }
 
@@ -362,7 +384,7 @@
             var selectedAnswer = currentQuestion.Answers.FirstOrDefault(a => a.AnswerId == selectedAnswerId);
             if (selectedAnswer != null)
             {
-                var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+                var existingAnswer = examAnswers.FirstOrDefault(ea => ea.BaseQuestionId == currentQuestion.BaseQuestionId);
                 if (existingAnswer != null)
                 {
                     existingAnswer.Answer = selectedAnswer;
@@ -382,7 +404,7 @@
     private void openAnswer(ChangeEventArgs e)
     {
         currentOpenAnswerText = e.Value.ToString();
-        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.BaseQuestionId == currentQuestion.BaseQuestionId);
         var currentAnswer = currentQuestion.Answers.FirstOrDefault();
         if (existingAnswer != null)
         {
@@ -390,6 +412,7 @@
             existingAnswer.Answer = currentAnswer;
             existingAnswer.AnswerId = currentAnswer?.AnswerId;
         }
+
         // Add updated answers to examExecution
         examExecution.ExamAnswers = examAnswers;
     }
@@ -431,7 +454,7 @@
     {
         var currentTime = DateTime.Now;
         var timeSpent = currentTime - questionStartTime;
-        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.QuestionId == currentQuestion.QuestionId);
+        var existingAnswer = examAnswers.FirstOrDefault(ea => ea.BaseQuestionId == currentQuestion.BaseQuestionId);
         if (existingAnswer != null)
         {
             existingAnswer.TimeSpent += timeSpent;

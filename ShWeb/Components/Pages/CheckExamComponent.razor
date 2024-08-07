@@ -20,10 +20,10 @@
     {
         @foreach (var examAnswer in examAnswers)
         {
-            @if (examAnswer.Question.QuestionType == QuestionTypeEnum.OpenQuestion)
+            @if (examAnswer.BaseQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
             {
                 <div class="exam-answer">
-                    <h4 class="question-text">@examAnswer.Question.QuestionText</h4>
+                    <h4 class="question-text">@examAnswer.BaseQuestion.QuestionText</h4>
                     <div class="answer-section">
                         <div class="user-answer">
                             <p class="label">Your Answer:</p>
@@ -116,7 +116,6 @@
 
     public ExamExecution examExecution;
     public ICollection<ExamAnswer> examAnswers;
-
     public int correctAnswersNum = 0;
     public int wrongAnswersNum = 0;
 
@@ -140,6 +139,10 @@
     private void SetUserMarkedCorrect(ExamAnswer examAnswer, bool isCorrect)
     {
         examAnswer.Answer.IsCorrectAnswer = isCorrect;
+        // var existingAnswer = examAnswers.FirstOrDefault(e => e.ExamAnswerId == examAnswer.ExamAnswerId);
+        // if (existingAnswer != null)
+        // {
+        //     existingAnswer.Answer.IsCorrectAnswer = isCorrect;
+        // }
     }
-
 }

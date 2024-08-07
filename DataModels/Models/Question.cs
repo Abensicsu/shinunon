@@ -7,22 +7,8 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
-    public enum QuestionTypeEnum
+    public class Question : BaseQuestion
     {
-        SelectQuestion,
-        OpenQuestion
-    }
-
-    public class Question
-    {
-        public int QuestionId { get; set; }
-        public string QuestionText { get; set; }
-        public QuestionTypeEnum QuestionType { get; set; }
-
-        public int SubjectId { get; set; }
-        [ForeignKey(nameof(SubjectId))]
-        public Subject Subject { get; set; }
-
-        public ICollection<Answer> Answers { get; set; }
+        public ICollection<UserQuestion> DerivedUserQuestions { get; set; }
     }
 }

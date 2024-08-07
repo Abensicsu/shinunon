@@ -6,17 +6,17 @@ using System.Net;
 
 namespace DataModels.Services
 {
-    public class PlanExamService
+    public class ExamPlanService
     {
         public SHcx Cx { get; }
 
-        public PlanExamService(SHcx cx)
+        public ExamPlanService(SHcx cx)
         {
             Cx = cx;
         }
 
         //create examexecutions according to planExam 
-        public void CreateExamExecutions(PlanExam planExam)
+        public void CreateExamExecutions(ExamPlan planExam)
         {
             var bookFrom = Cx.Books
                 .Where(book => book.BookId == planExam.FromSubject.BookId).FirstOrDefault();
@@ -109,10 +109,10 @@ namespace DataModels.Services
                     CorrectAnswers = 0,
                     WrongAnswers = 0,
                     QuestionsAnswered = 0,
-                    QuestionId = 0,
+                    BaseQuestionId = 0,
                     FromSubjectId = fromSubject.SubjectId,
                     ToSubjectId = toSubject.SubjectId,
-                    PlanExamId = planExam.PlanExamId,
+                    PlanExamId = planExam.ExamPlanId,
                     UserId = planExam.UserId
                 };
                 Cx.ExamExecutions.Add(newExamExecution);
@@ -130,7 +130,7 @@ namespace DataModels.Services
                 .Where(sub => sub.SubjectId == examExecution.ToSubjectId).FirstOrDefault();
 
             var plan = Cx.PlanExams
-                .Where(pl => pl.PlanExamId == examExecution.PlanExamId).FirstOrDefault();
+                .Where(pl => pl.ExamPlanId == examExecution.PlanExamId).FirstOrDefault();
 
             // subjects between fromSubject and toSubject
             var subjects = Cx.Subjects
@@ -149,8 +149,8 @@ namespace DataModels.Services
             var random = new Random();
             var shuffledIndices = new HashSet<int>();
 
-            var minId = questions.Min(q => q.QuestionId);
-            var maxId = questions.Max(q => q.QuestionId);
+            var minId = questions.Min(q => q.BaseQuestionId);
+            var maxId = questions.Max(q => q.BaseQuestionId);
 
             while (shuffledIndices.Count < amount)
             {
@@ -158,14 +158,14 @@ namespace DataModels.Services
             }
 
             ICollection<Question> selectedQuestions = questions
-                .Where(q => shuffledIndices.Contains(q.QuestionId))
+                .Where(q => shuffledIndices.Contains(q.BaseQuestionId))
                 .ToList();
 
             foreach (var question in selectedQuestions)
             {
                 var examAnswer = new ExamAnswer
                 {
-                    QuestionId = question.QuestionId,
+                    BaseQuestionId = question.BaseQuestionId,
                     ExamExecutionId = examExecution.ExamExecutionId,
                 };
                 Cx.ExamAnswers.Add(examAnswer);

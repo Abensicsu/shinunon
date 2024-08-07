@@ -9,9 +9,9 @@ namespace DataModels.Models
         Monthly
     }
 
-    public class PlanExam
+    public class ExamPlan
     {
-        public int PlanExamId { get; set; }
+        public int ExamPlanId { get; set; }
         public ExamFrequencyEnum ExamFrequency { get; set; }
 
         //How many per ExamFrequency, can choose both.

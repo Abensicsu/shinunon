@@ -20,12 +20,24 @@ namespace ShWeb.Controllers
         {
             var exam = Cx.ExamExecutions
                 .Include(e => e.ExamAnswers)
-                .ThenInclude(ea => ea.Question)
+                .ThenInclude(ea => ea.BaseQuestion)
                 .ThenInclude(q => q.Answers)
                 .Where(x => x.ExamExecutionId == ExamExecutionId)
                 .FirstOrDefault();
 
             return exam;
+
+            //var exam = Cx.ExamExecutions
+            //        .Include(e => e.ExamAnswers)
+            //        .ThenInclude(ea => ea.BaseQuestion)
+            //            .ThenInclude(bq => ((Question)bq).Answers) // Include Answers for Question type
+            //        .Include(e => e.ExamAnswers)
+            //        .ThenInclude(ea => ea.BaseQuestion)
+            //            .ThenInclude(bq => ((UserQuestion)bq).Answers) // Include Answers for UserQuestion type
+            //        .Where(x => x.ExamExecutionId == ExamExecutionId)
+            //        .FirstOrDefault();
+
+            //return exam;
         }
 
         [HttpGet]
@@ -33,7 +45,7 @@ namespace ShWeb.Controllers
         {
             return Cx.ExamAnswers
                 .Where(x => x.ExamExecutionId == ExamExecutionId)
-                .Include(x => x.Question)
+                .Include(x => x.BaseQuestion)
                 .ThenInclude(q => q.Answers)
                 .ToList();
         }
@@ -44,7 +56,7 @@ namespace ShWeb.Controllers
             var existingExecution = await Cx.ExamExecutions
                 .Where(x => x.ExamExecutionId == examExecution.ExamExecutionId)
                 .Include(x => x.ExamAnswers)
-                .ThenInclude(x => x.Question)
+                .ThenInclude(x => x.BaseQuestion)
                 .ThenInclude(q => q.Answers)
                 .AsNoTracking()
                 .FirstOrDefaultAsync();

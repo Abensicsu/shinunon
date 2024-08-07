@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ShWeb.Components;
 using ShWeb.Components.BAServices;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,17 +12,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddControllers()
-     .AddNewtonsoftJson(options =>
-     {
-         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-         options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.Objects;
-     });
+//     .AddNewtonsoftJson(options =>
+//     {
+//         options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+//         options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.Objects;
+//     });
+
+.AddJsonOptions(options =>
+ {
+     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
+     options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+ });
 
 builder.Services.AddRazorPages();
 
-builder.Services.AddScoped<PlanExamService>();
+builder.Services.AddScoped<ExamPlanService>();
 builder.Services.AddScoped<ExamExecutionService>();
-
+builder.Services.AddScoped<SefariaService>();
 
 builder.Services.AddScoped(sp => new HttpClient
 {

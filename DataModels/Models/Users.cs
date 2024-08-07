@@ -16,5 +16,7 @@ namespace DataModels.Models
 
         public UserSettings UserSettings { get; set; }
         public ICollection<ExamExecution> ExamExecutions { get; set; }
+
+        public ICollection<UserQuestion> UserQuestions { get; set; }
     }
 }

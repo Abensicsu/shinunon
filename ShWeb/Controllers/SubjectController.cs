@@ -2,6 +2,7 @@
 using DataModels.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ShWeb.Controllers
 {
@@ -28,10 +29,12 @@ namespace ShWeb.Controllers
             Cx.SaveChanges();
         }
 
-        //[HttpGet]
-        //public Subject[] AllSubjectsByBook(Book[] books)
-        //{
-
-        //}
+        [HttpGet]
+        public List<Subject> GetAllSubjectsWithText()
+        {
+            return Cx.Subjects
+                .Include(s => s.SubjectText)
+                .ToList();
+        }
     }
 }

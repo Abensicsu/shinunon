@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
-    public class Answer
+    public abstract class BaseAnswer
     {
         public int AnswerId { get; set; }
         public string AnswerText { get; set; }
         public bool IsCorrectAnswer { get; set; }
 
-        public int BaseQuestionId { get; set; }
-        [ForeignKey(nameof(BaseQuestionId))]
-        public BaseQuestion BaseQuestion { get; set; }
+        public int QuestionId { get; set; }
+        [ForeignKey(nameof(QuestionId))]
+        public Question Question { get; set; }
     }
 }

@@ -7,16 +7,17 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
-
     public class Book
     {
         public int BookId { get; set; }
         public string BookName { get; set; }
+        public string HebrewBookName { get; set; }
         public BookTypeEnum BookType { get; set; }
-        public bool HasSubSubject { get; set; } //True if has sub-subject
-        public int BookOrder { get; set; } //Order in Book list
+        public bool HasSubSubject { get; set; }
+        public int BookOrder { get; set; }
         public ICollection<Subject> Subjects { get; set; }
     }
+
     public enum BookTypeEnum
     {
         Chumash,

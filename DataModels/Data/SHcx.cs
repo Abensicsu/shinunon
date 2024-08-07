@@ -19,8 +19,11 @@ namespace DataModels.Data
         public DbSet<ExamExecution> ExamExecutions { get; set; }
         public DbSet<ForumQuestion> ForumQuestions { get; set; }
         public DbSet<ForumComment> ForumComments { get; set; }
-        public DbSet<PlanExam> PlanExams { get; set; }
+        public DbSet<ExamPlan> PlanExams { get; set; }
         public DbSet<Book> Books { get; set; }
+        public DbSet<SubjectText> SubjectTexts { get; set; }
+        public DbSet<BaseQuestion> BaseQuestions { get; set; }
+        public DbSet<UserQuestion> UserQuestions { get; set; }
 
         public SHcx(DbContextOptions<SHcx> dbContextOptions) : base(dbContextOptions)
         {
@@ -42,13 +45,13 @@ namespace DataModels.Data
                 .HasForeignKey(e => e.ToSubjectId)
                 .OnDelete(DeleteBehavior.Restrict); // or whatever delete behavior you prefer
 
-            modelBuilder.Entity<PlanExam>()
+            modelBuilder.Entity<ExamPlan>()
                 .HasOne(p => p.FromSubject)
                 .WithMany()
                 .HasForeignKey(p => p.FromSubjectId)
                 .OnDelete(DeleteBehavior.Restrict); // or whatever delete behavior you prefer
 
-            modelBuilder.Entity<PlanExam>()
+            modelBuilder.Entity<ExamPlan>()
                 .HasOne(p => p.ToSubject)
                 .WithMany()
                 .HasForeignKey(p => p.ToSubjectId)
@@ -56,6 +59,40 @@ namespace DataModels.Data
 
             modelBuilder.Entity<User>()
                 .OwnsOne(u => u.UserSettings);
+
+            // Configure one-to-one relationship
+            modelBuilder.Entity<Subject>()
+                .HasOne(m => m.SubjectText)
+                .WithOne(e => e.Subject)
+                .HasForeignKey<SubjectText>(e => e.SubjectId);
+
+            // Optional: Configure primary key for ExtraEntity if it's not automatically inferred
+            modelBuilder.Entity<SubjectText>()
+                .HasKey(e => e.SubjectId);
+
+            // Configure inheritance mapping for BaseQuestion
+            modelBuilder.Entity<BaseQuestion>()
+                .HasDiscriminator<string>("DiscriminatorRF")
+                .HasValue<Question>("DiscriminatorRF")
+                .HasValue<UserQuestion>("DiscriminatorRF");
+
+            // Configure inheritance mapping for BaseQuestion using the custom discriminator property
+            modelBuilder.Entity<BaseQuestion>()
+                .HasDiscriminator<string>("DiscriminatorRF")
+                .HasValue<Question>("Question")
+                .HasValue<UserQuestion>("UserQuestion");
+
+            // Configure relationships for derived classes
+            modelBuilder.Entity<UserQuestion>()
+                .HasOne(uq => uq.User)
+                .WithMany()
+                .HasForeignKey(uq => uq.UserId);
+
+            modelBuilder.Entity<UserQuestion>()
+                .HasOne(uq => uq.Question)
+                .WithMany(q => q.DerivedUserQuestions)
+                .HasForeignKey(uq => uq.OriginalQuestionId);
+
         }
     }
 }

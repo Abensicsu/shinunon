@@ -21,5 +21,7 @@ namespace DataModels.Models
         public int BookId { get; set; }
         [ForeignKey(nameof(BookId))]
         public Book Book { get; set; }
+
+        public SubjectText SubjectText { get; set; }
     }
 }

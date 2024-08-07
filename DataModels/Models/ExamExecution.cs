@@ -27,9 +27,9 @@ namespace DataModels.Models
         public ExamTypeEnum ExamType { get; set; }
         public int? ExamRepeatNumber { get; set; }  //How many times has the exam been done before?
         public bool? IsReviewed { get; set; }
-        public int? QuestionId { get; set; }
-        [ForeignKey(nameof(QuestionId))]
-        public Question CurrentQuestion { get; set; }
+        public int? BaseQuestionId { get; set; }
+        [ForeignKey(nameof(BaseQuestionId))]
+        public BaseQuestion CurrentQuestion { get; set; }
 
         public int FromSubjectId { get; set; }
         [ForeignKey(nameof(FromSubjectId))]
@@ -45,7 +45,7 @@ namespace DataModels.Models
 
         public int? PlanExamId { get; set; }
         [ForeignKey(nameof(PlanExamId))]
-        public PlanExam? PlanExam { get; set; }
+        public ExamPlan? PlanExam { get; set; }
 
         public ICollection<ExamAnswer> ExamAnswers { get; set; }
     }
