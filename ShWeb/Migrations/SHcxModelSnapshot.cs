@@ -117,6 +117,10 @@ namespace ShWeb.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("has_sub_subject");
 
+                    b.Property<string>("HebrewBookName")
+                        .HasColumnType("text")
+                        .HasColumnName("hebrew_book_name");
+
                     b.HasKey("BookId")
                         .HasName("pk_books");
 

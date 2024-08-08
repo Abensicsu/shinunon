@@ -19,8 +19,9 @@ namespace DataModels.Services
 
         public List<string> TanachBooks { get; private set; }
         public List<string> MishnaTractates { get; private set; }
-        public List<string> tanachBooksHebrew { get; private set; }
-        public List<string> mishnaTractatesHebrew { get; private set; }
+        public List<string> TanachBooksHebrew { get; private set; }
+        public List<string> MishnaTractatesHebrew { get; private set; }
+        private Dictionary<string, string> BookNameMapping { get; set; }
 
         public SefariaService(SHcx cx)
         {
@@ -56,28 +57,113 @@ namespace DataModels.Services
                 "Mishnah Oktzin"
             };
 
-
-            tanachBooksHebrew = new List<string>
+            BookNameMapping = new Dictionary<string, string>
             {
-                "בראשית", "שמות", "ויקרא", "במדבר", "דברים", "יהושע", "שופטים", "שמואל א", "שמואל ב",
-                "מלכים א", "מלכים ב", "ישעיהו", "ירמיהו", "יחזקאל", "הושע", "יואל", "עמוס", "עובדיה",
-                "יונה", "מיכה", "נחום", "חבקוק", "צפניה", "חגי", "זכריה", "מלאכי", "תהילים", "משלי",
-                "איוב", "שיר השירים", "רות", "איכה", "קוהלת", "אסתר", "דניאל", "עזרא", "נחמיה",
-                "דברי הימים א", "דברי הימים ב"
-            };
+                {"Bereshit", "בראשית"},
+                {"Shemot", "שמות"},
+                {"Vayikra", "ויקרא"},
+                {"Bamidbar", "במדבר"},
+                {"Devarim", "דברים"},
+                {"Yehoshua", "יהושע"},
+                {"Shoftim", "שופטים"},
+                {"I Samuel", "שמואל א"},
+                {"II Samuel", "שמואל ב"},
+                {"I Kings", "מלכים א"},
+                {"II Kings", "מלכים ב"},
+                {"Yeshayahu", "ישעיהו"},
+                {"Yirmeyahu", "ירמיהו"},
+                {"Yechezkel", "יחזקאל"},
+                {"Hoshea", "הושע"},
+                {"Yoel", "יואל"},
+                {"Amos", "עמוס"},
+                {"Ovadiah", "עובדיה"},
+                {"Yonah", "יונה"},
+                {"Micha", "מיכה"},
+                {"Nachum", "נחום"},
+                {"Habakkuk", "חבקוק"},
+                {"Zephaniah", "צפניה"},
+                {"Haggai", "חגי"},
+                {"Zechariah", "זכריה"},
+                {"Malachi", "מלאכי"},
+                {"Tehillim", "תהילים"},
+                {"Mishlei", "משלי"},
+                {"Iyov", "איוב"},
+                {"Shir HaShirim", "שיר השירים"},
+                {"Rut", "רות"},
+                {"Eichah", "איכה"},
+                {"Kohelet", "קוהלת"},
+                {"Ester", "אסתר"},
+                {"Daniel", "דניאל"},
+                {"Ezra", "עזרא"},
+                {"Nehemiah", "נחמיה"},
+                {"I Chronicles", "דברי הימים א"},
+                {"II Chronicles", "דברי הימים ב"},
 
-            mishnaTractatesHebrew = new List<string>
-            {
-                "ברכות", "פאה", "דמאי", "כלאים", "שביעית", "תרומות", "מעשרות", "מעשר שני", "חלה",
-                "ערלה", "ביכורים", "שבת", "עירובין", "פסחים", "שקלים", "יומא",
-                "סוכה", "ביצה", "ראש השנה", "תענית", "מגילה", "מועד קטן", "חגיגה", "יבמות",
-                "כתובות", "נדרים", "נזיר", "סוטה", "גיטין", "קידושין", "בבא קמא", "בבא מציעא",
-                "בבא בתרא", "סנהדרין", "מכות", "שבועות", "עדויות", "עבודה זרה", "אבות", "הוריות",
-                "זבחים", "מנחות", "חולין", "בכורות", "ערכין", "תמורה", "כריתות", "מעילה", "תמיד", "מדות",
-                "קינים", "כלים", "אהלות", "נגעים", "פרה", "טהרות",
-                "מקואות", "נדה", "מכשירין", "זבים", "טבול יום", "ידים", "עוקצים"
+                // Mappings for Mishna tractates
+                {"Berakhot", "ברכות"},
+                {"Peah", "פאה"},
+                {"D’mai", "דמאי"},
+                {"Kilayim", "כלאים"},
+                {"Sheviit", "שביעית"},
+                {"Terumot", "תרומות"},
+                {"Maʿasroth", "מעשרות"},
+                {"Maaser Sheni", "מעשר שני"},
+                {"Hallah", "חלה"},
+                {"Mishnah Orlah", "מִשְׁנָה ערלה"},
+                {"Bikkurim", "ביקורים"},
+                {"Shabbat", "שבת"},
+                {"Eruvin", "עירובין"},
+                {"Pesachim", "פסחים"},
+                {"Mishnah Shekalim", "מִשְׁנָה שקלים"},
+                {"Yoma", "יומא"},
+                {"Sukkah", "סוכה"},
+                {"Beitzah", "ביצה"},
+                {"Rosh Hashanah", "ראש השנה"},
+                {"Ta'anit", "תענית"},
+                {"Megillah", "מגילה"},
+                {"Moed Katan", "מועד קטן"},
+                {"Chagigah", "חגיגה"},
+                {"Yevamot", "יבמות"},
+                {"Ketubot", "כתובות"},
+                {"Nedarim", "נדרים"},
+                {"Nazir", "נזיר"},
+                {"Sotah", "סוטה"},
+                {"Gittin", "גטין"},
+                {"Kiddushin", "קידושין"},
+                {"Bava Kamma", "בבא קמא"},
+                {"Bava Metzia", "בבא מציעא"},
+                {"Bava Batra", "בבא בתרא"},
+                {"Sanhedrin", "סנהדרין"},
+                {"Makkot", "מכות"},
+                {"Shevuot", "שבועות"},
+                {"Eduyot", "עדויות"},
+                {"Avodah Zarah", "עבודה זרה"},
+                {"Avot", "אבות"},
+                {"Horayot", "הוריות"},
+                {"Zevachim", "זבחים"},
+                {"Menachot", "מנחות"},
+                {"Chullin", "חולין"},
+                {"Bekhorot", "בכורות"},
+                {"Arakhin", "ערכין"},
+                {"Temurah", "תמורה"},
+                {"Keritot", "כריתות"},
+                {"Meilah", "מעילה"},
+                {"Tamid", "תמיד"},
+                {"Middoth", "מדות"},
+                {"Mishna Kinnim", "קינים"},
+                {"Kelim", "כלים"},
+                {"Mishnah Ohalot", "אהלות"},
+                {"N’gaʿim", "נגעים"},
+                {"Parah", "פרה"},
+                {"Mishna Tahorot", "טהרות"},
+                {"Mishna Mikvaot", "מקואות"},
+                {"Niddah", "נדה"},
+                {"Makhshirin", "מכשירין"},
+                {"Zavim", "זבים"},
+                {"Mishnah Tevul Yom", "טבול יום"},
+                {"Yadayim", "ידים"},
+                {"Mishnah Oktzin", "עוקצים"}
             };
-
         }
 
         public async Task FetchAndSaveAllBooks()
@@ -97,6 +183,9 @@ namespace DataModels.Services
 
         private async Task FetchAndSaveBook(string bookName, BookTypeEnum bookType, int bookOrder)
         {
+            // Get the Hebrew book name
+            var heBookName = BookNameMapping.ContainsKey(bookName) ? BookNameMapping[bookName] : bookName;
+
             var url = $"https://www.sefaria.org/api/v3/texts/{bookName}";
             var response = await _httpClient.GetAsync(url);
 
@@ -115,7 +204,7 @@ namespace DataModels.Services
                     {
                         var book = new Book
                         {
-                            BookName = bookName,
+                            BookName = heBookName,
                             BookType = bookType,
                             HasSubSubject = false, // Update this as needed
                             BookOrder = bookOrder
@@ -130,7 +219,7 @@ namespace DataModels.Services
                         {
                             var subject = new Subject
                             {
-                                SubjectName = $"{bookName} Chapter {chapterNumber}",
+                                SubjectName = $"{heBookName} פרק {chapterNumber}",
                                 Ordinal = chapterNumber,
                                 BookId = book.BookId,
                                 SubjectText = new SubjectText
