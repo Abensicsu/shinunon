@@ -106,8 +106,9 @@ namespace DataModels.Services
                 {
                     StartTime = null,//check
                     EndTime = null,
-                    CorrectAnswers = 0,
-                    WrongAnswers = 0,
+                    CorrectAnswersNum = 0,
+                    PartiallyCorrectAnswersNum = 0,
+                    WrongAnswersNum = 0,
                     QuestionsAnswered = 0,
                     BaseQuestionId = 0,
                     FromSubjectId = fromSubject.SubjectId,

@@ -70,11 +70,11 @@ namespace DataModels.Data
             modelBuilder.Entity<SubjectText>()
                 .HasKey(e => e.SubjectId);
 
-            // Configure inheritance mapping for BaseQuestion
-            modelBuilder.Entity<BaseQuestion>()
-                .HasDiscriminator<string>("DiscriminatorRF")
-                .HasValue<Question>("DiscriminatorRF")
-                .HasValue<UserQuestion>("DiscriminatorRF");
+            //// Configure inheritance mapping for BaseQuestion
+            //modelBuilder.Entity<BaseQuestion>()
+            //    .HasDiscriminator<string>("DiscriminatorRF")
+            //    .HasValue<Question>("DiscriminatorRF")
+            //    .HasValue<UserQuestion>("DiscriminatorRF");
 
             // Configure inheritance mapping for BaseQuestion using the custom discriminator property
             modelBuilder.Entity<BaseQuestion>()
@@ -92,7 +92,6 @@ namespace DataModels.Data
                 .HasOne(uq => uq.Question)
                 .WithMany(q => q.DerivedUserQuestions)
                 .HasForeignKey(uq => uq.OriginalQuestionId);
-
         }
     }
 }

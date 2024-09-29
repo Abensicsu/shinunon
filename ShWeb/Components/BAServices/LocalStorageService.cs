@@ -1,4 +1,5 @@
-﻿using Microsoft.JSInterop;
+﻿using DataModels.Utilities;
+using Microsoft.JSInterop;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
@@ -15,7 +16,8 @@ namespace ShWeb.Components.BAServices
 
         public async Task StoreInLocalStorageAsync<T>(string key, T value)
         {
-            var settings = GetJsonSerializerSettings();
+            var settings = JsonSerializerConfig.GetSettings(); // Use configured settings
+
             var json = JsonConvert.SerializeObject(value, settings);
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", key, json);
         }
@@ -24,20 +26,12 @@ namespace ShWeb.Components.BAServices
         {
             var json = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", key);
             if (json == null) return default(T);
-            var settings = GetJsonSerializerSettings();
+            var settings = JsonSerializerConfig.GetSettings(); // Use configured settings
+
             return JsonConvert.DeserializeObject<T>(json, settings);
         }
 
-        private JsonSerializerSettings GetJsonSerializerSettings()
-        {
-            return new JsonSerializerSettings
-            {
-                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            };
-        }
-
-         public async Task RemoveFromLocalStorageAsync(string key)
+        public async Task RemoveFromLocalStorageAsync(string key)
         {
             await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", key);
         }

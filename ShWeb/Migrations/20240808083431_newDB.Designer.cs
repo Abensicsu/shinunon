@@ -3,6 +3,7 @@ using System;
 using DataModels.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
-    partial class SHcxModelSnapshot : ModelSnapshot
+    [Migration("20240808083431_newDB")]
+    partial class newDB
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -136,10 +139,6 @@ namespace ShWeb.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ExamAnswerId"));
 
-                    b.Property<int?>("AnswerCorrectnessLevel")
-                        .HasColumnType("integer")
-                        .HasColumnName("answer_correctness_level");
-
                     b.Property<int?>("AnswerId")
                         .HasColumnType("integer")
                         .HasColumnName("answer_id");
@@ -188,9 +187,9 @@ namespace ShWeb.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("base_question_id");
 
-                    b.Property<int>("CorrectAnswersNum")
+                    b.Property<int>("CorrectAnswers")
                         .HasColumnType("integer")
-                        .HasColumnName("correct_answers_num");
+                        .HasColumnName("correct_answers");
 
                     b.Property<DateTime?>("EndTime")
                         .HasColumnType("timestamp with time zone")
@@ -212,10 +211,6 @@ namespace ShWeb.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_reviewed");
 
-                    b.Property<int>("PartiallyCorrectAnswersNum")
-                        .HasColumnType("integer")
-                        .HasColumnName("partially_correct_answers_num");
-
                     b.Property<int?>("PlanExamId")
                         .HasColumnType("integer")
                         .HasColumnName("plan_exam_id");
@@ -236,9 +231,9 @@ namespace ShWeb.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("user_id");
 
-                    b.Property<int>("WrongAnswersNum")
+                    b.Property<int>("WrongAnswers")
                         .HasColumnType("integer")
-                        .HasColumnName("wrong_answers_num");
+                        .HasColumnName("wrong_answers");
 
                     b.HasKey("ExamExecutionId")
                         .HasName("pk_exam_executions");

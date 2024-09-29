@@ -24,13 +24,13 @@ else if (selectedBook == null)
     <ul>
         @foreach (var book in books)
         {
-            <li @onclick="() => SelectBook(book)">@book.BookName</li>
+            <li @onclick="() => SelectBook(book)">@book.HebrewBookName</li>
         }
     </ul>
 }
 else if (selectedSubject == null)
 {
-    <h4>Select a Topic in @selectedBook.BookName</h4>
+    <h4>Select a Topic in @selectedBook.HebrewBookName</h4>
     <ul>
         @foreach (var topic in selectedBook.Subjects)
         {

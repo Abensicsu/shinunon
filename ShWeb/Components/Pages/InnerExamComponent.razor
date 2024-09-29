@@ -19,7 +19,8 @@
 {
     <div class="question-container">
         <h4>@currentQuestion.QuestionText</h4>
-        <div>
+
+        <div class="question">
             @if (currentQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
             {
                 @foreach (var answer in currentQuestion.Answers)
@@ -85,7 +86,7 @@
     </div>
 }
 
-<ConfirmationPopupComponent @ref="confirmationDialog"></ConfirmationPopupComponent>
+@* <ConfirmationPopupComponent @ref="confirmationDialog"></ConfirmationPopupComponent> *@
 
 <style>
     .question-container {
@@ -93,7 +94,9 @@
         padding: 20px;
         border-radius: 5px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
     }
+
 
     .option {
         margin-bottom: 10px;
@@ -102,6 +105,58 @@
         .option input[type="radio"] {
             margin-right: 5px;
         }
+
+    .button-container {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+
+        .button-container button {
+            margin-left: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+        border: 1px solid #007bff;
+        border-radius: 4px;
+        padding: 10px 20px;
+    }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+        border: 1px solid #dc3545;
+        border-radius: 4px;
+        padding: 10px 20px;
+    }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
+    .btn-info {
+        background-color: #17a2b8;
+        color: white;
+        border: 1px solid #17a2b8;
+        border-radius: 4px;
+        padding: 10px 20px;
+    }
+
+        .btn-info:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+
 
     .question-number-table table {
         width: 100%;
@@ -163,6 +218,12 @@
         background-color: #f8d7da;
         color: #721c24;
     }
+
+    .partially-correct-answer {
+        background-color: #f7eac7;
+        color: #856404;
+    }
+
 </style>
 
 @code {
@@ -248,7 +309,7 @@
                         examAnswers = examExecution.ExamAnswers;
                     questionNum = examAnswers.Count;
                     SetCurrentQuestion();
-                    startTime = DateTime.Now.Add(TimeSpan.Parse(elapsedTime).Negate());//why not DateTime.Now??
+                    startTime = DateTime.Now.Add(TimeSpan.Parse(elapsedTime).Negate());
                     if (Permission)
                         InitializeTimers(); // TimeSpan.Parse(remainingTime));
                 }
@@ -354,10 +415,10 @@
     {
         elapsedTimer?.Stop();
         remainingTimer?.Stop();
-        await LocalStorageService.StoreInLocalStorageAsync("currentQuestionIndex", currentQuestionIndex);
-        await LocalStorageService.StoreInLocalStorageAsync("elapsedTime", elapsedTime);
-        await LocalStorageService.StoreInLocalStorageAsync("remainingTime", remainingTime);
-        await LocalStorageService.StoreInLocalStorageAsync("examExecution", examExecution);
+        // await LocalStorageService.StoreInLocalStorageAsync("currentQuestionIndex", currentQuestionIndex);
+        // await LocalStorageService.StoreInLocalStorageAsync("elapsedTime", elapsedTime);
+        // await LocalStorageService.StoreInLocalStorageAsync("remainingTime", remainingTime);
+        // await LocalStorageService.StoreInLocalStorageAsync("examExecution", examExecution);
         Console.WriteLine("data saved to local storage.");
     }
 
@@ -466,14 +527,24 @@
         if (!Permission)
         {
             var currentExamAnswer = examAnswers.ElementAt(currentQuestionIndex);
-            if (!(currentExamAnswer.AnswerId.HasValue))
-            {
-                return "";
-            }
 
-            if (currentExamAnswer.AnswerId.Value == answerId)
+            if (!currentExamAnswer.AnswerCorrectnessLevel.HasValue)
+                return "";
+
+            // Check if this answer is the one selected by the user
+            if (currentExamAnswer.Answer?.AnswerId == answerId)
             {
-                return currentExamAnswer.Answer.IsCorrectAnswer ? "correct-answer" : "incorrect-answer";
+                switch (currentExamAnswer.AnswerCorrectnessLevel)
+                {
+                    case AnswerCorrectnessLevelEnum.Correct:
+                        return "correct-answer";
+                    case AnswerCorrectnessLevelEnum.Wrong:
+                        return "incorrect-answer";
+                    case AnswerCorrectnessLevelEnum.PartiallyCorrect:
+                        return "partially-correct-answer";
+                    default:
+                        return "";
+                }
             }
         }
         return "";

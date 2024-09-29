@@ -14,5 +14,7 @@ namespace DataModels.Models
         public User User { get; set; }
         public int? OriginalQuestionId { get; set; }
         public Question Question { get; set; }
+
+        // Inherits Answers collection from BaseQuestion
     }
 }

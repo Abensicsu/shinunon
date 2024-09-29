@@ -7,11 +7,20 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
+    public enum AnswerCorrectnessLevelEnum
+    {
+        Correct,
+        PartiallyCorrect,
+        Wrong
+    }
+
     public class ExamAnswer
     {
         public int ExamAnswerId { get; set; }
         public string? TextAnswer { get; set; }
         public TimeSpan TimeSpent { get; set; }
+
+        public AnswerCorrectnessLevelEnum? AnswerCorrectnessLevel { get; set; }
 
         public int? AnswerId { get; set; }
         [ForeignKey(nameof(AnswerId))]

@@ -20,8 +20,9 @@ namespace DataModels.Models
         public int ExamExecutionId { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }
-        public int CorrectAnswers { get; set; }
-        public int WrongAnswers { get; set; }
+        public int CorrectAnswersNum { get; set; }
+        public int PartiallyCorrectAnswersNum { get; set; }
+        public int WrongAnswersNum { get; set; }
         public int QuestionsAnswered { get; set; }
 
         public ExamTypeEnum ExamType { get; set; }

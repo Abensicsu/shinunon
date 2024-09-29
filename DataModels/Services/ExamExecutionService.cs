@@ -72,8 +72,9 @@ namespace DataModels.Services
                 var newExamExecution = new ExamExecution
                 {
                     StartTime = DateTime.Now.AddDays(interval),
-                    WrongAnswers = 0,
-                    CorrectAnswers = 0,
+                    CorrectAnswersNum = 0,
+                    PartiallyCorrectAnswersNum = 0,
+                    WrongAnswersNum = 0,
                     QuestionsAnswered = 0,
                     ExamType = ExamTypeEnum.RepeatExam,
                     ExamRepeatNumber = repeatNumber,
@@ -91,8 +92,9 @@ namespace DataModels.Services
             var newExamExecution = new ExamExecution
             {
                 StartTime = DateTime.Now,
-                WrongAnswers = 0,
-                CorrectAnswers = 0,
+                CorrectAnswersNum = 0,
+                PartiallyCorrectAnswersNum = 0,
+                WrongAnswersNum = 0,
                 QuestionsAnswered = 0,
                 ExamType = examType,
                 FromSubjectId = fromSubjectId,
@@ -135,23 +137,39 @@ namespace DataModels.Services
             // Minimum of DefaultQuestionCount from userSettings and the total number of questions available.
             var amount = Math.Min(user.UserSettings.DefaultQuestionCount, questions.Count);
 
+            //var random = new Random();
+            //var shuffledIndices = new HashSet<int>();
+
+            ////Need to change, IDs are not always in any order!!!!!!!!!!!!!!!
+            //var minId = questions.Min(q => q.BaseQuestionId);
+            //var maxId = questions.Max(q => q.BaseQuestionId);
+            //var count = amount;
+
+            //while (shuffledIndices.Count < amount)
+            //{
+            //    shuffledIndices.Add(random.Next(minId, maxId));
+            //}
+
+            //ICollection<Question> selectedQuestions = questions
+            //    .Where(q => shuffledIndices.Contains(q.BaseQuestionId))
+            //    .ToList();
+
+            //foreach (var question in selectedQuestions)
+            //{
+            //    var examAnswer = new ExamAnswer
+            //    {
+            //        BaseQuestionId = question.BaseQuestionId,
+            //        ExamExecutionId = examExecution.ExamExecutionId,
+            //    };
+            //    Cx.ExamAnswers.Add(examAnswer);
+            //}
+            //Cx.SaveChanges();
+            // Shuffle the list of questions
+
             var random = new Random();
-            var shuffledIndices = new HashSet<int>();
+            var shuffledQuestions = questions.OrderBy(q => random.Next()).Take(amount).ToList();
 
-            //Need to change, IDs are not always in any order!!!!!!!!!!!!!!!
-            var minId = questions.Min(q => q.BaseQuestionId);
-            var maxId = questions.Max(q => q.BaseQuestionId);
-
-            while (shuffledIndices.Count < amount)
-            {
-                shuffledIndices.Add(random.Next(minId, maxId));
-            }
-
-            ICollection<Question> selectedQuestions = questions
-                .Where(q => shuffledIndices.Contains(q.BaseQuestionId))
-                .ToList();
-
-            foreach (var question in selectedQuestions)
+            foreach (var question in shuffledQuestions)
             {
                 var examAnswer = new ExamAnswer
                 {

@@ -3,8 +3,10 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
+using DataModels.Utilities;
 using Microsoft.JSInterop;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 
 public class CustomHttpClientService
@@ -19,21 +21,13 @@ public class CustomHttpClientService
     public async Task<T> GetAsync<T>(string requestUri)
     {
         var response = await _httpClient.GetStringAsync(requestUri);
-        var settings = new JsonSerializerSettings
-        {
-            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        };
+        var settings = JsonSerializerConfig.GetSettings(); // Use configured settings
         return JsonConvert.DeserializeObject<T>(response, settings);
     }
 
     public async Task<TResponse> PostAsync<TRequest, TResponse>(string requestUri, TRequest request)
     {
-        var settings = new JsonSerializerSettings
-        {
-            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        };
+        var settings = JsonSerializerConfig.GetSettings(); // Use configured settings
 
         var json = JsonConvert.SerializeObject(request, settings);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -44,11 +38,7 @@ public class CustomHttpClientService
 
     public async Task<TResponse> PutAsync<TRequest, TResponse>(string requestUri, TRequest request)
     {
-        var settings = new JsonSerializerSettings
-        {
-            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        };
+        var settings = JsonSerializerConfig.GetSettings(); // Use configured settings
 
         var json = JsonConvert.SerializeObject(request, settings);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -56,13 +46,9 @@ public class CustomHttpClientService
         var responseJson = await response.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<TResponse>(responseJson, settings);
     }
-
-    private JsonSerializerSettings GetJsonSerializerSettings()
+    public async Task<bool> DeleteAsync(string requestUri)
     {
-        return new JsonSerializerSettings
-        {
-            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-        };
+        var response = await _httpClient.DeleteAsync(requestUri);
+        return response.IsSuccessStatusCode;
     }
 }

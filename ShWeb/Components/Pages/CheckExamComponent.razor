@@ -20,7 +20,7 @@
     {
         @foreach (var examAnswer in examAnswers)
         {
-            @if (examAnswer.BaseQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+            @if (examAnswer.BaseQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && examAnswer.TextAnswer != null)
             {
                 <div class="exam-answer">
                     <h4 class="question-text">@examAnswer.BaseQuestion.QuestionText</h4>
@@ -36,12 +36,12 @@
                     </div>
                     <div class="answer-level">
                         <p>Choose your answer level:</p>
-                        <label>
-                            <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, true)" /> Correct
-                        </label>
-                        <label>
-                            <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, false)" /> Wrong
-                        </label>
+                        @foreach (AnswerCorrectnessLevelEnum level in Enum.GetValues(typeof(AnswerCorrectnessLevelEnum)))
+                        {
+                            <label>
+                                <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, level)" /> @level
+                            </label>
+                        }
                     </div>
                 </div>
             }
@@ -116,19 +116,19 @@
 
     public ExamExecution examExecution;
     public ICollection<ExamAnswer> examAnswers;
-    public int correctAnswersNum = 0;
-    public int wrongAnswersNum = 0;
 
     protected override async Task OnInitializedAsync()
     {
         examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
         examAnswers = examExecution.ExamAnswers;
-        examExecution.IsReviewed = true;
     }
 
     public async Task getExamResults()
     {
+        checkSelectQuestions();
         examExecution.ExamAnswers = examAnswers;
+        examExecution.IsReviewed = true;
+
 
         await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
 
@@ -136,13 +136,42 @@
         Navigation.NavigateTo($"/exam-results/{examExecutionId}");
     }
 
-    private void SetUserMarkedCorrect(ExamAnswer examAnswer, bool isCorrect)
+    public void checkSelectQuestions()
     {
-        examAnswer.Answer.IsCorrectAnswer = isCorrect;
-        // var existingAnswer = examAnswers.FirstOrDefault(e => e.ExamAnswerId == examAnswer.ExamAnswerId);
-        // if (existingAnswer != null)
-        // {
-        //     existingAnswer.Answer.IsCorrectAnswer = isCorrect;
-        // }
+        // Check correctness for all answers
+        foreach (var examAnswer in examAnswers)
+        {
+            if (examAnswer.BaseQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+            {
+                var correctAnswer = examAnswer.BaseQuestion.Answers.FirstOrDefault(a => a.IsCorrectAnswer);
+                // Set AnswerCorrectnessLevel only for the user's selected answer
+                if (examAnswer.Answer != null)
+                {
+                    // If the selected answer is correct
+                    if (examAnswer.Answer.AnswerId == correctAnswer.AnswerId)
+                    {
+                        examAnswer.AnswerCorrectnessLevel = AnswerCorrectnessLevelEnum.Correct;
+                    }
+                    else
+                    {
+                        examAnswer.AnswerCorrectnessLevel = AnswerCorrectnessLevelEnum.Wrong;
+                    }
+                }
+                else
+                {
+                    // If no answer was selected, consider it wrong
+                    examAnswer.AnswerCorrectnessLevel = AnswerCorrectnessLevelEnum.Wrong;
+                }
+            }
+        }
+    }
+
+    private void SetUserMarkedCorrect(ExamAnswer examAnswer, AnswerCorrectnessLevelEnum level)
+    {
+        var existingAnswer = examAnswers.FirstOrDefault(e => e.ExamAnswerId == examAnswer.ExamAnswerId);
+        if (existingAnswer != null)
+        {
+            existingAnswer.AnswerCorrectnessLevel = level;
+        }
     }
 }

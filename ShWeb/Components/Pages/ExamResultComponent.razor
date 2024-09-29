@@ -19,21 +19,25 @@
 {
     <div class="results-container">
         <div class="results-summary">
-            <div class="summary-item incorrect">
-                <span class="number">@examExecution.WrongAnswers</span>
-                <span class="label">Wrong Answers</span>
-            </div>
             <div class="summary-item correct">
-                <span class="number">@examExecution.CorrectAnswers</span>
+                <span class="number">@examExecution.CorrectAnswersNum</span>
                 <span class="label">Correct Answers</span>
+            </div>
+            <div class="summary-item partially-correct">
+                <span class="number">@examExecution.PartiallyCorrectAnswersNum</span>
+                <span class="label">Partially Correct Answers</span>
+            </div>
+            <div class="summary-item incorrect">
+                <span class="number">@examExecution.WrongAnswersNum</span>
+                <span class="label">Wrong Answers</span>
             </div>
             <div class="summary-item question-qnswered">
                 <span class="number">@(examExecution.QuestionsAnswered)</span>
                 <span class="label">Question Answered</span>
             </div>
             <div class="summary-item success-rate">
-                <span class="number">@((examExecution.CorrectAnswers * 100) / questionNum)%</span>
-                <span class="label">success-rate</span>
+                <span class="number">@(SuccessRate)%</span>
+                <span class="label">Success Rate</span>
             </div>
         </div>
         <div class="timers">
@@ -44,7 +48,6 @@
             <div class="timer">
                 <span class="label">End Time</span>
                 <span class="time">@examExecution.EndTime.Value.TimeOfDay.ToString(@"hh\:mm\:ss")</span>
-
             </div>
         </div>
     </div>
@@ -80,8 +83,12 @@
             background-color: #e0f7fa;
         }
 
+        .summary-item.partially-correct {
+            background-color: #f7eac7;
+        }
+
         .summary-item.question-qnswered {
-            background-color: #ffc10752;
+            background-color: #e1aee9;
         }
 
         .summary-item.incorrect {
@@ -196,35 +203,62 @@
     private ExamExecution examExecution;
     public ICollection<ExamAnswer> examAnswers;
     public int questionNum;
+    public double SuccessRate;
     public int i = 0;
     public TimeSpan totalTime;
 
     public int correctAnswersNum = 0;
-    public int wrongAnswersNum = 0;
-    public int openQuestionNum = 0;
+    public int PartiallyCorrectAnswersNum;
+    public int wrongAnswersNum;
+    public int openQuestionNum;
 
     protected override async Task OnInitializedAsync()
     {
         examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?examExecutionId={examExecutionId}");
         examAnswers = examExecution.ExamAnswers;
         questionNum = examExecution.ExamAnswers.Count;
+
+        CalculateResults();
+
+        examExecution.IsReviewed = true;
+        await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
+        SuccessRate = (examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum);
+    }
+
+    private void CalculateResults()
+    {
         totalTime = TimeSpan.Zero;
-        foreach (var answer in examExecution.ExamAnswers)
+
+        foreach (var examAnswer in examExecution.ExamAnswers)
         {
-            totalTime = totalTime.Add(answer.TimeSpent);
+            totalTime = totalTime.Add(examAnswer.TimeSpent);
+
+            if (examAnswer.Answer != null)
+            {
+                switch (examAnswer.AnswerCorrectnessLevel)
+                {
+                    case AnswerCorrectnessLevelEnum.Correct:
+                        correctAnswersNum++;
+                        break;
+                    case AnswerCorrectnessLevelEnum.PartiallyCorrect:
+                        PartiallyCorrectAnswersNum++;
+                        break;
+                    case AnswerCorrectnessLevelEnum.Wrong:
+                        wrongAnswersNum++;
+                        break;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(examAnswer.TextAnswer))
+            {
+                openQuestionNum++;
+            }
         }
 
-        // Calculate correct and wrong answers
-        correctAnswersNum = examExecution.ExamAnswers.Count(ea => ea.Answer != null && ea.Answer.IsCorrectAnswer);
-        wrongAnswersNum = examExecution.ExamAnswers.Count(ea => ea.Answer != null && !(ea.Answer.IsCorrectAnswer));
-
-        examExecution.CorrectAnswers = correctAnswersNum;
-        examExecution.WrongAnswers = wrongAnswersNum;
-        examExecution.ExamAnswers = examAnswers;
+        examExecution.CorrectAnswersNum = correctAnswersNum;
+        examExecution.PartiallyCorrectAnswersNum = PartiallyCorrectAnswersNum;
+        examExecution.WrongAnswersNum = wrongAnswersNum;
         examExecution.QuestionsAnswered = examAnswers.Count(ea => ea.AnswerId != null);
-        openQuestionNum = examAnswers.Count(ea => ea.TextAnswer != null);
-
-        await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
