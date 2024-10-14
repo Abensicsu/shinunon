@@ -15,7 +15,7 @@
 
 <h3>BooksComponent</h3>
 
-@if (books == null)
+@* @if (books == null)
 {
     <p><em>Loading...</em></p>
 }
@@ -25,7 +25,7 @@ else if (selectedBook == null)
     <ul>
         @foreach (var book in books)
         {
-            <li @onclick="() => SelectBook(book)">@book.HebrewBookName</li>
+            <li @onclick="() => LoadBookTopics(book)">@book.HebrewBookName</li>
         }
     </ul>
 }
@@ -35,12 +35,16 @@ else if (selectedSubject == null)
     <ul>
         @foreach (var subject in selectedBook.Subjects)
         {
+<<<<<<< HEAD
             <li @onclick="() => SelectSubject(subject)">@subject.SubjectName</li>
+=======
+            <li @onclick="() => SelectTopic(topic)">@topic.SubjectName</li>
+>>>>>>> 98a283474309fc3f8bdba4c36b57c44ec9580c10
         }
     </ul>
     <button @onclick="DeselectBook">Back to Books</button>
 }
-else
+@* else
 {
     <h4>Subject Detail: @selectedSubject.SubjectName</h4>
     // <p>@selectedSubject.SubjectText?.SubjectTextContent</p>
@@ -52,9 +56,25 @@ else
     </ul>
     <button @onclick="DeselectSubject">Back to Subjects</button>
     <button @onclick="DeselectBook">Back to Books</button>
+} *@
+@* 
+else
+{
+    <h4>Topic Detail: @selectedSubject.SubjectName</h4>
+    // <p>@selectedSubject.SubjectText?.SubjectTextContent</p>
+    <ul style="direction:rtl;font-size:xx-large">
+        @foreach (var item in TextData)
+        {
+            <li>@((MarkupString)item)</li>
+        }
+    </ul>
+    <button @onclick="DeselectTopic">Back to Topics</button>
+    <button @onclick="DeselectBook">Back to Books</button>
 }
 
 <button @onclick="readDataFromSefaria">read data</button>
+
+
 
 @code {
     public List<Book> books;
@@ -63,7 +83,11 @@ else
 
     public List<string> TextData => selectedSubject != null ?
                                  JArray.Parse(selectedSubject.SubjectText.SubjectTextContent)
+<<<<<<< HEAD
                                 .Select(x => x.ToString()).ToList() : new List<string>();
+=======
+                                .Select(x=>x.ToString()).ToList() : new List<string>();
+>>>>>>> 98a283474309fc3f8bdba4c36b57c44ec9580c10
 
 
     protected override async Task OnInitializedAsync()
@@ -82,6 +106,7 @@ else
         selectedSubject = null;
     }
 
+<<<<<<< HEAD
     public async Task SelectSubject(Subject subject)
     {
         if (subject.SubjectText == null)
@@ -89,6 +114,15 @@ else
             subject.SubjectText = await Http.GetAsync<SubjectText>("api/Book/GetSubjectText/" + subject.SubjectId);
         }
         selectedSubject = subject;
+=======
+    public async Task SelectTopic(Subject topic)
+    {
+        if (topic.SubjectText == null)
+        {
+            topic.SubjectText = await Http.GetAsync<SubjectText>("api/Book/GetSubjectText/" + topic.SubjectId);
+        }
+        selectedSubject = topic;
+>>>>>>> 98a283474309fc3f8bdba4c36b57c44ec9580c10
     }
 
     public void DeselectSubject()
