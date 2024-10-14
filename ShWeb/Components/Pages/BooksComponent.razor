@@ -9,6 +9,7 @@
 @using DataModels.Data
 @using DataModels.Models
 @using DataModels.Services
+@using Newtonsoft.Json.Linq
 
 @page "/books"
 
@@ -35,14 +36,20 @@ else if (selectedSubject == null)
         @foreach (var topic in selectedBook.Subjects)
         {
             <li @onclick="() => SelectTopic(topic)">@topic.SubjectName</li>
-        } 
+        }
     </ul>
     <button @onclick="DeselectBook">Back to Books</button>
 }
 else
 {
     <h4>Topic Detail: @selectedSubject.SubjectName</h4>
-    <p>@selectedSubject.SubjectText?.SubjectTextContent</p>
+    // <p>@selectedSubject.SubjectText?.SubjectTextContent</p>
+    <ul style="direction:rtl;font-size:xx-large">
+        @foreach (var item in TextData)
+        {
+            <li>@((MarkupString)item)</li>
+        }
+    </ul>
     <button @onclick="DeselectTopic">Back to Topics</button>
     <button @onclick="DeselectBook">Back to Books</button>
 }
@@ -54,9 +61,14 @@ else
     public Book selectedBook;
     public Subject selectedSubject;
 
+    public List<string> TextData => selectedSubject != null ?
+                                 JArray.Parse(selectedSubject.SubjectText.SubjectTextContent)
+                                .Select(x=>x.ToString()).ToList() : new List<string>();
+
+
     protected override async Task OnInitializedAsync()
     {
-        books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjectsAndText");
+        books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
     }
 
     public void SelectBook(Book book)
@@ -70,8 +82,12 @@ else
         selectedSubject = null;
     }
 
-    public void SelectTopic(Subject topic)
+    public async Task SelectTopic(Subject topic)
     {
+        if (topic.SubjectText == null)
+        {
+            topic.SubjectText = await Http.GetAsync<SubjectText>("api/Book/GetSubjectText/" + topic.SubjectId);
+        }
         selectedSubject = topic;
     }
 
