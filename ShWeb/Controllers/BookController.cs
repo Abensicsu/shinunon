@@ -16,17 +16,17 @@ namespace ShWeb.Controllers
             Cx = cx;
         }
 
-        //[HttpGet]
-        //public List<Book> AllBooks()
-        //{
-        //    return Cx.Books.ToList();
-        //}
+        [HttpGet]
+        public List<Book> AllBooks()
+        {
+            return Cx.Books.ToList();
+        }
 
-        //[HttpGet]
-        //public async Task<List<Book>> AllBooksIncludeSubjects()
-        //{
-        //    return await Cx.Books.Include(b => b.Subjects).ToListAsync();
-        //}
+        [HttpGet]
+        public async Task<List<Book>> AllBooksIncludeSubjects()
+        {
+            return await Cx.Books.Include(b => b.Subjects).ToListAsync();
+        }
 
         //[HttpGet]
         //public async Task<List<Book>> AllBooksIncludeSubjectsAndText()
@@ -36,29 +36,11 @@ namespace ShWeb.Controllers
         //        .ThenInclude(s => s.SubjectText).ToListAsync();
         //}
 
-        [HttpGet]
-        public List<Book> AllBooks()
+        [HttpGet("{SubjectID}")]
+        public async Task<SubjectText> GetSubjectText(int SubjectID)
         {
-            return Cx.Books.ToList(); 
+            return await Cx.Subjects.Where(x => x.SubjectId == SubjectID)
+                        .Select(x => x.SubjectText).FirstAsync();
         }
-
-        [HttpGet("{bookId}")]
-        public async Task<List<Subject>> GetBookSubjects(int bookId)
-        {
-            // Retrieve subjects for a specific book
-            var book = await Cx.Books.Include(b => b.Subjects)
-                                     .FirstOrDefaultAsync(b => b.BookId == bookId);
-            return book?.Subjects.ToList() ?? new List<Subject>();
-        }
-
-        [HttpGet("{subjectId}")]
-        public async Task<SubjectText> GetSubjectText(int subjectId)
-        {
-            // Retrieve the text for a specific subject
-            var subject = await Cx.Subjects.Include(s => s.SubjectText)
-                                           .FirstOrDefaultAsync(s => s.SubjectId == subjectId);
-            return subject?.SubjectText;
-        }
-
     }
 }
