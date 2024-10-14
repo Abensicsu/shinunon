@@ -28,12 +28,19 @@ namespace ShWeb.Controllers
             return await Cx.Books.Include(b => b.Subjects).ToListAsync();
         }
 
-        [HttpGet]
-        public async Task<List<Book>> AllBooksIncludeSubjectsAndText()
+        //[HttpGet]
+        //public async Task<List<Book>> AllBooksIncludeSubjectsAndText()
+        //{
+        //    return await Cx.Books
+        //        .Include(b => b.Subjects)
+        //        .ThenInclude(s => s.SubjectText).ToListAsync();
+        //}
+
+        [HttpGet("{SubjectID}")]
+        public async Task<SubjectText> GetSubjectText(int SubjectID)
         {
-            return await Cx.Books
-                .Include(b => b.Subjects)
-                .ThenInclude(s => s.SubjectText).ToListAsync();
+            return await Cx.Subjects.Where(x=>x.SubjectId==SubjectID)
+                        .Select(x=>x.SubjectText).FirstAsync();
         }
     }
 }
