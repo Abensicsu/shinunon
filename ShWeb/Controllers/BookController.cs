@@ -16,24 +16,49 @@ namespace ShWeb.Controllers
             Cx = cx;
         }
 
+        //[HttpGet]
+        //public List<Book> AllBooks()
+        //{
+        //    return Cx.Books.ToList();
+        //}
+
+        //[HttpGet]
+        //public async Task<List<Book>> AllBooksIncludeSubjects()
+        //{
+        //    return await Cx.Books.Include(b => b.Subjects).ToListAsync();
+        //}
+
+        //[HttpGet]
+        //public async Task<List<Book>> AllBooksIncludeSubjectsAndText()
+        //{
+        //    return await Cx.Books
+        //        .Include(b => b.Subjects)
+        //        .ThenInclude(s => s.SubjectText).ToListAsync();
+        //}
+
         [HttpGet]
         public List<Book> AllBooks()
         {
-            return Cx.Books.ToList();
+            return Cx.Books.ToList(); 
         }
 
-        [HttpGet]
-        public async Task<List<Book>> AllBooksIncludeSubjects()
+        [HttpGet("{bookId}")]
+        public async Task<List<Subject>> GetBookSubjects(int bookId)
         {
-            return await Cx.Books.Include(b => b.Subjects).ToListAsync();
+            // Retrieve subjects for a specific book
+            var book = await Cx.Books.Include(b => b.Subjects)
+                                     .FirstOrDefaultAsync(b => b.BookId == bookId);
+            return book?.Subjects.ToList() ?? new List<Subject>();
         }
 
-        [HttpGet]
-        public async Task<List<Book>> AllBooksIncludeSubjectsAndText()
+        [HttpGet("{subjectId}")]
+        public async Task<SubjectText> GetSubjectText(int subjectId)
         {
-            return await Cx.Books
-                .Include(b => b.Subjects)
-                .ThenInclude(s => s.SubjectText).ToListAsync();
+            // Retrieve the text for a specific subject
+            var subject = await Cx.Subjects.Include(s => s.SubjectText)
+                                           .FirstOrDefaultAsync(s => s.SubjectId == subjectId);
+            return subject?.SubjectText;
         }
+
     }
 }
