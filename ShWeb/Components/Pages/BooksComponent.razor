@@ -9,6 +9,7 @@
 @using DataModels.Data
 @using DataModels.Models
 @using DataModels.Services
+@using Newtonsoft.Json.Linq
 
 @page "/books"
 
@@ -50,63 +51,13 @@ else if (selectedSubject == null)
 else
 {
     <h4>Topic Detail: @selectedSubject.SubjectName</h4>
-    @if (selectedSubject.SubjectText == null)
-    {
-        <p><em>Loading topic text...</em></p>
-    }
-    else
-    {
-        <p>@selectedSubject.SubjectText.SubjectTextContent</p>
-    }
-    <button @onclick="DeselectTopic">Back to Topics</button>
-    <button @onclick="DeselectBook">Back to Books</button>
-} *@
-
-@* <button @onclick="readDataFromSefaria">read data</button> *@
- 
-@if (books == null)
-{
-    <p><em>Loading books...</em></p>
-}
-else if (selectedBook == null)
-{
-    <h4>Select a Book</h4>
-    <ul>
-        @foreach (var book in books)
+    // <p>@selectedSubject.SubjectText?.SubjectTextContent</p>
+    <ul style="direction:rtl;font-size:xx-large">
+        @foreach (var item in TextData)
         {
-            <li @onclick="() => LoadBookTopics(book)">@book.HebrewBookName</li>
+            <li>@((MarkupString)item)</li>
         }
     </ul>
-}
-else if (selectedSubject == null)
-{
-    <h4>Topics in @selectedBook.HebrewBookName</h4>
-    @if (selectedBook.Subjects == null)
-    {
-        <p><em>Loading topics...</em></p>
-    }
-    else
-    {
-        <ul>
-            @foreach (var topic in selectedBook.Subjects)
-            {
-                <li @onclick="() => LoadTopicText(topic)">@topic.SubjectName</li>
-            }
-        </ul>
-        <button @onclick="DeselectBook">Back to Books</button>
-    }
-}
-else
-{
-    <h4>Topic Detail: @selectedSubject.SubjectName</h4>
-    @if (selectedSubject.SubjectText == null)
-    {
-        <p><em>Loading topic text...</em></p>
-    }
-    else
-    {
-        <p>@selectedSubject.SubjectText.SubjectTextContent</p>
-    }
     <button @onclick="DeselectTopic">Back to Topics</button>
     <button @onclick="DeselectBook">Back to Books</button>
 }
@@ -120,22 +71,14 @@ else
     public Book selectedBook;
     public Subject selectedSubject;
 
+    public List<string> TextData => selectedSubject != null ?
+                                 JArray.Parse(selectedSubject.SubjectText.SubjectTextContent)
+                                .Select(x=>x.ToString()).ToList() : new List<string>();
+
+
     protected override async Task OnInitializedAsync()
     {
-        // books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjectsAndText");
-        books = await Http.GetAsync<List<Book>>("api/Book/AllBooks");
-    }
-
-    public async Task LoadBookTopics(Book book)
-    {
-        selectedBook = book;
-        selectedBook.Subjects = await Http.GetAsync<List<Subject>>($"api/Book/GetBookSubjects/{book.BookId}");
-    }
-
-    public async Task LoadTopicText(Subject topic)
-    {
-        selectedSubject = topic;
-        selectedSubject.SubjectText = await Http.GetAsync<SubjectText>($"api/Book/GetSubjectText/{topic.SubjectId}");
+        books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
     }
 
     public void SelectBook(Book book)
@@ -149,8 +92,12 @@ else
         selectedSubject = null;
     }
 
-    public void SelectTopic(Subject topic)
+    public async Task SelectTopic(Subject topic)
     {
+        if (topic.SubjectText == null)
+        {
+            topic.SubjectText = await Http.GetAsync<SubjectText>("api/Book/GetSubjectText/" + topic.SubjectId);
+        }
         selectedSubject = topic;
     }
 

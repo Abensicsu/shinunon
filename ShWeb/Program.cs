@@ -78,7 +78,11 @@ builder.Services.AddScoped<SefariaService>();
 
 builder.Services.AddScoped(sp => new HttpClient
 {
+#if DEBUG
     BaseAddress = new Uri("https://localhost:7115")
+#else
+    BaseAddress = new Uri("https://shn.datasyspro.com")
+#endif
 });
 
 builder.Services.AddScoped<CustomHttpClientService>();

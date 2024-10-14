@@ -51,13 +51,19 @@ namespace ShWeb.Controllers
             return book?.Subjects.ToList() ?? new List<Subject>();
         }
 
-        [HttpGet("{subjectId}")]
-        public async Task<SubjectText> GetSubjectText(int subjectId)
+        //[HttpGet]
+        //public async Task<List<Book>> AllBooksIncludeSubjectsAndText()
+        //{
+        //    return await Cx.Books
+        //        .Include(b => b.Subjects)
+        //        .ThenInclude(s => s.SubjectText).ToListAsync();
+        //}
+
+        [HttpGet("{SubjectID}")]
+        public async Task<SubjectText> GetSubjectText(int SubjectID)
         {
-            // Retrieve the text for a specific subject
-            var subject = await Cx.Subjects.Include(s => s.SubjectText)
-                                           .FirstOrDefaultAsync(s => s.SubjectId == subjectId);
-            return subject?.SubjectText;
+            return await Cx.Subjects.Where(x=>x.SubjectId==SubjectID)
+                        .Select(x=>x.SubjectText).FirstAsync();
         }
 
     }
