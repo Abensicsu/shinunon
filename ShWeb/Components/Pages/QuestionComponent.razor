@@ -1,229 +1,4 @@
-﻿@* @rendermode InteractiveServer
-
-<h3>ComponentQuestion</h3>
-
-@inject CustomHttpClientService Http
-
-@using DataModels.Models
-@using Npgsql
-@using System.Collections.Generic
-
-@page "/questions"
-
-
-@if (questions == null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <table class="table">
-        <thead>
-            <tr>
-                <th>SubjectName</th>
-                <th>SubjectId</th>
-                <th>QuestionId</th>
-                <th>QuestionType</th>
-                <th>QuestionText</th>
-                <th>Base\User Question</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var question in questions)
-            {
-                <tr>
-                    <td>@question.Subject.SubjectName</td>
-                    <td>@question.Subject.SubjectId</td>
-                    <td>@question.BaseQuestionId</td>
-                    <td>@question.QuestionType</td>
-                    <td>@question.QuestionText</td>
-                    <td>@question.DiscriminatorRF</td>
-                    <td>
-                        @if (question.QuestionType == QuestionTypeEnum.OpenQuestion)
-                        {
-                            <div>
-                                @foreach (var answer in question.Answers)
-                                {
-                                    <p>@answer.AnswerText</p>
-                                }
-                            </div>
-                        }
-                        else if (question.QuestionType == QuestionTypeEnum.SelectQuestion)
-                        {
-                            <div>
-                                <ul>
-                                    @foreach (var answer in question.Answers)
-                                    {
-                                        <li>
-                                            <b>Text:</b> @answer.AnswerText
-                                            <b>A.ID:</b> @answer.AnswerId
-                                            <b>BQ.ID:</b> @answer.BaseQuestionId
-                                        </li>
-                                    }
-                                </ul>
-                            </div>
-                        }
-                    </td>
-                    <td>
-                        <button @onclick="() => EditQuestion(question)">Edit</button>
-                        <button @onclick="() => DeleteQuestion(question.BaseQuestionId)">Delete</button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-
-<h4>Add Question</h4>
-
-<!-- Display dropdown list with subjects -->
-<div>
-    <label for="subject">Select a subject:</label>
-    <select id="subject" @onchange="OnSelectionChange">
-        <option value="0">Select</option>
-        @if (subjects != null)
-        {
-            @foreach (var subject in subjects)
-            {
-                <option value="@subject.SubjectId">@subject.SubjectName</option>
-            }
-        }
-    </select>
-</div>
-
-<b>Question Text</b>
-<input @bind="newQuestion.QuestionText" />
-
-<b>Question Type</b>
-<InputSelect @bind-Value="@newQuestion.QuestionType">
-
-    @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
-    {
-        <option value="@qType">@qType</option>
-    }
-</InputSelect>
-
-<button @onclick="AddQuestion">Add</button>
-
-<!-- Modal for Editing -->
-@if (editingQuestion != null)
-{
-    <div class="modal show" style="display:block;" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Question</h5>
-                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div>
-                        <label for="editSubject">Subject:</label>
-                        <select id="editSubject" @bind="editingQuestion.SubjectId">
-                            @if (subjects != null)
-                            {
-                                @foreach (var subject in subjects)
-                                {
-                                    <option value="@subject.SubjectId">@subject.SubjectName</option>
-                                }
-                            }
-                        </select>
-                    </div>
-                    <div>
-                        <label>Question Type:</label>
-                        <InputSelect @bind-Value="@editingQuestion.QuestionType">
-                            @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
-                            {
-                                <option value="@qType">@qType</option>
-                            }
-                        </InputSelect>
-                    </div>
-                    <div>
-                        <label>Question Text:</label>
-                        <InputText @bind-Value="editingQuestion.QuestionText" />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" @onclick="SaveEditedQuestion">Save</button>
-                    <button class="btn btn-secondary" @onclick="CloseEditModal">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-@code {
-    public int userId = 1;
-    public BaseQuestion[] questions { get; set; }
-    public UserQuestion newQuestion { get; set; } = new UserQuestion();
-    public Subject[] subjects { get; set; }
-    private Subject selectedSubject;
-    private UserQuestion editingQuestion;
-
-    protected override async Task OnInitializedAsync()
-    {
-        questions = await Http.GetAsync<BaseQuestion[]>($"api/Question/AllQuestions?UserId={userId}");
-        subjects = await Http.GetAsync<Subject[]>("api/Subject/AllSubjects");
-    }
-
-    protected async Task AddQuestion()
-    {
-        newQuestion.SubjectId = selectedSubject.SubjectId;
-        newQuestion.UserId = userId;
-        // newQuestion.BaseQuestionId = ;
-        await Http.PostAsync<UserQuestion, string>("api/Question/Add", newQuestion);
-        await RefreshQuestionsAndResetInputs();
-    }
-
-    // Method to handle selection change
-    private void OnSelectionChange(ChangeEventArgs e)
-    {
-        int selectedId = Convert.ToInt32(e.Value);
-        selectedSubject = subjects.FirstOrDefault(s => s.SubjectId == selectedId);
-    }
-
-    private void EditQuestion(BaseQuestion question)
-    {
-        editingQuestion = new UserQuestion
-            {
-                // BaseQuestionId = question.BaseQuestionId,
-                QuestionText = question.QuestionText,
-                QuestionType = question.QuestionType,
-                SubjectId = question.SubjectId,
-                UserId = userId,
-                OriginalQuestionId = question.BaseQuestionId
-            };
-    }
-
-    private async Task SaveEditedQuestion()
-    {
-        await Http.PostAsync<UserQuestion, string>("api/Question/Add", editingQuestion);
-        await RefreshQuestionsAndResetInputs();
-        CloseEditModal();
-    }
-
-    private void CloseEditModal()
-    {
-        editingQuestion = null;
-    }
-
-    private async Task DeleteQuestion(int questionId)
-    {
-        await Http.DeleteAsync($"api/Question/Delete/{questionId}");
-        await RefreshQuestionsAndResetInputs();
-    }
-
-    private async Task RefreshQuestionsAndResetInputs()
-    {
-        // Refresh the list of questions
-        questions = await Http.GetAsync<BaseQuestion[]>($"api/Question/AllQuestions?UserId={userId}");
-
-        // Reset inputs for adding questions
-        newQuestion = new UserQuestion();
-        selectedSubject = null;
-    }
-} *@
-
-@rendermode InteractiveServer
+﻿@rendermode InteractiveServer
 
 <h3>ComponentQuestion</h3>
 
@@ -264,7 +39,7 @@ else
                     <td>@question.QuestionText</td>
                     <td>@question.DiscriminatorRF</td>
                     <td>
-                        <button @onclick="() => EditQuestion(question)">Edit</button>
+                        @* <button @onclick="() => EditQuestion(question)">Edit</button> *@
                         <button @onclick="() => DeleteQuestion(question.BaseQuestionId)">Delete</button>
                     </td>
                 </tr>
@@ -274,6 +49,7 @@ else
 }
 
 <h4>Add Question</h4>
+<br />
 
 <div>
     <label for="subject">Select a subject:</label>
@@ -290,7 +66,7 @@ else
 </div>
 
 <b>Question Text</b>
-<input @bind="newQuestion.QuestionText" />
+<InputText @bind="newQuestion.QuestionText" />
 
 <b>Question Type</b>
 <InputSelect @bind-Value="@newQuestion.QuestionType">
@@ -300,88 +76,26 @@ else
     }
 </InputSelect>
 
-<button @onclick="AddQuestion">Add</button>
-
-@if (editingQuestion != null)
+<b>Add Answers</b>
+<br />
+@if(newQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
 {
-    <div class="modal show" style="display:block;" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Question</h5>
-                    <button type="button" class="btn-close" @onclick="CloseEditModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div>
-                        <label for="editSubject">Subject:</label>
-                        <select id="editSubject" @bind="editingQuestion.SubjectId">
-                            @if (subjects != null)
-                            {
-                                @foreach (var subject in subjects)
-                                {
-                                    <option value="@subject.SubjectId">@subject.SubjectName</option>
-                                }
-                            }
-                        </select>
-                    </div>
-                    <div>
-                        <label>Question Type:</label>
-                        <InputSelect @bind-Value="editingQuestion.QuestionType" @onchange="OnQuestionTypeChange">
-                            @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
-                            {
-                                <option value="@qType">@qType</option>
-                            }
-                        </InputSelect>
-                    </div>
-                    <div>
-                        <label>Question Text:</label>
-                        <InputText @bind-Value="editingQuestion.QuestionText" />
-                    </div>
-
-                    @if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
-                    {
-                        <div>
-                            <label>Answer:</label>
-                            @foreach (var answer in editingQuestion.Answers)
-                            {
-                                <InputText @bind-Value="answer.AnswerText" />
-                            }
-                        </div>
-                    }
-                    else if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
-                    {
-                        <div>
-                            <label>Answers:</label>
-                            @foreach (var answer in editingQuestion.Answers)
-                            {
-                                <div>
-                                    <InputText @bind-Value="answer.AnswerText" placeholder="Answer Text" />
-                                    <InputCheckbox @bind-Value="answer.IsCorrectAnswer" />
-                                    <button @onclick="() => RemoveAnswer(answer)">Remove</button>
-                                </div>
-                            }
-                            <button @onclick="AddNewAnswer">Add New Answer</button>
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" @onclick="SaveEditedQuestion">Save</button>
-                    <button class="btn btn-secondary" @onclick="CloseEditModal">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <InputTextArea ></InputTextArea>
 }
+
+
+<button @onclick="AddQuestion">Add</button>
 
 @code {
     public int userId = 1;
     public BaseQuestion[] questions { get; set; }
-    public UserQuestion newQuestion { get; set; } = new UserQuestion();
+    public UserQuestion newQuestion { get; set; } = new UserQuestion
+    {
+        Answers = new List<Answer>()
+    };
     public Subject[] subjects { get; set; }
     private Subject selectedSubject;
-    private UserQuestion editingQuestion;
-    private bool isEditingOpenQuestionToClosed = false;
-    private bool isEditingClosedQuestionToOpen = false;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -403,88 +117,20 @@ else
         selectedSubject = subjects.FirstOrDefault(s => s.SubjectId == selectedId);
     }
 
-    private void EditQuestion(BaseQuestion question)
-    {
-        editingQuestion = new UserQuestion
-            {
-                QuestionText = question.QuestionText,
-                QuestionType = question.QuestionType,
-                SubjectId = question.SubjectId,
-                UserId = userId,
-                OriginalQuestionId = question.BaseQuestionId,
-                Answers = question.Answers != null ? new List<Answer>(question.Answers) : new List<Answer>()
-            };
-
-        isEditingOpenQuestionToClosed = question.QuestionType == QuestionTypeEnum.OpenQuestion;
-        isEditingClosedQuestionToOpen = question.QuestionType == QuestionTypeEnum.SelectQuestion;
-    }
-
-    private void OnQuestionTypeChange(ChangeEventArgs e)
-    {
-        var selectedType = (QuestionTypeEnum)Enum.Parse(typeof(QuestionTypeEnum), e.Value.ToString());
-        if (selectedType != editingQuestion.QuestionType)
-        {
-            // Open question to select question
-            if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && selectedType == QuestionTypeEnum.SelectQuestion)
-            {
-                isEditingOpenQuestionToClosed = true;
-                isEditingClosedQuestionToOpen = false;
-                editingQuestion.Answers.Clear(); // Clear existing open answer
-                AddNewAnswer(); // Prepare for multiple choice answers
-            }
-            // Select question to open question
-            else if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && selectedType == QuestionTypeEnum.OpenQuestion)
-            {
-                isEditingOpenQuestionToClosed = false;
-                isEditingClosedQuestionToOpen = true;
-                editingQuestion.Answers.Clear(); // Clear existing multiple choice answers
-                editingQuestion.Answers.Add(new Answer { AnswerText = "" }); // Prepare for text answer
-            }
-        }
-        editingQuestion.QuestionType = selectedType;
-    }
-
-    private void AddNewAnswer()
-    {
-        if (editingQuestion.Answers.Count < 5)
-        {
-            editingQuestion.Answers.Add(new Answer { AnswerText = "", IsCorrectAnswer = false });
-        }
-    }
-
-    private void RemoveAnswer(Answer answer)
-    {
-        editingQuestion.Answers.Remove(answer);
-    }
-
-    private async Task SaveEditedQuestion()
-    {
-        if (isEditingClosedQuestionToOpen && editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
-        {
-            // Ensure only one answer is allowed for an open question
-            editingQuestion.Answers = new List<Answer> { new Answer { AnswerText = editingQuestion.Answers.FirstOrDefault()?.AnswerText } };
-        }
-
-        await Http.PostAsync<UserQuestion, string>("api/Question/Edit", editingQuestion);
-        await RefreshQuestionsAndResetInputs();
-        CloseEditModal();
-    }
-
     private async Task RefreshQuestionsAndResetInputs()
     {
         questions = await Http.GetAsync<BaseQuestion[]>($"api/Question/AllQuestions?UserId={userId}");
         newQuestion = new UserQuestion();
-        editingQuestion = null;
-    }
-
-    private void CloseEditModal()
-    {
-        editingQuestion = null;
     }
 
     private async Task DeleteQuestion(int questionId)
     {
         await Http.DeleteAsync($"api/Question/Delete/{questionId}");
         await RefreshQuestionsAndResetInputs();
+    }
+
+    private async Task EditQuestion(Question question)
+    {
+
     }
 }

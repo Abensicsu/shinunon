@@ -19,14 +19,14 @@ namespace ShWeb.Controllers
         public SHcx Cx { get; }
 
         [HttpGet]
-        public object AllQuestions(int userId)
+        public async Task<BaseQuestion[]> AllQuestions(int userId)
         {
             // All questions
-            var questions = Cx.BaseQuestions
+            BaseQuestion[] questions = await Cx.BaseQuestions
                 .Include(bq => bq.Subject)
                 .Include(bq => (bq as Question).DerivedUserQuestions)
                 .Include(bq => bq.Answers)
-                .ToList();
+                .ToArrayAsync();
 
             return questions;
         }
@@ -38,29 +38,18 @@ namespace ShWeb.Controllers
             Cx.SaveChanges();
         }
 
-        [HttpPut]
-        public IActionResult Edit(UserQuestion updatedQuestion)
+        //[HttpPut]
+        //public IActionResult Edit(UserQuestion updatedQuestion)
+        //{
+        //    return Ok();
+        //}
+
+        [HttpDelete("{questionId}/{userId}")]
+        public IActionResult Delete(int questionId, int userId)//delete original question or only userquestion ??
         {
-            var question = Cx.BaseQuestions.FirstOrDefault(q => q.BaseQuestionId == updatedQuestion.BaseQuestionId);
-            if (question == null)
-            {
-                return NotFound();
-            }
-
-            question.QuestionText = updatedQuestion.QuestionText;
-            question.QuestionType = updatedQuestion.QuestionType;
-            question.SubjectId = updatedQuestion.SubjectId;
-
-            Cx.SaveChanges();
-            return Ok();
-        }
-
-        [HttpDelete("{questionId}")]
-        public IActionResult Delete(int questionId)
-        {
-            var question = Cx.BaseQuestions
+            var question = Cx.UserQuestions
                .Include(q => q.Answers) // Include answers to delete them too
-               .FirstOrDefault(q => q.BaseQuestionId == questionId);
+               .FirstOrDefault(q => q.BaseQuestionId == questionId && q.UserId == userId);
 
             if (question == null)
             {

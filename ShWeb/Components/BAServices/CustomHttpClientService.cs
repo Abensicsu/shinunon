@@ -16,6 +16,7 @@ public class CustomHttpClientService
     public CustomHttpClientService(HttpClient httpClient)
     {
         _httpClient = httpClient;
+        _httpClient.Timeout = TimeSpan.FromMinutes(5); // Set the timeout to 5 minutes, adjust as needed
     }
 
     public async Task<T> GetAsync<T>(string requestUri)
@@ -46,6 +47,7 @@ public class CustomHttpClientService
         var responseJson = await response.Content.ReadAsStringAsync();
         return JsonConvert.DeserializeObject<TResponse>(responseJson, settings);
     }
+
     public async Task<bool> DeleteAsync(string requestUri)
     {
         var response = await _httpClient.DeleteAsync(requestUri);
