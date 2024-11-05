@@ -39,8 +39,15 @@ else
                     <td>@question.QuestionText</td>
                     <td>@question.DiscriminatorRF</td>
                     <td>
-                        @* <button @onclick="() => EditQuestion(question)">Edit</button> *@
-                        <button @onclick="() => DeleteQuestion(question.BaseQuestionId)">Delete</button>
+                        @if (question.DiscriminatorRF == "UserQuestion")
+                        {
+                            <button @onclick="() => EditQuestion(question)">Edit</button>
+                            <button @onclick="() => DeleteQuestion(question.BaseQuestionId)">Delete</button>
+                        }
+                        else
+                        {
+                            <button @onclick="() => EditQuestion(question)">Edit</button>
+                        }
                     </td>
                 </tr>
             }
@@ -48,89 +55,408 @@ else
     </table>
 }
 
-<h4>Add Question</h4>
-<br />
+<button @onclick="AddQuestionBool" class="btn btn-primary">Add</button>
 
-<div>
-    <label for="subject">Select a subject:</label>
-    <select id="subject" @onchange="OnSelectionChange">
-        <option value="0">Select</option>
-        @if (subjects != null)
-        {
-            @foreach (var subject in subjects)
+@if (addQuestion)
+{
+    <h4>Add Question</h4>
+
+    <div>
+        <label for="subject">Select a subject:</label>
+        <select id="subject" @bind="newQuestion.SubjectId">
+            <option value="0">Select</option>
+            @if (subjects != null)
             {
-                <option value="@subject.SubjectId">@subject.SubjectName</option>
+                @foreach (var subject in subjects)
+                {
+                    <option value="@subject.SubjectId">@subject.SubjectName</option>
+                }
             }
+        </select>
+    </div>
+
+    <b>Question Type</b>
+    <select @bind="@newQuestion.QuestionType">
+
+        @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
+        {
+            <option value="@qType">@qType</option> <!-- Cast enum to int for proper binding -->
         }
     </select>
-</div>
 
-<b>Question Text</b>
-<InputText @bind="newQuestion.QuestionText" />
-
-<b>Question Type</b>
-<InputSelect @bind-Value="@newQuestion.QuestionType">
-    @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
+    @if (newQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
     {
-        <option value="@qType">@qType</option>
-    }
-</InputSelect>
+        <h3>Question</h3>
+        <input type="text" @bind="newQuestion.QuestionText" placeholder="question" class="form-control" />
+        <h4>Correct answer:</h4>
+        <textarea @bind="correctAnswerText" @oninput="HandleAnswerInput" placeholder="Correct answer" class="form-control answer-textarea"></textarea>
 
-<b>Add Answers</b>
-<br />
-@if(newQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
-{
-    <InputTextArea ></InputTextArea>
+    }
+    else if (newQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+    {
+        <h3>Question</h3>
+        <input type="text" @bind="newQuestion.QuestionText" placeholder="question" class="form-control" />
+
+        <h4>Answers</h4>
+
+        @foreach (var answer in answers.Select((answer, index) => new { answer, index }))
+        {
+            <div id="answer-@answer.index" class="answer-option" @key="answer.index">
+                <input type="radio" name="correctAnswer" @onclick="() => MarkCorrectAnswer(answer.index)" checked="@answer.answer.IsCorrectAnswer" />
+                <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"answer {answer.index + 1}")" class="form-control" />
+            </div>
+        }
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    <br />
+    <button @onclick="AddQuestion" class="btn btn-primary">Add</button>
 }
 
 
-<button @onclick="AddQuestion">Add</button>
+@* Edit Existing Question Form *@
+@if (editMode)
+{
+    <h4>Edit Question</h4>
+
+    <div>
+        <label for="edit-subject">Select a subject:</label>
+        <select id="edit-subject" @bind="editingQuestion.SubjectId">
+            <option value="0">Select</option>
+            @if (subjects != null)
+            {
+                @foreach (var subject in subjects)
+                {
+                    <option value="@subject.SubjectId">@subject.SubjectName</option>
+                }
+            }
+        </select>
+    </div>
+
+    <b>Question Type</b>
+    <select @onchange="OnEditQuestionTypeChanged">
+        @* <select @bind="editingQuestion.QuestionType" @bind:event="OnEditQuestionTypeChanged"> *@
+        @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
+        {
+            <option value="@qType">@qType</option>
+        }
+    </select>
+
+    @if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+    {
+        <h3>Question</h3>
+        <input type="text" @bind="editingQuestion.QuestionText" placeholder="question" class="form-control" />
+        <h4>Correct answer:</h4>
+        <textarea @bind="correctAnswerText" placeholder="Correct answer" class="form-control answer-textarea"></textarea>
+    }
+    else if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+    {
+        <h3>Question</h3>
+        <input type="text" @bind="editingQuestion.QuestionText" placeholder="question" class="form-control" />
+
+        <h4>Answers</h4>
+        @foreach (var answer in answers.Select((answer, index) => new { answer, index }))
+        {
+            <div class="answer-option">
+                <input type="radio" name="correctAnswer" @onclick="() => MarkCorrectAnswer(answer.index)" checked="@answer.answer.IsCorrectAnswer" />
+                <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"answer {answer.index + 1}")" class="form-control" />
+            </div>
+        }
+    }
+
+    <br />
+    <button @onclick="SaveEditedQuestion" class="btn btn-primary">Save Changes</button>
+
+}
+
+
+<style>
+    .answers {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .answer-option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+    }
+
+        .answer-option input[type="radio"] {
+            margin-right: 8px;
+        }
+
+    .form-control {
+        width: 100%;
+        max-width: 400px;
+    }
+</style>
+
 
 @code {
     public int userId = 1;
     public BaseQuestion[] questions { get; set; }
-    public UserQuestion newQuestion { get; set; } = new UserQuestion
-    {
-        Answers = new List<Answer>()
-    };
+    public UserQuestion newQuestion { get; set; } = new UserQuestion { };
     public Subject[] subjects { get; set; }
-    private Subject selectedSubject;
+    private Subject selectedSubject { get; set; } = new Subject { };
+    private string correctAnswerText { get; set; } = string.Empty;
+    private List<Answer> answers { get; set; } = new List<Answer>();
 
+    public string AnswerText { get; set; }
+    public bool IsCorrectAnswer { get; set; }
+    private string errorMessage = string.Empty;
+    private bool isAnswerFieldFilled = false; // Track if the answer field is filled
+    private UserQuestion editingQuestion { get; set; } = new UserQuestion { };
+    private bool editMode = false;
+    private bool addQuestion = false;
 
     protected override async Task OnInitializedAsync()
     {
-        questions = await Http.GetAsync<BaseQuestion[]>($"api/Question/AllQuestions?UserId={userId}");
+        questions = await Http.GetAsync<BaseQuestion[]>($"api/Question/AllQuestions");
         subjects = await Http.GetAsync<Subject[]>("api/Subject/AllSubjects");
+        InitializeAnswers();
+    }
+
+    private void InitializeAnswers()
+    {
+        answers.Clear();
+        for (int i = 0; i < 4; i++)
+        {
+            answers.Add(new Answer
+                {
+                    AnswerText = string.Empty,
+                    IsCorrectAnswer = false
+                });
+        }
+    }
+
+    private void AddQuestionBool()
+    {
+        addQuestion = true;
+    }
+
+    // Method that handles the onchange event
+    private void OnQuestionTypeChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse(typeof(QuestionTypeEnum), e.Value.ToString(), out var parsedType))
+        {
+            newQuestion.QuestionType = (QuestionTypeEnum)parsedType;
+            InitializeAnswers(); // Reset answers each time question type is changed
+        }
+    }
+
+    private void HandleAnswerInput(ChangeEventArgs e)
+    {
+        correctAnswerText = e.Value.ToString(); // Update answer text
+        isAnswerFieldFilled = true; // Update typing status
+    }
+
+
+    private void MarkCorrectAnswer(int index)
+    {
+        // Set all other answers' IsCorrectAnswer to false
+        for (int i = 0; i < answers.Count; i++)
+        {
+            answers[i].IsCorrectAnswer = (i == index);
+        }
     }
 
     protected async Task AddQuestion()
     {
-        newQuestion.SubjectId = selectedSubject.SubjectId;
+        editMode = false;
+        if (newQuestion.SubjectId == 0)
+        {
+            errorMessage = "Please select a subject";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newQuestion.QuestionText) || (newQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && string.IsNullOrWhiteSpace(correctAnswerText)))
+        {
+            errorMessage = "Please enter question and answer";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(newQuestion.QuestionText))
+        {
+            errorMessage = "Please fill out the question and answers text";
+            return;
+        }
+
+        if (newQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Count < 4)
+        {
+            errorMessage = "Provide at least 4 answers for Select questions";
+            return;
+        }
+
+        // Check if any answer is empty, null, or whitespace
+        if (answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
+        {
+            errorMessage = "Please fill out all answers";
+            return;
+        }
+
+        // Add answers based on question type
+        if (newQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+        {
+            newQuestion.Answers = new List<Answer>
+            {
+                new Answer
+                {
+                    AnswerText = correctAnswerText,
+                    IsCorrectAnswer = false
+                }
+            };
+        }
+        else if (newQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+        {
+            // Ensure at least one correct answer is set
+            var correctAnswerExists = answers.Any(a => a.IsCorrectAnswer);
+            if (!correctAnswerExists)
+            {
+                errorMessage = "At least one answer must be marked as correct for Select questions.";
+                return;
+            }
+
+            newQuestion.Answers = answers; // Add all answers for Select questions
+
+        }
+
         newQuestion.UserId = userId;
         await Http.PostAsync<UserQuestion, string>("api/Question/Add", newQuestion);
         await RefreshQuestionsAndResetInputs();
     }
 
-    private void OnSelectionChange(ChangeEventArgs e)
+    private async Task DeleteQuestion(int questionId)
     {
-        int selectedId = Convert.ToInt32(e.Value);
-        selectedSubject = subjects.FirstOrDefault(s => s.SubjectId == selectedId);
+        await Http.DeleteAsync($"api/Question/Delete/{questionId}/{userId}");
+        await RefreshQuestionsAndResetInputs();
     }
 
     private async Task RefreshQuestionsAndResetInputs()
     {
         questions = await Http.GetAsync<BaseQuestion[]>($"api/Question/AllQuestions?UserId={userId}");
         newQuestion = new UserQuestion();
+        editingQuestion = new UserQuestion();
+        InitializeAnswers(); // Reset the answers list after adding a question
+        errorMessage = string.Empty;// Reset error message if valid
+        isAnswerFieldFilled = false;
     }
 
-    private async Task DeleteQuestion(int questionId)
+    private void OnEditQuestionTypeChanged(ChangeEventArgs e)
     {
-        await Http.DeleteAsync($"api/Question/Delete/{questionId}");
+        if (Enum.TryParse(typeof(QuestionTypeEnum), e.Value.ToString(), out var parsedType))
+        {
+            editingQuestion.QuestionType = (QuestionTypeEnum)parsedType;
+            InitializeAnswers();
+        }
+    }
+
+    private void EditQuestion(BaseQuestion question)
+    {
+        editMode = true;
+        addQuestion = false;
+        // Casting to UserQuestion for editing
+        if (question.DiscriminatorRF == "Question")
+        {
+            editingQuestion = new UserQuestion
+                {
+                    OriginalQuestionId = question.BaseQuestionId,
+                    QuestionText = question.QuestionText,
+                    QuestionType = question.QuestionType,
+                    SubjectId = question.Subject.SubjectId,
+                    UserId = userId
+                };
+
+        }
+        else if (question.DiscriminatorRF == "UserQuestion")
+        {
+            editingQuestion = new UserQuestion
+                {
+                    BaseQuestionId = question.BaseQuestionId,
+                    QuestionText = question.QuestionText,
+                    QuestionType = question.QuestionType,
+                    SubjectId = question.Subject.SubjectId,
+                    UserId = userId
+                };
+        }
+
+        answers = question.Answers.Select(a => new Answer
+            {
+                AnswerText = a.AnswerText,
+                IsCorrectAnswer = a.IsCorrectAnswer
+            }).ToList();
+
+        correctAnswerText = editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && answers.Any() ? answers.First().AnswerText : string.Empty;
+    }
+
+    private async Task SaveEditedQuestion()
+    {
+        if (editingQuestion.SubjectId == 0)
+        {
+            errorMessage = "Please select a subject";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(editingQuestion.QuestionText) || (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && string.IsNullOrWhiteSpace(correctAnswerText)))
+        {
+            errorMessage = "Please enter question and answer";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(editingQuestion.QuestionText))
+        {
+            errorMessage = "Please fill out the question and answers text";
+            return;
+        }
+
+        if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Count < 4)
+        {
+            errorMessage = "Provide at least 4 answers for Select questions";
+            return;
+        }
+
+        // Check if any answer is empty, null, or whitespace
+        if (answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
+        {
+            errorMessage = "Please fill out all answers";
+            return;
+        }
+
+        // Add answers based on question type
+        if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+        {
+            editingQuestion.Answers = new List<Answer>
+            {
+                new Answer
+                {
+                    AnswerText = correctAnswerText,
+                    IsCorrectAnswer = false
+                }
+            };
+        }
+        else if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+        {
+            // Ensure at least one correct answer is set
+            var correctAnswerExists = answers.Any(a => a.IsCorrectAnswer);
+            if (!correctAnswerExists)
+            {
+                errorMessage = "At least one answer must be marked as correct for Select questions.";
+                return;
+            }
+
+            editingQuestion.Answers = answers; // Add all answers for Select questions
+        }
+
+        editingQuestion.UserId = userId;
+        await Http.PutAsync<UserQuestion, string>("api/Question/Edit", editingQuestion);
         await RefreshQuestionsAndResetInputs();
-    }
-
-    private async Task EditQuestion(Question question)
-    {
-
+        editMode = false;
+        addQuestion = false;
     }
 }

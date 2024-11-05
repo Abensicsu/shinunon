@@ -16,7 +16,6 @@ public class CustomHttpClientService
     public CustomHttpClientService(HttpClient httpClient)
     {
         _httpClient = httpClient;
-        _httpClient.Timeout = TimeSpan.FromMinutes(5); // Set the timeout to 5 minutes, adjust as needed
     }
 
     public async Task<T> GetAsync<T>(string requestUri)

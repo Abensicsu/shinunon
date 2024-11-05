@@ -21,12 +21,5 @@ namespace ShWeb.Controllers
         {
             return await Cx.Books.Include(b => b.Subjects).ToListAsync();
         }
-
-        [HttpGet("{SubjectID}")]
-        public async Task<SubjectText> GetSubjectText(int SubjectID)
-        {
-            return await Cx.Subjects.Where(x => x.SubjectId == SubjectID)
-                        .Select(x => x.SubjectText).FirstAsync();
-        }
     }
 }

@@ -29,12 +29,11 @@ namespace ShWeb.Controllers
             Cx.SaveChanges();
         }
 
-        [HttpGet]
-        public List<Subject> GetAllSubjectsWithText()
+        [HttpGet("{SubjectID}")]
+        public async Task<SubjectText> GetSubjectText(int SubjectID)
         {
-            return Cx.Subjects
-                .Include(s => s.SubjectText)
-                .ToList();
+            return await Cx.Subjects.Where(x => x.SubjectId == SubjectID)
+                        .Select(x => x.SubjectText).FirstAsync();
         }
     }
 }
