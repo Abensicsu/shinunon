@@ -20,9 +20,9 @@ else
         <thead>
             <tr>
                 <th>SubjectName</th>
-                <th>SubjectId</th>
-                <th>QuestionId</th>
-                <th>QuestionType</th>
+               @*  <th>SubjectId</th>
+                <th>questionid</th> *@
+                <th>questiontype</th>
                 <th>QuestionText</th>
                 <th>Base\User Question</th>
                 <th>Actions</th>
@@ -33,8 +33,8 @@ else
             {
                 <tr>
                     <td>@question.Subject.SubjectName</td>
-                    <td>@question.Subject.SubjectId</td>
-                    <td>@question.BaseQuestionId</td>
+                  @*   <td>@question.Subject.SubjectId</td>
+                    <td>@question.BaseQuestionId</td> *@
                     <td>@question.QuestionType</td>
                     <td>@question.QuestionText</td>
                     <td>@question.DiscriminatorRF</td>
@@ -57,7 +57,7 @@ else
 
 <button @onclick="AddQuestionBool" class="btn btn-primary">Add</button>
 
-@if (addQuestion)
+@if (addQuestionMode)
 {
     <h4>Add Question</h4>
 
@@ -144,7 +144,7 @@ else
         @* <select @bind="editingQuestion.QuestionType" @bind:event="OnEditQuestionTypeChanged"> *@
         @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
         {
-            <option value="@qType">@qType</option>
+            <option value="@qType" selected="@(qType.Equals(editingQuestion.QuestionType))">@qType</option>
         }
     </select>
 
@@ -168,6 +168,13 @@ else
                 <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"answer {answer.index + 1}")" class="form-control" />
             </div>
         }
+    }
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
     }
 
     <br />
@@ -214,11 +221,11 @@ else
     private bool isAnswerFieldFilled = false; // Track if the answer field is filled
     private UserQuestion editingQuestion { get; set; } = new UserQuestion { };
     private bool editMode = false;
-    private bool addQuestion = false;
+    private bool addQuestionMode = false;
 
     protected override async Task OnInitializedAsync()
     {
-        questions = await Http.GetAsync<BaseQuestion[]>($"api/Question/AllQuestions");
+        questions = await Http.GetAsync<BaseQuestion[]>($"api/Question/AllQuestions?UserId={userId}");
         subjects = await Http.GetAsync<Subject[]>("api/Subject/AllSubjects");
         InitializeAnswers();
     }
@@ -238,7 +245,7 @@ else
 
     private void AddQuestionBool()
     {
-        addQuestion = true;
+        addQuestionMode = true;
     }
 
     // Method that handles the onchange event
@@ -295,7 +302,7 @@ else
         }
 
         // Check if any answer is empty, null, or whitespace
-        if (answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
+        if (newQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
         {
             errorMessage = "Please fill out all answers";
             return;
@@ -346,6 +353,8 @@ else
         InitializeAnswers(); // Reset the answers list after adding a question
         errorMessage = string.Empty;// Reset error message if valid
         isAnswerFieldFilled = false;
+        editMode = false;
+        addQuestionMode = false;
     }
 
     private void OnEditQuestionTypeChanged(ChangeEventArgs e)
@@ -360,7 +369,7 @@ else
     private void EditQuestion(BaseQuestion question)
     {
         editMode = true;
-        addQuestion = false;
+        addQuestionMode = false;
         // Casting to UserQuestion for editing
         if (question.DiscriminatorRF == "Question")
         {
@@ -422,7 +431,7 @@ else
         }
 
         // Check if any answer is empty, null, or whitespace
-        if (answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
+        if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
         {
             errorMessage = "Please fill out all answers";
             return;
@@ -456,7 +465,5 @@ else
         editingQuestion.UserId = userId;
         await Http.PutAsync<UserQuestion, string>("api/Question/Edit", editingQuestion);
         await RefreshQuestionsAndResetInputs();
-        editMode = false;
-        addQuestion = false;
     }
 }
