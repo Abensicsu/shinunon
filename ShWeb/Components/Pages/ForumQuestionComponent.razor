@@ -1,0 +1,462 @@
+﻿@rendermode InteractiveServer
+
+@inject CustomHttpClientService Http
+@inject NavigationManager Navigation
+
+@using DataModels.Models
+@using System.Net.Http.Json
+
+@page "/forum/question/{questionId:int}"
+
+<button class="back-link" @onclick="NavigateBackToForum">
+    חזרה <span class="rotated-arrow">↪</span>
+</button>
+
+<div class="question-detail-container">
+    @if (forumQuestion != null)
+    {
+        <button class="btn btn-primary reply-button" @onclick="OpenReplyModal">תשובה</button>
+        <!-- Question Header and Details -->
+        <div class="question-header">
+            <div class="question-type">@GetForumTypeLabel(forumQuestion.ForumQuestionType)</div>
+            <h2>@forumQuestion.ForumQuestionText</h2>
+            <div class="question-meta">
+                <span>@(forumQuestion.User != null ? forumQuestion.User.UserName : "") | @forumQuestion.CreateDate.ToString("dd.MM.yyyy")</span>
+                <span>  @forumQuestion.ViewsCount צפיות</span>
+                <span>  @forumQuestion.Comments.Count תגובות</span>
+            </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section">
+            @foreach (var comment in forumQuestion.Comments)
+            {
+                @if (comment.ParentCommentId == null)
+                {
+                    <div class="comment-item">
+                        <span class="comment-avatar">@GetUserInitial(comment.User?.UserName != null ? comment.User.UserName : "")</span>
+                        <div class="comment-content">
+                            <span class="comment-author">@comment.User?.UserName</span>
+                            <span class="comment-date">@comment.CreateDate.ToString("dd.MM.yyyy")</span>
+                            <p>@comment.Comment</p>
+                            <button class="btn btn-secondary reply-to-comment-button" @onclick="() => OpenReplyToCommentModal(comment)">תגובה לתגובה</button>
+                        </div>
+                    </div>
+                }
+
+                @if (comment.Comments.Count > 0)
+                {
+                    <div class="replies-section">
+                        @foreach (var reply in comment.Comments)
+                        {
+                            <div class="reply-item">
+                                <span class="comment-avatar">@GetUserInitial(reply.User?.UserName != null ? reply.User.UserName : "")</span>
+                                <div class="comment-content">
+                                    <span class="comment-author">@reply.User?.UserName</span>
+                                    <span class="comment-date">@reply.CreateDate.ToString("dd.MM.yyyy")</span>
+                                    <p>@reply.Comment</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    }
+    else
+    {
+        <p>טוען שאלה...</p>
+    }
+</div>
+
+<!-- Modal for Comment a ForumQuestion -->
+@if (showReplyModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-button" @onclick="CloseReplyModal">✖</button>
+            <div class="modal-question-type-badge">@GetForumTypeLabel(forumQuestion.ForumQuestionType)</div>
+            <textarea class="comment-input" placeholder="כתוב את התשובה שלך" @bind="newCommentText"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CloseReplyModal">ביטול</button>
+                <button class="btn btn-primary" @onclick="SubmitComment">פרסם</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal for Comment to a Comment -->
+@if (showReplyToCommentModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-button" @onclick="CloseCommentToCommentModal">✖</button>
+            <h3>תגובה לכותב</h3>
+            <textarea class="comment-input" placeholder="כתוב את התשובה שלך" @bind="newReplyText"></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CloseCommentToCommentModal">ביטול</button>
+                <button class="btn btn-primary" @onclick="SubmitReplyToComment">פרסם</button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .back-link {
+        color: #2b6cb0;
+        cursor: pointer;
+        margin-bottom: 20px;
+    }
+
+    .question-detail-container {
+        max-width: 800px;
+        margin: 0 auto;
+        direction: rtl;
+    }
+
+    .question-header {
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .question-type {
+        display: inline-block;
+        background-color: #f6ad55;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+
+    .question-meta {
+        display: flex;
+        gap: 20px;
+        color: #718096;
+        font-size: 0.85rem;
+        margin-top: 10px;
+    }
+
+    .reply-button {
+        margin-top: 15px;
+    }
+
+    .comments-section {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+
+    .comment-item {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+
+    .comment-avatar {
+        background-color: #2b6cb0;
+        color: white;
+        font-weight: bold;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .comment-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .comment-author {
+        font-weight: bold;
+        color: #2d3748;
+    }
+
+    .comment-date {
+        font-size: 0.85rem;
+        color: #718096;
+        margin-bottom: 5px;
+    }
+
+    .back-link {
+        background: none;
+        border: none;
+        color: #333;
+        font-size: 1rem;
+        font-family: inherit;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        padding: 0;
+        text-decoration: none;
+        line-height: 1;
+    }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .back-link .rotated-arrow {
+            transform: rotate(180deg);
+            margin-left: 6px;
+            font-size: 1rem;
+            vertical-align: middle;
+            display: inline-block;
+            line-height: 1;
+        }
+
+
+    /* Modal Comment to question Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background-color: #ffffff;
+        padding: 25px 30px;
+        border-radius: 10px;
+        max-width: 500px;
+        width: 90%;
+        position: relative;
+        text-align: right;
+        direction: rtl;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .close-button {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        font-size: 1.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #999;
+    }
+
+    .modal-question-type-badge {
+        display: inline-block;
+        background-color: #f6ad55;
+        color: #0e1fd7;
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: right;
+        direction: rtl;
+    }
+
+    .modal-content h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        color: #333;
+    }
+
+    .comment-input {
+        width: 100%;
+        height: 120px;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        resize: none;
+        text-align: right;
+        direction: rtl;
+        font-size: 1rem;
+        color: #333;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-start;
+        margin-top: 20px;
+    }
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 1rem;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .btn-primary {
+        background-color: #2b6cb0;
+        color: #fff;
+        border: none;
+    }
+
+    .btn-secondary {
+        background-color: #e2e8f0;
+        color: #333;
+        border: none;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    /* Modal Comment to comment Styles */
+    .replies-section {
+        margin-right: 50px;
+        border-right: 4px solid #e2e8f0;
+        padding-right: 20px;
+    }
+
+    .reply-item {
+        display: flex;
+        gap: 10px;
+        padding: 10px;
+        background-color: #dddddd;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .reply-to-comment-button {
+        margin-top: 10px;
+        background-color: #ffc107;
+        color: black;
+        border: none;
+        padding: 5px 10px;
+        font-size: 0.9rem;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+        .reply-to-comment-button:hover {
+            background-color: #e0a800;
+        }
+</style>
+
+@code {
+    [Parameter]
+    public int questionId { get; set; }
+
+    private ForumQuestion forumQuestion;
+
+    private bool showReplyModal = false;
+    private string newCommentText = string.Empty;
+
+    private ForumComment newForumComment { get; set; } = new ForumComment { };
+
+    private bool showReplyToCommentModal = false;
+    private ForumComment selectedCommentForComment;
+    private string newReplyText = string.Empty;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadQuestionDetails();
+    }
+
+    private async Task LoadQuestionDetails()
+    {
+        forumQuestion = await Http.GetAsync<ForumQuestion>($"api/Forum/GetQuestion?questionId={questionId}");
+    }
+
+    private string GetForumTypeLabel(ForumQuestionType type) =>
+      type switch
+      {
+          ForumQuestionType.Comment => "הערה",
+          ForumQuestionType.Subject => "נושא",
+          ForumQuestionType.Discussion => "דיון",
+          _ => ""
+      };
+
+    private string GetUserInitial(string userName) =>
+        string.IsNullOrEmpty(userName) ? "?" : userName.Substring(0, 1).ToUpper();
+
+    private async Task NavigateBackToForum()
+    {
+        forumQuestion.ViewsCount++;
+        await Http.PutAsync<ForumQuestion, string>("api/forum/UpdateForumQuestion", forumQuestion);
+        Navigation.NavigateTo("/forum");
+    }
+
+    private void OpenReplyModal()
+    {
+        showReplyModal = true;
+    }
+
+    private void CloseReplyModal()
+    {
+        showReplyModal = false;
+        newCommentText = string.Empty;
+        newForumComment = new ForumComment { };
+    }
+
+    private async Task SubmitComment()
+    {
+        if (!string.IsNullOrWhiteSpace(newCommentText))
+        {
+            var newComment = new ForumComment
+                {
+                    Comment = newCommentText,
+                    CreateDate = DateTime.Now,
+                    ForumQuestionId = questionId,
+                    UserId = forumQuestion.UserId,
+                };
+
+            // Call the correct API endpoint and pass the ForumComment object.
+            await Http.PostAsync<ForumComment, string>("api/forum/CommentForumQuestion", newComment);
+
+            // Reload the question details to update the comments section.
+            await LoadQuestionDetails();
+            CloseReplyModal();
+        }
+    }
+
+    private void OpenReplyToCommentModal(ForumComment comment)
+    {
+        selectedCommentForComment = comment;
+        showReplyToCommentModal = true;
+    }
+
+    private void CloseCommentToCommentModal()
+    {
+        selectedCommentForComment = null;
+        newReplyText = string.Empty;
+        showReplyToCommentModal = false;
+    }
+
+    private async Task SubmitReplyToComment()
+    {
+        if (!string.IsNullOrWhiteSpace(newReplyText) && selectedCommentForComment != null)
+        {
+            var newComment = new ForumComment
+                {
+                    Comment = newReplyText,
+                    ForumQuestionId = forumQuestion.ForumQuestionId,
+                    ParentCommentId = selectedCommentForComment.ForumCommentId, // Set the parent comment ID
+                    UserId = forumQuestion.UserId, // Replace with the current user ID
+                    CreateDate = DateTime.Now
+                };
+
+            await Http.PostAsync<ForumComment, string>("api/forum/AddCommentToComment", newComment);
+
+            await LoadQuestionDetails(); // Reload the question to update replies
+            CloseCommentToCommentModal();
+        }
+    }
+}

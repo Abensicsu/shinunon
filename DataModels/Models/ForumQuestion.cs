@@ -18,8 +18,10 @@ namespace DataModels.Models
     public class ForumQuestion
     {
         public int ForumQuestionId { get; set; }
-        public ForumQuestionType ForumQuestionType { get; set; } //Choose comment\subject\discussion
-        public string Question { get; set; }
+        public ForumQuestionType ForumQuestionType { get; set; } //types comment\subject\discussion
+        public string ForumQuestionText { get; set; }
+
+        public string ForumQuestionDescription { get; set; }
 
         public int? SubjectId { get; set; }
         [ForeignKey(nameof(SubjectId))]
@@ -30,5 +32,8 @@ namespace DataModels.Models
         public int UserId { get; set; }
         [ForeignKey(nameof(UserId))]
         public User User { get; set; }
+
+        public int ViewsCount { get; set; } = 0;
+        public DateTime CreateDate { get; set; }
     }
 }

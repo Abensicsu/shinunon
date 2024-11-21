@@ -11,6 +11,7 @@ namespace DataModels.Models
     {
         public int ForumCommentId { get; set; }
         public string Comment { get; set; }
+        public DateTime CreateDate { get; set; }
 
         public int ForumQuestionId { get; set; }
         [ForeignKey(nameof(ForumQuestionId))]
@@ -23,5 +24,7 @@ namespace DataModels.Models
         public int UserId { get; set; }
         [ForeignKey(nameof(UserId))]
         public User User { get; set; }
+
+        public ICollection<ForumComment> Comments { get; set; }
     }
 }

@@ -214,9 +214,6 @@ else
     private Subject selectedSubject { get; set; } = new Subject { };
     private string correctAnswerText { get; set; } = string.Empty;
     private List<Answer> answers { get; set; } = new List<Answer>();
-
-    public string AnswerText { get; set; }
-    public bool IsCorrectAnswer { get; set; }
     private string errorMessage = string.Empty;
     private bool isAnswerFieldFilled = false; // Track if the answer field is filled
     private UserQuestion editingQuestion { get; set; } = new UserQuestion { };

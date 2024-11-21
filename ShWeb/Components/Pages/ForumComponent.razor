@@ -1,0 +1,310 @@
+﻿@rendermode InteractiveServer
+
+<PageTitle>Forum</PageTitle>
+
+@inject SHcx cx;
+@inject CustomHttpClientService Http
+@inject NavigationManager Navigation
+
+@using DataModels.Data
+@using DataModels.Models
+
+@page "/forum"
+
+<h3 class="forum-title">ForumComponent</h3>
+
+<div class="forum-container">
+    <button class="btn btn-primary new-topic-btn" @onclick="OpenNewTopicModal">+ נושא חדש</button>
+    <div class="forum-list">
+        @if (forumQuestions != null)
+        {
+            @foreach (var question in forumQuestions)
+            {
+                <div class="forum-item" @onclick="() => NavigateToQuestion(question.ForumQuestionId)">
+                    <!-- Forum Type Badge -->
+                    <div class="forum-type-badge">
+                        @GetForumTypeLabel(question.ForumQuestionType)
+                    </div>
+
+                    <!-- Content of the Forum Question -->
+                    <div class="forum-content">
+                        <h4 class="forum-question-text">@question.ForumQuestionText</h4>
+                        <div class="forum-footer">
+                            <span class="forum-user-date">
+                                @(question.User != null ? question.User.UserName : "משתמש לא ידוע") | @question.CreateDate.ToString("dd.MM.yyyy")
+                            </span>
+                            <div class="forum-meta">
+                                <span>@question.ViewsCount צפיות <i class="fa fa-eye"></i></span>
+                                <span>@question.Comments.Count תגובות <i class="fa fa-comments"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <p>טוען שאלות...</p>
+        }
+    </div>
+</div>
+
+
+<!-- Modal for New Topic -->
+@if (showNewTopicModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-button" @onclick="CloseNewTopicModal">✖</button>
+            <h3>נושא חדש</h3>
+
+            <select @bind="newForumQuestion.ForumQuestionType">
+                <option value="">בחר סטטוס</option>
+                <option value="Comment">הערה</option>
+                <option value="Subject">נושא</option>
+                <option value="Discussion">דיון</option>
+            </select>
+
+            <!-- Dropdown for subjects -->
+            <select @bind="newForumQuestion.SubjectId">
+                <option value="">בחר נושא</option>
+                @foreach (var subject in subjects)
+                {
+                    <option value="@subject.SubjectId">@subject.SubjectName</option>
+                }
+            </select>
+
+            <input type="text" placeholder="עמוד" @bind="newForumQuestion.Subject.Ordinal" />
+            <input type="text" placeholder="שאלה" @bind="newForumQuestion.ForumQuestionText" />
+            <textarea placeholder="תיאור" @bind="newForumQuestion.ForumQuestionDescription"></textarea>
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CloseNewTopicModal">ביטול</button>
+                <button class="btn btn-primary" @onclick="AddNewTopic">פרסם</button>
+            </div>
+        </div>
+    </div>
+}
+
+
+<style>
+    /* Page Title */
+    .forum-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        text-align: left;
+    }
+
+    /* Container Styling */
+    .forum-container {
+        padding: 20px;
+        max-width: 900px;
+        margin: 0 auto;
+        direction: rtl; /* RTL for Hebrew layout */
+    }
+
+    .new-topic-btn {
+        background-color: #2b6cb0;
+        color: white;
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+
+    /* Forum List */
+    .forum-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    /* Forum Item Styling */
+    .forum-item {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 15px;
+        position: relative;
+        overflow: hidden; /* Prevent overflow */
+        word-wrap: break-word; /* Break long words */
+        max-width: 100%; /* Ensure it doesn't exceed container width */
+    }
+
+    .forum-type-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px; /* Adjusted for RTL */
+        background-color: #f6ad55;
+        color: white;
+        padding: 4px 10px;
+        border-radius: 5px;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+
+    .forum-content {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .forum-question-text {
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: #2d3748;
+        margin: 0;
+        white-space: normal; /* Allow wrapping for long lines */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+    }
+
+    .forum-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+        color: #718096;
+    }
+
+    .forum-user-date {
+        color: #2d3748;
+        font-weight: bold;
+    }
+
+    .forum-meta {
+        display: flex;
+        gap: 15px;
+    }
+
+        .forum-meta i {
+            margin-left: 5px;
+        }
+
+    /* Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 500px;
+        width: 90%;
+        position: relative;
+    }
+
+    .close-button {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 1.5rem;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 15px;
+    }
+
+    .comment-input {
+        width: 100%;
+        height: 100px;
+        padding: 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        resize: none;
+    }
+</style>
+
+
+@code {
+    [Parameter]
+    public int UserId { get; set; } = 1;
+
+    private List<ForumQuestion> forumQuestions;
+    private List<Subject> subjects;
+    private bool showNewTopicModal = false;
+    private ForumQuestion newForumQuestion { get; set; } = new ForumQuestion { };
+
+    protected override async Task OnInitializedAsync()
+    {
+        forumQuestions = await Http.GetAsync<List<ForumQuestion>>("api/forum/AllForumQuestions");
+        subjects = await Http.GetAsync<List<Subject>>("api/subject/AllSubjects");
+    }
+
+    private string GetForumTypeLabel(ForumQuestionType type)
+    {
+        return type switch
+        {
+            ForumQuestionType.Comment => "הערה",
+            ForumQuestionType.Subject => "נושא",
+            ForumQuestionType.Discussion => "דיון",
+            _ => ""
+        };
+    }
+
+    private void NavigateToQuestion(int questionId)
+    {
+        Navigation.NavigateTo($"/forum/question/{questionId}");
+    }
+
+    private void OpenNewTopicModal()
+    {
+        // Initialize NewForumQuestion with a new Subject each time the modal is opened
+        newForumQuestion = new ForumQuestion
+            {
+                Subject = new Subject(), // Initialize with a new Subject instance to prevent null reference
+                CreateDate = DateTime.Now // Initialize with current date
+            };
+        showNewTopicModal = true;
+    }
+
+    private void CloseNewTopicModal()
+    {
+        showNewTopicModal = false;
+        newForumQuestion = new ForumQuestion
+            {
+                Subject = new Subject() // Initialize a new Subject to avoid null issues
+            };
+    }
+
+    private async Task AddNewTopic()
+    {
+        var newQuestion = new ForumQuestion
+            {
+                ForumQuestionType = newForumQuestion.ForumQuestionType,
+                ForumQuestionText = newForumQuestion.ForumQuestionText,
+                ForumQuestionDescription = newForumQuestion.ForumQuestionDescription,
+                SubjectId = newForumQuestion.SubjectId,
+                UserId = UserId,
+                ViewsCount = 0,
+                CreateDate = DateTime.Now
+            };
+
+
+        await Http.PostAsync<ForumQuestion, string>("api/forum/AddForumQuestion", newQuestion);
+
+        CloseNewTopicModal();
+        await loadQuestions();
+    }
+
+    private async Task loadQuestions()
+    {
+        forumQuestions = await Http.GetAsync<List<ForumQuestion>>("api/forum/AllForumQuestions");
+    }
+}

@@ -21,47 +21,25 @@ namespace ShWeb.Controllers
         [HttpGet]
         public BaseQuestion[] AllQuestions(int userId)
         {
-            //// All questions
-            //BaseQuestion[] questions = Cx.BaseQuestions
-            //    .Include(bq => bq.Subject)
-            //    .Include(bq => (bq as Question).DerivedUserQuestions)
-            //    .Include(bq => bq.Answers)
-            //    .ToArray();
-            //return questions;
-
-
-            // Retrieve all base questions
+            // Retrieve all questions
             var questions = Cx.BaseQuestions
                 .Include(bq => bq.Subject)
                 .Include(bq => bq.Answers)
-                .ToList();
-
-            // Retrieve user-specific questions (UserQuestion) for the given userId
-            var userQuestions = Cx.UserQuestions
-                .Where(uq => uq.UserId == userId)
-                .Include(uq => uq.Subject)
-                .Include(uq => uq.Answers)
+                .Include(bq => (bq as Question).DerivedUserQuestions) // Include derived UserQuestions
                 .ToList();
 
             // Replace any base question with the user's version if it exists
-            foreach (var userQuestion in userQuestions)
+            var resultQuestions = questions.Select(q =>
             {
-                var baseQuestionIndex = questions.FindIndex(q => q.BaseQuestionId == userQuestion.BaseQuestionId);
-                if (baseQuestionIndex >= 0)
-                {
-                    // Replace the BaseQuestion with the UserQuestion in the list
-                    questions[baseQuestionIndex] = userQuestion;
-                }
-                else
-                {
-                    // If the user question has no corresponding base question, add it (optional)
-                    questions.Add(userQuestion);
-                }
+                // Check if there's a UserQuestion derived from this question for the specified user
+                var userQuestion = (q as Question)?.DerivedUserQuestions
+                    .FirstOrDefault(uq => uq.UserId == userId);
 
+                // If a UserQuestion exists, return it; otherwise, return the original BaseQuestion
+                return userQuestion ?? q;
+            }).ToList();
 
-            }
-
-            return questions.ToArray();
+            return resultQuestions.Distinct().ToArray();
         }
 
         [HttpPost]

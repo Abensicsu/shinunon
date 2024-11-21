@@ -119,53 +119,50 @@ namespace DataModels.Services
                 .Where(sub => sub.SubjectId == examExecution.ToSubjectId)
                 .FirstOrDefault();
 
-            // Subjects between fromSubject and toSubject
-            var subjects = Cx.Subjects
-                .Where(s => s.Ordinal >= fromSubject.Ordinal
-                        && s.Ordinal <= toSubject.Ordinal)
-                .ToList();
-
-            // Questions associated with subjects
-            var questions = Cx.Questions
-                .Where(q => subjects.Contains(q.Subject))
-                .ToList();
-
             var user = Cx.Users.Where(u => u.UserId == examExecution.UserId)
                 .Include(user => user.UserSettings)
                 .FirstOrDefault();
 
+            if (fromSubject == null || toSubject == null)
+            {
+                throw new InvalidOperationException("Invalid subject range specified.");
+            }
+
+            var fromSubjectBook = Cx.Books
+                .FirstOrDefault(book => book.BookId == fromSubject.BookId);
+
+            var toSubjectBook = Cx.Books
+                .FirstOrDefault(book => book.BookId == toSubject.BookId);
+
+            // Subjects between fromSubject and toSubject
+            var subjects = Cx.Subjects
+                .Where(s => s.Ordinal >= fromSubject.Ordinal
+                        && s.Ordinal <= toSubject.Ordinal
+                        && s.BookId >= fromSubjectBook.BookId && s.BookId <= toSubjectBook.BookId)
+                .ToList();
+
+            // Retrieve all base questions
+            var allQuestions = Cx.BaseQuestions
+                .Where(bq => subjects.Contains(bq.Subject))
+                .Include(bq => (bq as Question).DerivedUserQuestions) // Include derived UserQuestions
+                .ToList();
+
+            // Replace any base question with the user's version if it exists
+            var questions = allQuestions.Select(q =>
+            {
+                // Check if there's a UserQuestion derived from this question for the specified user
+                var userQuestion = (q as Question)?.DerivedUserQuestions
+                    .FirstOrDefault(uq => uq.UserId == user.UserId);
+
+                // If a UserQuestion exists, return it; otherwise, return the original BaseQuestion
+                return userQuestion ?? q;
+            }).Distinct().ToList();
+
+
             // Minimum of DefaultQuestionCount from userSettings and the total number of questions available.
             var amount = Math.Min(user.UserSettings.DefaultQuestionCount, questions.Count);
 
-            //var random = new Random();
-            //var shuffledIndices = new HashSet<int>();
-
-            ////Need to change, IDs are not always in any order!!!!!!!!!!!!!!!
-            //var minId = questions.Min(q => q.BaseQuestionId);
-            //var maxId = questions.Max(q => q.BaseQuestionId);
-            //var count = amount;
-
-            //while (shuffledIndices.Count < amount)
-            //{
-            //    shuffledIndices.Add(random.Next(minId, maxId));
-            //}
-
-            //ICollection<Question> selectedQuestions = questions
-            //    .Where(q => shuffledIndices.Contains(q.BaseQuestionId))
-            //    .ToList();
-
-            //foreach (var question in selectedQuestions)
-            //{
-            //    var examAnswer = new ExamAnswer
-            //    {
-            //        BaseQuestionId = question.BaseQuestionId,
-            //        ExamExecutionId = examExecution.ExamExecutionId,
-            //    };
-            //    Cx.ExamAnswers.Add(examAnswer);
-            //}
-            //Cx.SaveChanges();
             // Shuffle the list of questions
-
             var random = new Random();
             var shuffledQuestions = questions.OrderBy(q => random.Next()).Take(amount).ToList();
 

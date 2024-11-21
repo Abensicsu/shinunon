@@ -3,6 +3,7 @@ using System;
 using DataModels.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
-    partial class SHcxModelSnapshot : ModelSnapshot
+    [Migration("20241112124702_forumComment2")]
+    partial class forumComment2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -659,7 +662,7 @@ namespace ShWeb.Migrations
                         .HasConstraintName("fk_forum_comments_forum_questions_forum_question_id");
 
                     b.HasOne("DataModels.Models.ForumComment", "ParentComment")
-                        .WithMany("Comments")
+                        .WithMany()
                         .HasForeignKey("ParentCommentId")
                         .HasConstraintName("fk_forum_comments_forum_comments_parent_comment_id");
 
@@ -802,11 +805,6 @@ namespace ShWeb.Migrations
             modelBuilder.Entity("DataModels.Models.ExamPlan", b =>
                 {
                     b.Navigation("ExamExecutions");
-                });
-
-            modelBuilder.Entity("DataModels.Models.ForumComment", b =>
-                {
-                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("DataModels.Models.ForumQuestion", b =>

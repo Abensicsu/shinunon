@@ -3,6 +3,7 @@ using System;
 using DataModels.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
-    partial class SHcxModelSnapshot : ModelSnapshot
+    [Migration("20241111102047_forumQuestion")]
+    partial class forumQuestion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -326,10 +329,6 @@ namespace ShWeb.Migrations
                         .HasColumnType("text")
                         .HasColumnName("comment");
 
-                    b.Property<DateTime>("CreateDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("create_date");
-
                     b.Property<int>("ForumQuestionId")
                         .HasColumnType("integer")
                         .HasColumnName("forum_question_id");
@@ -370,17 +369,13 @@ namespace ShWeb.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("create_date");
 
-                    b.Property<string>("ForumQuestionDescription")
-                        .HasColumnType("text")
-                        .HasColumnName("forum_question_description");
-
-                    b.Property<string>("ForumQuestionText")
-                        .HasColumnType("text")
-                        .HasColumnName("forum_question_text");
-
                     b.Property<int>("ForumQuestionType")
                         .HasColumnType("integer")
                         .HasColumnName("forum_question_type");
+
+                    b.Property<string>("Question")
+                        .HasColumnType("text")
+                        .HasColumnName("question");
 
                     b.Property<int?>("SubjectId")
                         .HasColumnType("integer")
@@ -659,7 +654,7 @@ namespace ShWeb.Migrations
                         .HasConstraintName("fk_forum_comments_forum_questions_forum_question_id");
 
                     b.HasOne("DataModels.Models.ForumComment", "ParentComment")
-                        .WithMany("Comments")
+                        .WithMany()
                         .HasForeignKey("ParentCommentId")
                         .HasConstraintName("fk_forum_comments_forum_comments_parent_comment_id");
 
@@ -802,11 +797,6 @@ namespace ShWeb.Migrations
             modelBuilder.Entity("DataModels.Models.ExamPlan", b =>
                 {
                     b.Navigation("ExamExecutions");
-                });
-
-            modelBuilder.Entity("DataModels.Models.ForumComment", b =>
-                {
-                    b.Navigation("Comments");
                 });
 
             modelBuilder.Entity("DataModels.Models.ForumQuestion", b =>
