@@ -1,0 +1,188 @@
+﻿@rendermode InteractiveServer
+
+@using DataModels.Models
+@using System.Net.Http.Json
+@using ShWeb.Components.BAServices
+
+@inject CustomHttpClientService HttpClient
+@inject NavigationManager NavigationManager
+@inject LocalStorageService LocalStorageService
+
+<h3>RegisterComponent</h3>
+
+@page "/register"
+
+<div class="auth-container">
+    <div class="form-container">
+        <h1 class="form-title">הרשמה</h1>
+        <div class="form-group">
+            <label>שם פרטי ומשפחה:</label>
+            <input type="text" @bind="UserName" placeholder="הזן שם פרטי ומשפחה" />
+        </div>
+        <div class="form-group">
+            <label>אימייל:</label>
+            <input type="email" @bind="Email" placeholder="הזן כתובת אימייל" />
+        </div>
+        <div class="form-group">
+            <label>סיסמה:</label>
+            <input type="password" @bind="Password" placeholder="הזן סיסמה" />
+        </div>
+        <button class="submit-button" @onclick="HandleSignUp">הרשמה</button>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p class="error-message">@ErrorMessage</p>
+        }
+
+        <div class="auth-links">
+            <p>רשום כבר? <a href="/login">התחבר</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f8f9fa;
+        font-family: Arial, sans-serif;
+    }
+
+    .form-container {
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+    }
+
+    .form-title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #0068d0;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+        text-align: right;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #333333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+    .submit-button {
+        background-color: #0068d0;
+        color: #ffffff;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+        .submit-button:hover {
+            background-color: #0056a8;
+        }
+
+    .error-message {
+        color: red;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+
+    .auth-links {
+        margin-top: 20px;
+        font-size: 14px;
+    }
+
+        .auth-links a {
+            color: #0068d0;
+            text-decoration: none;
+        }
+
+            .auth-links a:hover {
+                text-decoration: underline;
+            }
+</style>
+
+<div class="auth-container">
+    <div class="form-container">
+        <h1 class="form-title">הרשמה</h1>
+        <div class="form-group">
+            <label>שם פרטי ומשפחה:</label>
+            <input type="text" @bind="UserName" placeholder="הזן שם פרטי ומשפחה" />
+        </div>
+        <div class="form-group">
+            <label>אימייל:</label>
+            <input type="email" @bind="Email" placeholder="הזן כתובת אימייל" />
+        </div>
+        <div class="form-group">
+            <label>סיסמה:</label>
+            <input type="password" @bind="Password" placeholder="הזן סיסמה" />
+        </div>
+        <button class="submit-button" @onclick="HandleSignUp">הרשמה</button>
+
+        @if (!string.IsNullOrEmpty(ErrorMessage))
+        {
+            <p class="error-message">@ErrorMessage</p>
+        }
+
+        <div class="auth-links">
+            <p>רשום כבר? <a href="/login">התחבר</a></p>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string UserName { get; set; }
+    private string Email { get; set; }
+    private string Password { get; set; }
+    private string ErrorMessage { get; set; }
+
+    private async Task HandleSignUp()
+    {
+        var signUpRequest = new
+        {
+            UserName,
+            Email,
+            Password
+        };
+
+        try
+        {
+            var response = await HttpClient.PostAsync<object, bool>("api/auth/signup", signUpRequest);
+
+            if (response)
+            {
+                NavigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                ErrorMessage = "הרשמה נכשלה. בדוק את הפרטים ונסה שוב.";
+            }
+        }
+        catch
+        {
+            ErrorMessage = "התרחשה שגיאה בשרת. נסה שוב מאוחר יותר.";
+        }
+    }
+}

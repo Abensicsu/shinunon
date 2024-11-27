@@ -11,12 +11,11 @@ namespace ShWeb.Controllers
     [ApiController]
     public class QuestionController : ControllerBase
     {
+        public SHcx Cx { get; }
         public QuestionController(SHcx cx)
         {
             Cx = cx;
         }
-
-        public SHcx Cx { get; }
 
         [HttpGet]
         public BaseQuestion[] AllQuestions(int userId)

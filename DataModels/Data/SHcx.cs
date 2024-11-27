@@ -1,17 +1,20 @@
 ﻿using DataModels.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace DataModels.Data
 {
-    public class SHcx : DbContext
+    public class SHcx : IdentityDbContext<User, Role, int>
     {
-        public DbSet<User> Users { get; set; }
         public DbSet<Answer> Answers { get; set; }
         public DbSet<Question> Questions { get; set; }
         public DbSet<Subject> Subjects { get; set; }
@@ -32,6 +35,20 @@ namespace DataModels.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<ExamExecution>()
+                .HasOne(e => e.FromSubject)
+                .WithMany(s => s.ExamExecutions)
+                .HasForeignKey(e => e.FromSubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ExamExecution>()
+                .HasOne(e => e.ToSubject)
+                .WithMany()
+                .HasForeignKey(e => e.ToSubjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Define relationships here
             modelBuilder.Entity<ExamExecution>()
                 .HasOne(e => e.FromSubject)

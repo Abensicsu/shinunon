@@ -11,6 +11,11 @@ using Newtonsoft.Json.Serialization;
 using DataModels.Utilities;
 using Newtonsoft.Json;
 using System.Runtime.Serialization;
+using System.Numerics;
+using DataModels.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +92,7 @@ builder.Services.AddScoped(sp => new HttpClient
 
 builder.Services.AddScoped<CustomHttpClientService>();
 builder.Services.AddScoped<LocalStorageService>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 builder.Services.AddDbContext<SHcx>(options =>
 {
@@ -97,7 +103,31 @@ builder.Services.AddDbContext<SHcx>(options =>
 #endif
     //options.("ShWeb");
 });
+builder.Services.AddDefaultIdentity<User>(options => 
+        options.SignIn.RequireConfirmedAccount = false)
+    .AddEntityFrameworkStores<SHcx>();
 
+
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.RequireHttpsMetadata = false;
+    object Configuration = null;
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidAudience = builder.Configuration["JWT:ValidAudience"],
+        ValidIssuer = builder.Configuration["JWT:ValidIssuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SecretKey"]))
+    };
+});
 var app = builder.Build();
 
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
