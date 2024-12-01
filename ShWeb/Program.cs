@@ -71,9 +71,7 @@ builder.Services.AddControllers()
 // });
 
 
-
 builder.Services.AddRazorPages();
-
 
 builder.Services.AddRazorPages();
 
@@ -103,9 +101,24 @@ builder.Services.AddDbContext<SHcx>(options =>
 #endif
     //options.("ShWeb");
 });
-builder.Services.AddDefaultIdentity<User>(options => 
-        options.SignIn.RequireConfirmedAccount = false)
-    .AddEntityFrameworkStores<SHcx>();
+//builder.Services.AddDefaultIdentity<User>(options => 
+//        options.SignIn.RequireConfirmedAccount = false)
+//    .AddEntityFrameworkStores<SHcx>();
+
+builder.Services.AddDefaultIdentity<User>(options =>
+{
+
+    options.User.AllowedUserNameCharacters = null; // Allow any characters
+    options.SignIn.RequireConfirmedAccount = false; // Users are not required to confirm their account via email.
+
+    // Password requirements
+    options.Password.RequireDigit = true; // At least one numeric digit (e.g., 0-9).
+    options.Password.RequiredLength = 8; // At least 8 characters long.
+    options.Password.RequireNonAlphanumeric = true; // At least one special character (e.g., @, $, !, %, etc.).
+    options.Password.RequireUppercase = true; // At least one uppercase letter (e.g., A-Z).
+    options.Password.RequireLowercase = true; // At least one lowercase letter (e.g., a-z).
+})
+.AddEntityFrameworkStores<SHcx>();
 
 
 

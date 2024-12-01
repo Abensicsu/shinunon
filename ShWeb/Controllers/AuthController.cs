@@ -27,28 +27,48 @@ namespace ShWeb.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] DataModels.Models.LoginRequest request)
         {
-            var user = await _userManager.FindByNameAsync(request.UserName);
+            var user = await _userManager.FindByEmailAsync(request.Email);
             if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
                 return Unauthorized("Invalid username or password.");
 
             var token = _jwtTokenService.GenerateToken(user.UserName, user.Email, user.UserId.ToString());
             return Ok(new { Token = token });
         }
-    }
 
-    public class RegisterRequest
-    {
-        public string UserName { get; set; }
-        public string Email { get; set; }
-        public string Password { get; set; }
-        public string ConfirmPassword { get; set; }
-    }
+        [HttpPost]
+        public async Task<IActionResult> Register([FromBody] DataModels.Models.RegisterRequest request)
+        {
+            if (request.Password != request.ConfirmPassword)
+            {
+                return BadRequest("Password and Confirm Password do not match.");
+            }
 
-    public class LoginRequest
-    {
-        public string UserName { get; set; }
-        public string Password { get; set; }
+            if (string.IsNullOrWhiteSpace(request.UserName))
+            {
+                return BadRequest(new { Errors = new[] { "UserName is required." } });
+            }
+
+            var user = new User
+            {
+                UserName = request.UserName,
+                Email = request.Email,
+            };
+
+            var result = await _userManager.CreateAsync(user, request.Password);
+
+            if (result.Succeeded)
+            {
+                // Generate JWT token
+                var token = _jwtTokenService.GenerateToken(user.UserName, user.Email, user.Id.ToString());
+
+                // Return token in the response
+                return Ok(new { Token = token });
+            }
+
+            // If registration failed, return errors
+            return BadRequest(new { Errors = result.Errors.Select(e => e.Description).ToArray() });
+        }
     }
 }

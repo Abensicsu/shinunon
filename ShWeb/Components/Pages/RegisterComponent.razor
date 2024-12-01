@@ -17,17 +17,17 @@
         <h1 class="form-title">הרשמה</h1>
         <div class="form-group">
             <label>שם פרטי ומשפחה:</label>
-            <input type="text" @bind="UserName" placeholder="הזן שם פרטי ומשפחה" />
+            <input type="text" @bind="request.UserName" placeholder="הזן שם פרטי ומשפחה" />
         </div>
         <div class="form-group">
             <label>אימייל:</label>
-            <input type="email" @bind="Email" placeholder="הזן כתובת אימייל" />
+            <input type="email" @bind="request.Email" placeholder="הזן כתובת אימייל" />
         </div>
         <div class="form-group">
             <label>סיסמה:</label>
-            <input type="password" @bind="Password" placeholder="הזן סיסמה" />
+            <input type="password" @bind="request.Password" placeholder="הזן סיסמה" />
         </div>
-        <button class="submit-button" @onclick="HandleSignUp">הרשמה</button>
+        <button class="submit-button" @onclick="HandleRegister">הרשמה</button>
 
         @if (!string.IsNullOrEmpty(ErrorMessage))
         {
@@ -124,65 +124,59 @@
             }
 </style>
 
-<div class="auth-container">
-    <div class="form-container">
-        <h1 class="form-title">הרשמה</h1>
-        <div class="form-group">
-            <label>שם פרטי ומשפחה:</label>
-            <input type="text" @bind="UserName" placeholder="הזן שם פרטי ומשפחה" />
-        </div>
-        <div class="form-group">
-            <label>אימייל:</label>
-            <input type="email" @bind="Email" placeholder="הזן כתובת אימייל" />
-        </div>
-        <div class="form-group">
-            <label>סיסמה:</label>
-            <input type="password" @bind="Password" placeholder="הזן סיסמה" />
-        </div>
-        <button class="submit-button" @onclick="HandleSignUp">הרשמה</button>
-
-        @if (!string.IsNullOrEmpty(ErrorMessage))
-        {
-            <p class="error-message">@ErrorMessage</p>
-        }
-
-        <div class="auth-links">
-            <p>רשום כבר? <a href="/login">התחבר</a></p>
-        </div>
-    </div>
-</div>
-
 @code {
-    private string UserName { get; set; }
-    private string Email { get; set; }
-    private string Password { get; set; }
     private string ErrorMessage { get; set; }
 
-    private async Task HandleSignUp()
+    private RegisterRequest request { get; set; } = new RegisterRequest();
+
+    private string ValidatePassword(string password)
     {
-        var signUpRequest = new
+        var regex = new System.Text.RegularExpressions.Regex(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$");
+        if (!regex.IsMatch(password))
         {
-            UserName,
-            Email,
-            Password
-        };
+            return "הסיסמה חייבת לכלול לפחות 8 תווים, אות גדולה, אות קטנה, מספר ותו מיוחד.";
+        }
+        return null;
+    }
+
+    private async Task HandleRegister()
+    {
+        var validationError = ValidatePassword(request.Password);
+        if (!string.IsNullOrEmpty(validationError))
+        {
+            ErrorMessage = validationError;
+            return;
+        }
+
+        request.ConfirmPassword = request.Password;
 
         try
         {
-            var response = await HttpClient.PostAsync<object, bool>("api/auth/signup", signUpRequest);
+            var response = await HttpClient.PostAsync<RegisterRequest, TokenResponse>("api/auth/register", request);
 
-            if (response)
+            if (response != null && !string.IsNullOrEmpty(response.Token))
             {
-                NavigationManager.NavigateTo("/login");
+                // Store the JWT token in local storage
+                await LocalStorageService.StoreInLocalStorageAsync("jwt_token", response.Token);
+
+                // Navigate to the login page
+                NavigationManager.NavigateTo("/forum");
             }
             else
             {
                 ErrorMessage = "הרשמה נכשלה. בדוק את הפרטים ונסה שוב.";
             }
         }
-        catch
+        catch (Exception ex)
         {
+            // Handle server error
             ErrorMessage = "התרחשה שגיאה בשרת. נסה שוב מאוחר יותר.";
+            Console.WriteLine($"Error: {ex.Message}");
         }
+    }
+
+    private class TokenResponse
+    {
+        public string Token { get; set; }
     }
 }

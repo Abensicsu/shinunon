@@ -17,11 +17,11 @@
         <h1 class="form-title">התחברות</h1>
         <div class="form-group">
             <label>אימייל:</label>
-            <input type="email" @bind="Email" placeholder="הזן כתובת אימייל" />
+            <input type="email" @bind="request.Email" placeholder="הזן כתובת אימייל" />
         </div>
         <div class="form-group">
             <label>סיסמה:</label>
-            <input type="password" @bind="Password" placeholder="הזן סיסמה" />
+            <input type="password" @bind="request.Password" placeholder="הזן סיסמה" />
         </div>
         <button class="submit-button" @onclick="HandleLogin">התחבר</button>
 
@@ -38,86 +38,86 @@
 
 <style>
     .auth-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        background-color: #f8f9fa;
-        font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
     }
 
     .form-container {
-        background: #ffffff;
-        padding: 30px;
-        border-radius: 10px;
-        box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-        width: 100%;
-        max-width: 400px;
-        text-align: center;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
     }
 
     .form-title {
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 20px;
-        color: #0068d0;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #0068d0;
     }
 
     .form-group {
-        margin-bottom: 15px;
-        text-align: right;
+    margin-bottom: 15px;
+    text-align: right;
     }
 
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            margin-bottom: 5px;
-            color: #333333;
-        }
+    .form-group label {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 5px;
+    color: #333333;
+    }
 
-        .form-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 14px;
-        }
+    .form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    }
 
     .submit-button {
-        background-color: #0068d0;
-        color: #ffffff;
-        padding: 10px 15px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        width: 100%;
-        font-size: 16px;
-        font-weight: bold;
+    background-color: #0068d0;
+    color: #ffffff;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+    font-weight: bold;
     }
 
-        .submit-button:hover {
-            background-color: #0056a8;
-        }
+    .submit-button:hover {
+    background-color: #0056a8;
+    }
 
     .error-message {
-        color: red;
-        font-size: 14px;
-        margin-top: 10px;
+    color: red;
+    font-size: 14px;
+    margin-top: 10px;
     }
 
     .auth-links {
-        margin-top: 20px;
-        font-size: 14px;
+    margin-top: 20px;
+    font-size: 14px;
     }
 
-        .auth-links a {
-            color: #0068d0;
-            text-decoration: none;
-        }
+    .auth-links a {
+    color: #0068d0;
+    text-decoration: none;
+    }
 
-            .auth-links a:hover {
-                text-decoration: underline;
-            }
+    .auth-links a:hover {
+    text-decoration: underline;
+    }
 </style>
 
 @code {
@@ -125,22 +125,18 @@
     private string Password { get; set; }
     private string ErrorMessage { get; set; }
 
+    private LoginRequest request { get; set; } = new LoginRequest();
+
     private async Task HandleLogin()
     {
-        var loginRequest = new
-        {
-            Email,
-            Password
-        };
-
         try
         {
-            var response = await HttpClient.PostAsync<object, TokenResponse>("api/auth/login", loginRequest);
+            var response = await HttpClient.PostAsync<LoginRequest, TokenResponse>("api/auth/login", request);
 
             if (response != null)
             {
                 await LocalStorageService.StoreInLocalStorageAsync("jwt_token", response.Token);
-                NavigationManager.NavigateTo("/");
+                NavigationManager.NavigateTo("/forum");
             }
             else
             {

@@ -33,6 +33,7 @@ public class CustomHttpClientService
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync(requestUri, content);
         var responseJson = await response.Content.ReadAsStringAsync();
+        Console.WriteLine($"Response JSON: {responseJson}");
         return JsonConvert.DeserializeObject<TResponse>(responseJson, settings);
     }
 
@@ -52,4 +53,10 @@ public class CustomHttpClientService
         var response = await _httpClient.DeleteAsync(requestUri);
         return response.IsSuccessStatusCode;
     }
+
+    public class TokenResponse
+{
+    public string Token { get; set; }
+}
+
 }
