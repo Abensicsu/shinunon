@@ -23,7 +23,7 @@
             <div class="question-meta">
                 <span>@(forumQuestion.User != null ? forumQuestion.User.UserName : "") | @forumQuestion.CreateDate.ToString("dd.MM.yyyy")</span>
                 <span>  @forumQuestion.ViewsCount צפיות</span>
-                <span>  @forumQuestion.Comments.Count תגובות</span>
+                <span>  @forumQuestion.Comments.Count(com => com.ParentCommentId == null)  תגובות</span>
             </div>
         </div>
 
@@ -363,7 +363,6 @@
     private bool showReplyToCommentModal = false;
     private ForumComment selectedCommentForComment;
     private string newReplyText = string.Empty;
-
 
     protected override async Task OnInitializedAsync()
     {

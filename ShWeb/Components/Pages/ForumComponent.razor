@@ -35,7 +35,9 @@
                             </span>
                             <div class="forum-meta">
                                 <span>@question.ViewsCount צפיות <i class="fa fa-eye"></i></span>
-                                <span>@question.Comments.Count תגובות <i class="fa fa-comments"></i></span>
+                                <span>
+                                    @question.Comments.Count(com => com.ParentCommentId == null) תגובות <i class="fa fa-comments"></i>
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -240,6 +242,7 @@
     private List<Subject> subjects;
     private bool showNewTopicModal = false;
     private ForumQuestion newForumQuestion { get; set; } = new ForumQuestion { };
+    private int numComments = 0;
 
     protected override async Task OnInitializedAsync()
     {

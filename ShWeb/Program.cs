@@ -109,14 +109,18 @@ builder.Services.AddDefaultIdentity<User>(options =>
 {
 
     options.User.AllowedUserNameCharacters = null; // Allow any characters
+
+    options.User.RequireUniqueEmail = true; // שמור על ייחודיות אימייל
+    options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+"; //white list of chars in user-name
+
     options.SignIn.RequireConfirmedAccount = false; // Users are not required to confirm their account via email.
 
     // Password requirements
     options.Password.RequireDigit = true; // At least one numeric digit (e.g., 0-9).
-    options.Password.RequiredLength = 8; // At least 8 characters long.
-    options.Password.RequireNonAlphanumeric = true; // At least one special character (e.g., @, $, !, %, etc.).
-    options.Password.RequireUppercase = true; // At least one uppercase letter (e.g., A-Z).
-    options.Password.RequireLowercase = true; // At least one lowercase letter (e.g., a-z).
+    options.Password.RequiredLength = 6; // At least 8 characters long.
+    options.Password.RequireNonAlphanumeric = false; // ביטול הדרישה לתו מיוחד
+    options.Password.RequireUppercase = false; // ביטול הדרישה לאות גדולה
+    options.Password.RequireLowercase = false; // ביטול הדרישה לאות קטנה
 })
 .AddEntityFrameworkStores<SHcx>();
 

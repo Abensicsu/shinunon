@@ -77,6 +77,11 @@ namespace DataModels.Data
             modelBuilder.Entity<User>()
                 .OwnsOne(u => u.UserSettings);
 
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasIndex(u => u.NormalizedUserName).IsUnique(false);
+            });
+
             // Configure one-to-one relationship
             modelBuilder.Entity<Subject>()
                 .HasOne(m => m.SubjectText)

@@ -33,27 +33,30 @@ namespace ShWeb.Controllers
             if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
                 return Unauthorized("Invalid username or password.");
 
-            var token = _jwtTokenService.GenerateToken(user.UserName, user.Email, user.UserId.ToString());
+            var token = _jwtTokenService.GenerateToken(user.UserName, user.Email, user.Id.ToString());
             return Ok(new { Token = token });
         }
 
         [HttpPost]
         public async Task<IActionResult> Register([FromBody] DataModels.Models.RegisterRequest request)
         {
-            if (request.Password != request.ConfirmPassword)
-            {
-                return BadRequest("Password and Confirm Password do not match.");
-            }
-
-            if (string.IsNullOrWhiteSpace(request.UserName))
+            if (string.IsNullOrWhiteSpace(request.UserFullName))
             {
                 return BadRequest(new { Errors = new[] { "UserName is required." } });
             }
 
+            // Check if email already exists
+            var existingUser = await _userManager.FindByEmailAsync(request.Email);
+            if (existingUser != null)
+            {
+                return BadRequest(new { Errors = new[] { $"Email '{request.Email}' is already registered." } });
+            }
+
             var user = new User
             {
-                UserName = request.UserName,
+                UserName = request.Email,
                 Email = request.Email,
+                UserFullName = request.UserFullName
             };
 
             var result = await _userManager.CreateAsync(user, request.Password);

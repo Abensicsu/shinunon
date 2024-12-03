@@ -3,6 +3,7 @@
 @using DataModels.Models
 @using System.Net.Http.Json
 @using ShWeb.Components.BAServices
+@using Newtonsoft.Json
 
 @inject CustomHttpClientService HttpClient
 @inject NavigationManager NavigationManager
@@ -17,15 +18,15 @@
         <h1 class="form-title">הרשמה</h1>
         <div class="form-group">
             <label>שם פרטי ומשפחה:</label>
-            <input type="text" @bind="request.UserName" placeholder="הזן שם פרטי ומשפחה" />
+            <input type="text" @bind="request.UserFullName" placeholder="הזן שם פרטי ומשפחה" @oninput="ClearErrorMessage" />
         </div>
         <div class="form-group">
             <label>אימייל:</label>
-            <input type="email" @bind="request.Email" placeholder="הזן כתובת אימייל" />
+            <input type="email" @bind="request.Email" placeholder="הזן כתובת אימייל" @oninput="ClearErrorMessage" />
         </div>
         <div class="form-group">
             <label>סיסמה:</label>
-            <input type="password" @bind="request.Password" placeholder="הזן סיסמה" />
+            <input type="password" @bind="request.Password" placeholder="הזן סיסמה" @oninput="ClearErrorMessage" />
         </div>
         <button class="submit-button" @onclick="HandleRegister">הרשמה</button>
 
@@ -131,16 +132,44 @@
 
     private string ValidatePassword(string password)
     {
-        var regex = new System.Text.RegularExpressions.Regex(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$");
+        // Regex for at least 6 characters, including both letters (a-z, A-Z) and numbers (0-9)
+        var regex = new System.Text.RegularExpressions.Regex(@"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$");
+
         if (!regex.IsMatch(password))
         {
-            return "הסיסמה חייבת לכלול לפחות 8 תווים, אות גדולה, אות קטנה, מספר ותו מיוחד.";
+            return "הסיסמה חייבת לכלול לפחות 6 תווים, אותיות באנגלית ומספרים.";
         }
-        return null;
+
+        return null; // Password is valid
+    }
+
+
+    private bool ValidateEmail(string email)
+    {
+        var regex = new System.Text.RegularExpressions.Regex(@"^[^\s@]+@[^\s@]+\.[^\s@]+$");
+        return regex.IsMatch(email);
+    }
+
+    private void ClearErrorMessage()
+    {
+        ErrorMessage = string.Empty;
     }
 
     private async Task HandleRegister()
     {
+        if (string.IsNullOrEmpty(request.UserFullName) || string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+        {
+            ErrorMessage = "יש למלא את כל השדות.";
+            return;
+        }
+
+        var validationEmail = ValidateEmail(request.Email);
+        if (!validationEmail)
+        {
+            ErrorMessage = "כתובת אימייל אינה תקינה.";
+            return;
+        }
+
         var validationError = ValidatePassword(request.Password);
         if (!string.IsNullOrEmpty(validationError))
         {
@@ -148,7 +177,30 @@
             return;
         }
 
-        request.ConfirmPassword = request.Password;
+        // try
+        // {
+        //     var response = await HttpClient.PostAsync<RegisterRequest, TokenResponse>("api/auth/register", request);
+
+        //     if (response != null && !string.IsNullOrEmpty(response.Token))
+        //     {
+        //         // Store the JWT token in local storage
+        //         await LocalStorageService.StoreInLocalStorageAsync("jwt_token", response.Token);
+
+        //         // Navigate to the login page
+        //         NavigationManager.NavigateTo("/forum");
+        //     }
+        //     else
+        //     {
+        //         ErrorMessage = "הרשמה נכשלה. בדוק את הפרטים ונסה שוב.";
+        //     }
+        // }
+        // catch (Exception ex)
+        // {
+        //     // Handle server error
+        //     ErrorMessage = "התרחשה שגיאה בשרת. נסה שוב מאוחר יותר.";
+        //     Console.WriteLine($"Error: {ex.Message}");
+        // }
+        
 
         try
         {
@@ -156,27 +208,53 @@
 
             if (response != null && !string.IsNullOrEmpty(response.Token))
             {
-                // Store the JWT token in local storage
                 await LocalStorageService.StoreInLocalStorageAsync("jwt_token", response.Token);
-
-                // Navigate to the login page
                 NavigationManager.NavigateTo("/forum");
             }
-            else
+        }
+        catch (HttpRequestException ex)
+        {
+            // ErrorMessage = ex.
+            // פענח את הודעת השגיאה
+            ErrorMessage = ParseServerErrorMessage(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            ErrorMessage = "התרחשה שגיאה בשרת. נסה שוב מאוחר יותר.";
+        }
+    }
+
+    private string ParseServerErrorMessage(string serverMessage)
+    {
+        try
+        {
+            // Deserialize the JSON into a dynamic object
+            var json = System.Text.Json.JsonDocument.Parse(serverMessage);
+
+            // Try to extract the "errors" property
+            if (json.RootElement.TryGetProperty("errors", out var errors) && errors.ValueKind == System.Text.Json.JsonValueKind.Array)
             {
-                ErrorMessage = "הרשמה נכשלה. בדוק את הפרטים ונסה שוב.";
+                // Return the first error message
+                return errors[0].GetString();
             }
         }
         catch (Exception ex)
         {
-            // Handle server error
-            ErrorMessage = "התרחשה שגיאה בשרת. נסה שוב מאוחר יותר.";
-            Console.WriteLine($"Error: {ex.Message}");
+            Console.WriteLine($"Error parsing server message: {ex.Message}");
         }
+
+        // Return a generic message if parsing fails
+        return "An error occurred. Please try again.";
     }
 
     private class TokenResponse
     {
         public string Token { get; set; }
+    }
+
+    private class ErrorResponse
+    {
+        public string[] Errors { get; set; }
     }
 }

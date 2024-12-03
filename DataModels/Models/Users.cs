@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
@@ -14,8 +15,8 @@ namespace DataModels.Models
     }
     public class User : IdentityUser<int>
     {
-        public int UserId { get; set; }
-        //public string UserName { get; set; }
+        //public int UserId { get; set; }
+        public string UserFullName { get; set; }
 
         public UserSettings UserSettings { get; set; }
         public ICollection<ExamExecution> ExamExecutions { get; set; }
@@ -25,10 +26,16 @@ namespace DataModels.Models
 
     public class RegisterRequest
     {
-        public string UserName { get; set; }
+        //[Required(ErrorMessage = "שם המשתמש הוא שדה חובה")]
+        public string UserFullName { get; set; }
+
+        //[Required(ErrorMessage = "האימייל הוא שדה חובה")]
+        //[EmailAddress(ErrorMessage = "נא להזין כתובת אימייל תקינה.")]
         public string Email { get; set; }
+
+        //[Required(ErrorMessage = "הסיסמה היא שדה חובה")]
+        //[MinLength(6, ErrorMessage = "הסיסמה חייבת להיות באורך של לפחות 8 תווים.")]
         public string Password { get; set; }
-        public string ConfirmPassword { get; set; }
     }
 
     public class LoginRequest

@@ -31,7 +31,7 @@ namespace DataModels.Services
                 {
                     var user = Cx.Users
                         .Include(u => u.UserSettings)
-                        .SingleOrDefault(u => u.UserId == examExecution.UserId);
+                        .SingleOrDefault(u => u.Id == examExecution.UserId);
 
                     if (user == null) throw new ArgumentException("User not found");
                     //if (user.UserSettings == null) throw new ArgumentException("UserSettings not found");
@@ -80,7 +80,7 @@ namespace DataModels.Services
                     ExamRepeatNumber = repeatNumber,
                     FromSubjectId = examExecution.FromSubjectId,
                     ToSubjectId = examExecution.ToSubjectId,
-                    UserId = user.UserId,
+                    UserId = user.Id,
                 };
                 Cx.ExamExecutions.Add(newExamExecution);
             }
@@ -119,7 +119,7 @@ namespace DataModels.Services
                 .Where(sub => sub.SubjectId == examExecution.ToSubjectId)
                 .FirstOrDefault();
 
-            var user = Cx.Users.Where(u => u.UserId == examExecution.UserId)
+            var user = Cx.Users.Where(u => u.Id == examExecution.UserId)
                 .Include(user => user.UserSettings)
                 .FirstOrDefault();
 
@@ -152,7 +152,7 @@ namespace DataModels.Services
             {
                 // Check if there's a UserQuestion derived from this question for the specified user
                 var userQuestion = (q as Question)?.DerivedUserQuestions
-                    .FirstOrDefault(uq => uq.UserId == user.UserId);
+                    .FirstOrDefault(uq => uq.UserId == user.Id);
 
                 // If a UserQuestion exists, return it; otherwise, return the original BaseQuestion
                 return userQuestion ?? q;

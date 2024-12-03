@@ -1,13 +1,6 @@
-﻿using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 using DataModels.Utilities;
-using Microsoft.JSInterop;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
-using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 
 public class CustomHttpClientService
 {
@@ -32,6 +25,13 @@ public class CustomHttpClientService
         var json = JsonConvert.SerializeObject(request, settings);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
         var response = await _httpClient.PostAsync(requestUri, content);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await response.Content.ReadAsStringAsync();
+            throw new HttpRequestException(errorMessage);
+        }
+
         var responseJson = await response.Content.ReadAsStringAsync();
         Console.WriteLine($"Response JSON: {responseJson}");
         return JsonConvert.DeserializeObject<TResponse>(responseJson, settings);
