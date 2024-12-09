@@ -1,17 +1,10 @@
 using DataModels.Data;
 using DataModels.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using ShWeb.Components;
 using ShWeb.Components.BAServices;
-using System.Reflection;
-using System.Text.Json.Serialization;
-using System.Text.Json.Serialization.Metadata;
-using Newtonsoft.Json.Serialization;
 using DataModels.Utilities;
 using Newtonsoft.Json;
-using System.Runtime.Serialization;
-using System.Numerics;
 using DataModels.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -31,45 +24,6 @@ builder.Services.AddControllers()
             options.SerializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.Objects;
             options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         });
-
-//.AddJsonOptions(options =>
-// {
-//     options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.Preserve;
-//     options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
-
-//     options.JsonSerializerOptions.TypeInfoResolver = new DefaultJsonTypeInfoResolver
-//     {
-//         Modifiers =
-//            {
-//                static jsonTypeInfo =>
-//                {
-//                    // Check if the type is abstract or an interface
-//                    if (jsonTypeInfo.Type.IsAbstract || jsonTypeInfo.Type.IsInterface)
-//                    {
-//                        var polymorphismOptions = new JsonPolymorphismOptions
-//                        {
-//                            TypeDiscriminatorPropertyName = "$type",
-//                            UnknownDerivedTypeHandling = JsonUnknownDerivedTypeHandling.FallBackToBaseType
-//                        };
-
-//                        // Automatically add all derived types that are not abstract
-//                        var derivedTypes = Assembly.GetExecutingAssembly()
-//                            .GetTypes()
-//                            .Where(t => jsonTypeInfo.Type.IsAssignableFrom(t) && !t.IsAbstract)
-//                            .Select(t => new JsonDerivedType(t, t.Name));
-
-//                        foreach (var derivedType in derivedTypes)
-//                        {
-//                            polymorphismOptions.DerivedTypes.Add(derivedType);
-//                        }
-
-//                        jsonTypeInfo.PolymorphismOptions = polymorphismOptions;
-//                    }
-//                }
-//            }
-//     };
-// });
-
 
 builder.Services.AddRazorPages();
 
@@ -101,16 +55,13 @@ builder.Services.AddDbContext<SHcx>(options =>
 #endif
     //options.("ShWeb");
 });
-//builder.Services.AddDefaultIdentity<User>(options => 
-//        options.SignIn.RequireConfirmedAccount = false)
-//    .AddEntityFrameworkStores<SHcx>();
 
 builder.Services.AddDefaultIdentity<User>(options =>
 {
 
     options.User.AllowedUserNameCharacters = null; // Allow any characters
 
-    options.User.RequireUniqueEmail = true; // שמור על ייחודיות אימייל
+    options.User.RequireUniqueEmail = true; 
     options.User.AllowedUserNameCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+"; //white list of chars in user-name
 
     options.SignIn.RequireConfirmedAccount = false; // Users are not required to confirm their account via email.
@@ -118,9 +69,9 @@ builder.Services.AddDefaultIdentity<User>(options =>
     // Password requirements
     options.Password.RequireDigit = true; // At least one numeric digit (e.g., 0-9).
     options.Password.RequiredLength = 6; // At least 8 characters long.
-    options.Password.RequireNonAlphanumeric = false; // ביטול הדרישה לתו מיוחד
-    options.Password.RequireUppercase = false; // ביטול הדרישה לאות גדולה
-    options.Password.RequireLowercase = false; // ביטול הדרישה לאות קטנה
+    options.Password.RequireNonAlphanumeric = false; 
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false; 
 })
 .AddEntityFrameworkStores<SHcx>();
 

@@ -46,7 +46,7 @@
             </div>
             <div class="timer">
                 <span class="label">End Time</span>
-                <span class="time">@examExecution.EndTime.Value.TimeOfDay.ToString(@"hh\:mm\:ss")</span>
+                <span class="time">@examExecution?.EndTime.Value.TimeOfDay.ToString(@"hh\:mm\:ss")</span>
             </div>
         </div>
     </div>
@@ -58,7 +58,8 @@
 <style>
     .results-container {
         width: 100%;
-        height: 50% display: flex;
+        height: 50%; 
+        display: flex;
         flex-direction: column;
         align-items: center;
         padding: 20px;
@@ -133,7 +134,8 @@
 
     .inner-exam-component {
         width: 30%;
-        height: 50% margin-top: 10px;
+        height: 50%;
+        margin-top: 10px;
         padding: 10px;
         background-color: #ffffff;
         border-radius: 8px;
@@ -242,12 +244,12 @@
                 examExecution.IsReviewed = true;
                 await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
                 SuccessRate = (examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum);
-                StateHasChanged(); // כדי לעדכן את הממשק
+                StateHasChanged();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
-                Navigation.NavigateTo("/login"); // במידה ויש שגיאה
+                Navigation.NavigateTo("/login");
             }
         }
     }

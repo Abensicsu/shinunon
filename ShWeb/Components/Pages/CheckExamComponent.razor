@@ -45,7 +45,11 @@
                 </div>
             }
         }
-        <button class="submit-button" @onclick="getExamResults">Get Exam Result</button>
+
+        if (shoResultsBtn)
+        {
+            <button class="submit-button" @onclick="getExamResults">Get Exam Result</button>
+        }
     }
 </div>
 
@@ -112,36 +116,23 @@
 @code {
     [Parameter]
     public int examExecutionId { get; set; }
-
+    public int openQuestionNum = 0;
+    public bool shoResultsBtn = false;
     public ExamExecution examExecution;
     public ICollection<ExamAnswer> examAnswers;
-
-    // protected override async Task OnInitializedAsync()
-    // {
-        
-    // }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // try
-            // {
-                // currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
-                // if (currentUser == null)
-                // {
-                //     Navigation.NavigateTo("/login");
-                //     return;
-                // }
-                examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
-                examAnswers = examExecution.ExamAnswers;
-                StateHasChanged(); // Trigger UI update
-            // }
-            // catch (Exception ex)
-            // {
-            //     Console.WriteLine($"Error: {ex.Message}");
-            //     Navigation.NavigateTo("/login");
-            // }
+            examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
+            examAnswers = examExecution.ExamAnswers;
+            openQuestionNum = examExecution.ExamAnswers.Count(answer => !string.IsNullOrEmpty(answer.TextAnswer));
+            if (openQuestionNum == 0)
+                getExamResults();
+            else
+                shoResultsBtn = true;
+            StateHasChanged(); // Trigger UI update
         }
     }
 
@@ -150,7 +141,6 @@
         checkSelectQuestions();
         examExecution.ExamAnswers = examAnswers;
         examExecution.IsReviewed = true;
-
 
         await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
 
