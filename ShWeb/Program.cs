@@ -68,7 +68,7 @@ builder.Services.AddDefaultIdentity<User>(options =>
 
     // Password requirements
     options.Password.RequireDigit = true; // At least one numeric digit (e.g., 0-9).
-    options.Password.RequiredLength = 6; // At least 8 characters long.
+    options.Password.RequiredLength = 6; // At least 6 characters long.
     options.Password.RequireNonAlphanumeric = false; 
     options.Password.RequireUppercase = false;
     options.Password.RequireLowercase = false; 
