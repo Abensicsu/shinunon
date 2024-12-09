@@ -26,6 +26,19 @@ namespace ShWeb.Controllers
             _jwtTokenService = jwtTokenService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("User not authenticated.");
+            }
+
+            return Ok(currentUser);
+        }
+
+
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] DataModels.Models.LoginRequest request)
         {

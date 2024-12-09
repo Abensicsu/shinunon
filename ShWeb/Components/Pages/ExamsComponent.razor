@@ -5,9 +5,8 @@
 
 <PageTitle>Exams</PageTitle>
 
-@page "/exams/{UserId:int}"
+@page "/exams"
 
-@inject SHcx cx;
 @inject CustomHttpClientService Http
 @inject ExamExecutionService ExamExecutionService
 @inject NavigationManager Navigation
@@ -128,9 +127,7 @@
 </style>
 
 @code {
-    [Parameter]
-    public int UserId { get; set; } = 1;
-
+    private User currentUser { get; set; }
     public ExamExecution examExecution;
 
     public List<ExamExecution> futureExams;
@@ -139,11 +136,36 @@
 
     string[] period = { "future", "present", "past" };
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        futureExams = await Http.GetAsync<List<ExamExecution>>($"api/Exam/GetExamsForUser?UserId={UserId}&period={period[0]}");
-        presentExams = await Http.GetAsync<List<ExamExecution>>($"api/Exam/GetExamsForUser?UserId={UserId}&period={period[1]}");
-        pastExams = await Http.GetAsync<List<ExamExecution>>($"api/Exam/GetExamsForUser?UserId={UserId}&period={period[2]}");
+        if (firstRender)
+        {
+            try
+            {
+                currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+                if (currentUser == null)
+                {
+                    Navigation.NavigateTo("/login");
+                    return;
+                }
+
+                await LoadExams();
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                Navigation.NavigateTo("/login");
+            }
+        }
+    }
+
+
+    private async Task LoadExams()
+    {
+        futureExams = await Http.GetAsync<List<ExamExecution>>($"api/Exam/GetExamsForUser?period={period[0]}");
+        presentExams = await Http.GetAsync<List<ExamExecution>>($"api/Exam/GetExamsForUser?period={period[1]}");
+        pastExams = await Http.GetAsync<List<ExamExecution>>($"api/Exam/GetExamsForUser?period={period[2]}");
     }
 
     private void TakeExam(int examExecutionId)
@@ -175,6 +197,6 @@
 
     private void ReviewExam()
     {
-        Navigation.NavigateTo($"/review-exam/{UserId}");
+        Navigation.NavigateTo($"/review-exam");
     }
 }

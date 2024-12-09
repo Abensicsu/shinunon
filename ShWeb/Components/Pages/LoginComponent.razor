@@ -141,7 +141,7 @@
             if (response != null)
             {
                 await LocalStorageService.StoreInLocalStorageAsync("jwt_token", response.Token);
-                NavigationManager.NavigateTo("/forum");
+                NavigationManager.NavigateTo("/exams");
             }
             else
             {

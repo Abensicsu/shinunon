@@ -33,12 +33,14 @@ namespace ShWeb.Controllers
         public ForumQuestion GetQuestion(int questionId)
         {
             var fq = Cx.ForumQuestions
-                .Where(fq => fq.ForumQuestionId == questionId)
-                .Include(fq => fq.Comments)
-                    .ThenInclude(comment => comment.Comments)
-                .Include(fq => fq.User)
-                .FirstOrDefault();
-
+                       .Where(fq => fq.ForumQuestionId == questionId)
+                       .Include(fq => fq.Comments)
+                           .ThenInclude(comment => comment.Comments)
+                               .ThenInclude(innerComment => innerComment.User)
+                       .Include(fq => fq.Comments)
+                           .ThenInclude(comment => comment.User)
+                       .Include(fq => fq.User)
+                       .FirstOrDefault();
             return fq;
         }
 

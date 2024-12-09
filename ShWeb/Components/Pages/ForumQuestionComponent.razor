@@ -12,6 +12,7 @@
     חזרה <span class="rotated-arrow">↪</span>
 </button>
 
+
 <div class="question-detail-container">
     @if (forumQuestion != null)
     {
@@ -20,8 +21,9 @@
         <div class="question-header">
             <div class="question-type">@GetForumTypeLabel(forumQuestion.ForumQuestionType)</div>
             <h2>@forumQuestion.ForumQuestionText</h2>
+            <h3>@forumQuestion.ForumQuestionDescription</h3>
             <div class="question-meta">
-                <span>@(forumQuestion.User != null ? forumQuestion.User.UserName : "") | @forumQuestion.CreateDate.ToString("dd.MM.yyyy")</span>
+                <span>@(forumQuestion.User != null ? forumQuestion.User.UserFullName : "") | @forumQuestion.CreateDate.ToString("dd.MM.yyyy")</span>
                 <span>  @forumQuestion.ViewsCount צפיות</span>
                 <span>  @forumQuestion.Comments.Count(com => com.ParentCommentId == null)  תגובות</span>
             </div>
@@ -33,10 +35,10 @@
             {
                 @if (comment.ParentCommentId == null)
                 {
-                    <div class="comment-item">
-                        <span class="comment-avatar">@GetUserInitial(comment.User?.UserName != null ? comment.User.UserName : "")</span>
+                    <div class="comment-item">                   
+                        <span class="comment-avatar">@GetUserInitial(comment.User?.UserFullName != null ? comment.User.UserFullName : "")</span>
                         <div class="comment-content">
-                            <span class="comment-author">@comment.User?.UserName</span>
+                            <span class="comment-author">@comment.User?.UserFullName</span>
                             <span class="comment-date">@comment.CreateDate.ToString("dd.MM.yyyy")</span>
                             <p>@comment.Comment</p>
                             <button class="btn btn-secondary reply-to-comment-button" @onclick="() => OpenReplyToCommentModal(comment)">תגובה לתגובה</button>
@@ -50,9 +52,9 @@
                         @foreach (var reply in comment.Comments)
                         {
                             <div class="reply-item">
-                                <span class="comment-avatar">@GetUserInitial(reply.User?.UserName != null ? reply.User.UserName : "")</span>
+                                <span class="comment-avatar">@GetUserInitial(reply.User?.UserFullName != null ? reply.User.UserFullName : "")</span>
                                 <div class="comment-content">
-                                    <span class="comment-author">@reply.User?.UserName</span>
+                                    <span class="comment-author">@reply.User?.UserFullName</span>
                                     <span class="comment-date">@reply.CreateDate.ToString("dd.MM.yyyy")</span>
                                     <p>@reply.Comment</p>
                                 </div>
@@ -353,6 +355,8 @@
     [Parameter]
     public int questionId { get; set; }
 
+    private User currentUser { get; set; }
+
     private ForumQuestion forumQuestion;
 
     private bool showReplyModal = false;
@@ -364,9 +368,27 @@
     private ForumComment selectedCommentForComment;
     private string newReplyText = string.Empty;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadQuestionDetails();
+        if (firstRender)
+        {
+            try
+            {
+                currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+                if (currentUser == null)
+                {
+                    Navigation.NavigateTo("/login");
+                    return;
+                }
+                await LoadQuestionDetails();
+                StateHasChanged(); // Trigger UI update
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                Navigation.NavigateTo("/login");
+            }
+        }
     }
 
     private async Task LoadQuestionDetails()
@@ -414,7 +436,7 @@
                     Comment = newCommentText,
                     CreateDate = DateTime.Now,
                     ForumQuestionId = questionId,
-                    UserId = forumQuestion.UserId,
+                    UserId = currentUser.Id
                 };
 
             // Call the correct API endpoint and pass the ForumComment object.
@@ -448,7 +470,7 @@
                     Comment = newReplyText,
                     ForumQuestionId = forumQuestion.ForumQuestionId,
                     ParentCommentId = selectedCommentForComment.ForumCommentId, // Set the parent comment ID
-                    UserId = forumQuestion.UserId, // Replace with the current user ID
+                    UserId = currentUser.Id, // current user ID
                     CreateDate = DateTime.Now
                 };
 
@@ -456,6 +478,7 @@
 
             await LoadQuestionDetails(); // Reload the question to update replies
             CloseCommentToCommentModal();
+            StateHasChanged(); // Trigger UI update
         }
     }
 }

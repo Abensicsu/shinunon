@@ -2,7 +2,6 @@
 
 @page "/check-exam/{examExecutionId:int}"
 
-@inject SHcx cx
 @inject CustomHttpClientService Http
 @inject LocalStorageService LocalStorageService
 @inject IJSRuntime JS
@@ -117,10 +116,33 @@
     public ExamExecution examExecution;
     public ICollection<ExamAnswer> examAnswers;
 
-    protected override async Task OnInitializedAsync()
+    // protected override async Task OnInitializedAsync()
+    // {
+        
+    // }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
-        examAnswers = examExecution.ExamAnswers;
+        if (firstRender)
+        {
+            // try
+            // {
+                // currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+                // if (currentUser == null)
+                // {
+                //     Navigation.NavigateTo("/login");
+                //     return;
+                // }
+                examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
+                examAnswers = examExecution.ExamAnswers;
+                StateHasChanged(); // Trigger UI update
+            // }
+            // catch (Exception ex)
+            // {
+            //     Console.WriteLine($"Error: {ex.Message}");
+            //     Navigation.NavigateTo("/login");
+            // }
+        }
     }
 
     public async Task getExamResults()

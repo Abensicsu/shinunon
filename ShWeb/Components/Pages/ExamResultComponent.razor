@@ -2,7 +2,6 @@
 
 @page "/exam-results/{examExecutionId:int}"
 
-@inject SHcx cx
 @inject CustomHttpClientService Http
 @inject LocalStorageService LocalStorageService
 @inject IJSRuntime JS
@@ -212,17 +211,45 @@
     public int wrongAnswersNum;
     public int openQuestionNum;
 
-    protected override async Task OnInitializedAsync()
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?examExecutionId={examExecutionId}");
+    //     examAnswers = examExecution.ExamAnswers;
+    //     questionNum = examExecution.ExamAnswers.Count;
+
+    //     CalculateResults();
+
+    //     examExecution.IsReviewed = true;
+    //     await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
+    //     SuccessRate = (examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum);
+    // }
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?examExecutionId={examExecutionId}");
-        examAnswers = examExecution.ExamAnswers;
-        questionNum = examExecution.ExamAnswers.Count;
+        if (firstRender)
+        {
+            try
+            {
+                await clearLocalStorage();
 
-        CalculateResults();
+                examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?examExecutionId={examExecutionId}");
+                examAnswers = examExecution.ExamAnswers;
+                questionNum = examExecution.ExamAnswers.Count;
 
-        examExecution.IsReviewed = true;
-        await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
-        SuccessRate = (examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum);
+                CalculateResults();
+
+                examExecution.IsReviewed = true;
+                await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
+                SuccessRate = (examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum);
+                StateHasChanged(); // כדי לעדכן את הממשק
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                Navigation.NavigateTo("/login"); // במידה ויש שגיאה
+            }
+        }
     }
 
     private void CalculateResults()
@@ -261,13 +288,6 @@
         examExecution.QuestionsAnswered = examAnswers.Count(ea => ea.AnswerId != null);
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await clearLocalStorage();
-        }
-    }
 
     public async Task clearLocalStorage()
     {

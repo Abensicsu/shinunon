@@ -1,6 +1,5 @@
 ﻿@rendermode InteractiveServer
 
-@inject SHcx cx
 @inject CustomHttpClientService Http
 @inject LocalStorageService LocalStorageService
 @inject ExamExecutionService ExamExecutionService
@@ -571,12 +570,12 @@
         //process examExecutions by memory level
         ExamExecutionService.ProcessExamExecution(examExecution);
 
-        // Navigate to the ExamResultComponent
-        Navigation.NavigateTo($"/exams/{examExecution.UserId}");
+        // Navigate to the Exam Component
+        Navigation.NavigateTo($"/exams");
     }
 
     private void BackToAllExams()
     {
-        Navigation.NavigateTo($"/exams/{examExecution.UserId}");
+        Navigation.NavigateTo($"/exams");
     }
 }

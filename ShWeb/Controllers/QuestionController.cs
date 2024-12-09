@@ -1,6 +1,7 @@
 ﻿using DataModels.Data;
 using DataModels.Models;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -12,14 +13,19 @@ namespace ShWeb.Controllers
     public class QuestionController : ControllerBase
     {
         public SHcx Cx { get; }
-        public QuestionController(SHcx cx)
+        private readonly UserManager<User> _userManager;
+
+        public QuestionController(SHcx cx, UserManager<User> userManager)
         {
             Cx = cx;
+            _userManager = userManager;
         }
 
         [HttpGet]
-        public BaseQuestion[] AllQuestions(int userId)
+        public async Task<BaseQuestion[]> AllQuestionsAsync()
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
             // Retrieve all questions
             var questions = Cx.BaseQuestions
                 .Include(bq => bq.Subject)
@@ -30,9 +36,9 @@ namespace ShWeb.Controllers
             // Replace any base question with the user's version if it exists
             var resultQuestions = questions.Select(q =>
             {
-                // Check if there's a UserQuestion derived from this question for the specified user
+                // Check if there's a UserQנuestion derived from this question for the specified user
                 var userQuestion = (q as Question)?.DerivedUserQuestions
-                    .FirstOrDefault(uq => uq.UserId == userId);
+                    .FirstOrDefault(uq => uq.UserId == currentUser.Id);
 
                 // If a UserQuestion exists, return it; otherwise, return the original BaseQuestion
                 return userQuestion ?? q;
@@ -60,12 +66,14 @@ namespace ShWeb.Controllers
             return Ok();
         }
 
-        [HttpDelete("{questionId}/{userId}")]
-        public IActionResult Delete(int questionId, int userId)
+        [HttpDelete("{questionId}")]
+        public async Task<IActionResult> DeleteAsync(int questionId)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
             var question = Cx.UserQuestions
                .Include(q => q.Answers) // Include answers to delete them too
-               .FirstOrDefault(q => q.BaseQuestionId == questionId && q.UserId == userId);
+               .FirstOrDefault(q => q.BaseQuestionId == questionId && q.UserId == currentUser.Id);
 
             if (question == null)
             {

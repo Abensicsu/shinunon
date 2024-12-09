@@ -1,6 +1,5 @@
 @rendermode InteractiveServer
 
-@inject SHcx cx;
 @inject CustomHttpClientService Http
 @inject ExamExecutionService ExamExecutionService
 @inject NavigationManager Navigation
@@ -10,7 +9,7 @@
 @using DataModels.Services
 @using System.Net.Http.Json
 
-@page "/review-exam/{userId:int}"
+@page "/review-exam"
 
 <h3>Books List</h3>
 
@@ -87,10 +86,9 @@ else
 
 @code {
     [Parameter]
-    public int userId { get; set; } = 3;
-
-    [Parameter]
     public int examExecutionId { get; set; }
+
+    private User currentUser { get; set; }
 
     public List<Book> books;
     public Book selectedBook;
@@ -98,9 +96,29 @@ else
     public int toSubjectId;
     public ExamExecution exam;
 
-    protected override async Task OnInitializedAsync()
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
+        if (firstRender)
+        {
+            try
+            {
+                currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+                if (currentUser == null)
+                {
+                    Navigation.NavigateTo("/login");
+                    return;
+                }
+                books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
+
+                StateHasChanged(); // Trigger UI update
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                Navigation.NavigateTo("/login");
+            }
+        }
     }
 
     private void SelectBook(Book book)
@@ -112,7 +130,7 @@ else
 
     private void StartLearning()
     {
-        exam = ExamExecutionService.createExamExecutionBySubjectsAndExamType(userId, fromSubjectId, toSubjectId, ExamTypeEnum.ReviewExam);
+        exam = ExamExecutionService.createExamExecutionBySubjectsAndExamType(currentUser.Id, fromSubjectId, toSubjectId, ExamTypeEnum.ReviewExam);
         ExamExecutionService.SelectQuestionsCreateExamAnswers(exam);
         examExecutionId = exam.ExamExecutionId;
         Navigation.NavigateTo($"/exam/{examExecutionId}");

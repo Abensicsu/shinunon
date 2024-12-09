@@ -16,7 +16,7 @@
 
         <!-- NavLink for ExamsComponent -->
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="@examsUrl">
+            <NavLink class="nav-link" href="exams">
                 <span class="bi bi-calendar-fill-nav-menu" aria-hidden="true"></span> Exams
             </NavLink>
         </div>
@@ -46,13 +46,13 @@
 
 
 @code {
-    [Parameter]
-    public int UserId { get; set; } = 1;
+    // [Parameter]
+    // public int UserId { get; set; } = 1;
 
-    private string examsUrl;
+    // private string examsUrl;
 
-    protected override void OnInitialized()
-    {
-        examsUrl = $"exams/{UserId}";
-    }
+    // protected override void OnInitialized()
+    // {
+    //     examsUrl = $"exams/{UserId}";
+    // }
 }

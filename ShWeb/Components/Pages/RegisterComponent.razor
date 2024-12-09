@@ -177,31 +177,6 @@
             return;
         }
 
-        // try
-        // {
-        //     var response = await HttpClient.PostAsync<RegisterRequest, TokenResponse>("api/auth/register", request);
-
-        //     if (response != null && !string.IsNullOrEmpty(response.Token))
-        //     {
-        //         // Store the JWT token in local storage
-        //         await LocalStorageService.StoreInLocalStorageAsync("jwt_token", response.Token);
-
-        //         // Navigate to the login page
-        //         NavigationManager.NavigateTo("/forum");
-        //     }
-        //     else
-        //     {
-        //         ErrorMessage = "הרשמה נכשלה. בדוק את הפרטים ונסה שוב.";
-        //     }
-        // }
-        // catch (Exception ex)
-        // {
-        //     // Handle server error
-        //     ErrorMessage = "התרחשה שגיאה בשרת. נסה שוב מאוחר יותר.";
-        //     Console.WriteLine($"Error: {ex.Message}");
-        // }
-        
-
         try
         {
             var response = await HttpClient.PostAsync<RegisterRequest, TokenResponse>("api/auth/register", request);
@@ -209,13 +184,11 @@
             if (response != null && !string.IsNullOrEmpty(response.Token))
             {
                 await LocalStorageService.StoreInLocalStorageAsync("jwt_token", response.Token);
-                NavigationManager.NavigateTo("/forum");
+                NavigationManager.NavigateTo("/exams");
             }
         }
         catch (HttpRequestException ex)
         {
-            // ErrorMessage = ex.
-            // פענח את הודעת השגיאה
             ErrorMessage = ParseServerErrorMessage(ex.Message);
         }
         catch (Exception ex)

@@ -2,7 +2,6 @@
 
 <PageTitle>Forum</PageTitle>
 
-@inject SHcx cx;
 @inject CustomHttpClientService Http
 @inject NavigationManager Navigation
 
@@ -31,7 +30,7 @@
                         <h4 class="forum-question-text">@question.ForumQuestionText</h4>
                         <div class="forum-footer">
                             <span class="forum-user-date">
-                                @(question.User != null ? question.User.UserName : "משתמש לא ידוע") | @question.CreateDate.ToString("dd.MM.yyyy")
+                                @(question.User != null ? question.User.UserFullName : "משתמש לא ידוע") | @question.CreateDate.ToString("dd.MM.yyyy")
                             </span>
                             <div class="forum-meta">
                                 <span>@question.ViewsCount צפיות <i class="fa fa-eye"></i></span>
@@ -235,8 +234,7 @@
 
 
 @code {
-    [Parameter]
-    public int UserId { get; set; } = 1;
+    private User currentUser { get; set; }
 
     private List<ForumQuestion> forumQuestions;
     private List<Subject> subjects;
@@ -244,11 +242,30 @@
     private ForumQuestion newForumQuestion { get; set; } = new ForumQuestion { };
     private int numComments = 0;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        forumQuestions = await Http.GetAsync<List<ForumQuestion>>("api/forum/AllForumQuestions");
-        subjects = await Http.GetAsync<List<Subject>>("api/subject/AllSubjects");
+        if (firstRender)
+        {
+            try
+            {
+                currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+                if (currentUser == null)
+                {
+                    Navigation.NavigateTo("/login");
+                    return;
+                }
+                forumQuestions = await Http.GetAsync<List<ForumQuestion>>("api/forum/AllForumQuestions");
+                subjects = await Http.GetAsync<List<Subject>>("api/subject/AllSubjects");
+                StateHasChanged(); // Trigger UI update
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                Navigation.NavigateTo("/login");
+            }
+        }
     }
+
 
     private string GetForumTypeLabel(ForumQuestionType type)
     {
@@ -294,16 +311,18 @@
                 ForumQuestionText = newForumQuestion.ForumQuestionText,
                 ForumQuestionDescription = newForumQuestion.ForumQuestionDescription,
                 SubjectId = newForumQuestion.SubjectId,
-                UserId = UserId,
+                UserId = currentUser.Id,
                 ViewsCount = 0,
                 CreateDate = DateTime.Now
             };
 
 
-        await Http.PostAsync<ForumQuestion, string>("api/forum/AddForumQuestion", newQuestion);
+        await Http.PostAsync<ForumQuestion, string>
+    ("api/forum/AddForumQuestion", newQuestion);
 
         CloseNewTopicModal();
         await loadQuestions();
+        StateHasChanged(); // Trigger UI update
     }
 
     private async Task loadQuestions()

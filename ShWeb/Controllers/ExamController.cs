@@ -1,5 +1,6 @@
 ﻿using DataModels.Data;
 using DataModels.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,9 +11,13 @@ namespace ShWeb.Controllers
     public class ExamController : Controller
     {
         public SHcx Cx { get; }
-        public ExamController(SHcx cx)
+        private readonly UserManager<User> _userManager;
+
+
+        public ExamController(SHcx cx, UserManager<User> userManager)
         {
             Cx = cx;
+            _userManager = userManager;
         }
 
         [HttpGet]
@@ -26,18 +31,6 @@ namespace ShWeb.Controllers
                 .FirstOrDefault();
 
             return exam;
-
-            //var exam = Cx.ExamExecutions
-            //        .Include(e => e.ExamAnswers)
-            //        .ThenInclude(ea => ea.BaseQuestion)
-            //            .ThenInclude(bq => ((Question)bq).Answers) // Include Answers for Question type
-            //        .Include(e => e.ExamAnswers)
-            //        .ThenInclude(ea => ea.BaseQuestion)
-            //            .ThenInclude(bq => ((UserQuestion)bq).Answers) // Include Answers for UserQuestion type
-            //        .Where(x => x.ExamExecutionId == ExamExecutionId)
-            //        .FirstOrDefault();
-
-            //return exam;
         }
 
         [HttpGet]
@@ -99,10 +92,12 @@ namespace ShWeb.Controllers
 
         [HttpGet]
         [Produces("application/json")]
-        public async Task<ActionResult<List<ExamExecution>>> GetExamsForUserAsync(int userId, string period)
+        public async Task<ActionResult<List<ExamExecution>>> GetExamsForUserAsync(string period)
         {
+            var currentUser = await _userManager.GetUserAsync(User);
+
             DateTime today = DateTime.Today;
-            IQueryable<ExamExecution> exams = Cx.ExamExecutions.Where(e => e.UserId == userId);
+            IQueryable<ExamExecution> exams = Cx.ExamExecutions.Where(e => e.UserId == currentUser.Id);
 
             switch (period.ToLower())
             {

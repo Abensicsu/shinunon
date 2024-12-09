@@ -2,7 +2,6 @@
 
 <PageTitle>Books</PageTitle>
 
-@inject SHcx cx;
 @inject CustomHttpClientService Http
 @inject SefariaService SefariaService
 
@@ -66,9 +65,13 @@ else
                                 .Select(x => x.ToString()).ToList() : new List<string>();
 
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
+        if (firstRender)
+        {
+            books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
+            StateHasChanged(); // Trigger UI update
+        }
     }
 
     public void SelectBook(Book book)
