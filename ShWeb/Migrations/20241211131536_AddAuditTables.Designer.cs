@@ -3,6 +3,7 @@ using System;
 using DataModels.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ShWeb.Migrations
 {
     [DbContext(typeof(SHcx))]
-    partial class SHcxModelSnapshot : ModelSnapshot
+    [Migration("20241211131536_AddAuditTables")]
+    partial class AddAuditTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -40,10 +43,8 @@ namespace ShWeb.Migrations
                         .HasColumnName("base_question_id");
 
                     b.Property<DateTime>("DateCreatedAudit")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("date_created_audit")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnName("date_created_audit");
 
                     b.Property<bool>("IsCorrectAnswer")
                         .HasColumnType("boolean")
@@ -111,10 +112,8 @@ namespace ShWeb.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BaseQuestionId"));
 
                     b.Property<DateTime>("DateCreatedAudit")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("date_created_audit")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnName("date_created_audit");
 
                     b.Property<string>("DiscriminatorRF")
                         .IsRequired()
@@ -421,10 +420,8 @@ namespace ShWeb.Migrations
                         .HasColumnName("create_date");
 
                     b.Property<DateTime>("DateCreatedAudit")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("date_created_audit")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnName("date_created_audit");
 
                     b.Property<int>("ForumQuestionId")
                         .HasColumnType("integer")
@@ -471,10 +468,8 @@ namespace ShWeb.Migrations
                         .HasColumnName("create_date");
 
                     b.Property<DateTime>("DateCreatedAudit")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("date_created_audit")
-                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                        .HasColumnName("date_created_audit");
 
                     b.Property<string>("ForumQuestionDescription")
                         .HasColumnType("text")
@@ -681,7 +676,6 @@ namespace ShWeb.Migrations
                         .HasDatabaseName("EmailIndex");
 
                     b.HasIndex("NormalizedUserName")
-                        .IsUnique()
                         .HasDatabaseName("UserNameIndex");
 
                     b.ToTable("AspNetUsers", (string)null);

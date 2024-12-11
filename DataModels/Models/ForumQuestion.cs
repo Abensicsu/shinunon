@@ -15,7 +15,7 @@ namespace DataModels.Models
     }
 
 
-    public class ForumQuestion
+    public class ForumQuestion : IAuditable
     {
         public int ForumQuestionId { get; set; }
         public ForumQuestionType ForumQuestionType { get; set; } //types comment\subject\discussion
@@ -35,5 +35,8 @@ namespace DataModels.Models
 
         public int ViewsCount { get; set; } = 0;
         public DateTime CreateDate { get; set; }
+
+        public DateTime DateCreatedAudit { get; set; }
+        public DateTime LastUpdatedAudit { get; set; }
     }
 }

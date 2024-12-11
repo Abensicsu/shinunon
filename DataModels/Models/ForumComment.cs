@@ -4,10 +4,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
- 
+
 namespace DataModels.Models
 {
-    public class ForumComment
+    public class ForumComment : IAuditable
     {
         public int ForumCommentId { get; set; }
         public string Comment { get; set; }
@@ -26,5 +26,8 @@ namespace DataModels.Models
         public User User { get; set; }
 
         public ICollection<ForumComment> Comments { get; set; }
+
+        public DateTime DateCreatedAudit { get; set; }
+        public DateTime LastUpdatedAudit { get; set; }
     }
 }

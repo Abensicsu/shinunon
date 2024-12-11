@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
-    public class Answer
+    public class Answer : IAuditable
     {
         public int AnswerId { get; set; }
         public string AnswerText { get; set; }
@@ -16,5 +16,8 @@ namespace DataModels.Models
         public int BaseQuestionId { get; set; }
         [ForeignKey(nameof(BaseQuestionId))]
         public BaseQuestion BaseQuestion { get; set; }
+
+        public DateTime DateCreatedAudit { get; set; }
+        public DateTime LastUpdatedAudit { get; set; }
     }
 }

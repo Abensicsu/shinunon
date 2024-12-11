@@ -7,8 +7,11 @@ using System.Threading.Tasks;
 
 namespace DataModels.Models
 {
-    public class Question : BaseQuestion
+    public class Question : BaseQuestion, IAuditable
     {
         public ICollection<UserQuestion> DerivedUserQuestions { get; set; }
+        // Audit Fields
+        public DateTime DateCreatedAudit { get; set; }
+        public DateTime LastUpdatedAudit { get; set; }
     }
 }

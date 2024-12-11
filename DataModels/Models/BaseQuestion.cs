@@ -13,7 +13,7 @@ namespace DataModels.Models
         OpenQuestion
     }
 
-    public abstract class BaseQuestion
+    public abstract class BaseQuestion : IAuditable
     {
         public int BaseQuestionId { get; set; }
         public string QuestionText { get; set; }
@@ -25,5 +25,8 @@ namespace DataModels.Models
         [ForeignKey(nameof(SubjectId))]
         public Subject Subject { get; set; }
         public ICollection<Answer> Answers { get; set; }
+
+        public DateTime DateCreatedAudit { get; set; }
+        public DateTime LastUpdatedAudit { get; set; }
     }
 }

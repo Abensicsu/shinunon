@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.InteropServices.Marshalling;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,27 +28,13 @@ namespace DataModels.Data
         public DbSet<SubjectText> SubjectTexts { get; set; }
         public DbSet<BaseQuestion> BaseQuestions { get; set; }
         public DbSet<UserQuestion> UserQuestions { get; set; }
-
-        public SHcx(DbContextOptions<SHcx> dbContextOptions) : base(dbContextOptions)
-        {
-
-        }
+        public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<DeletedRecord> DeletedRecords { get; set; }
+        public SHcx(DbContextOptions<SHcx> dbContextOptions) : base(dbContextOptions) { }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-
-            modelBuilder.Entity<ExamExecution>()
-                .HasOne(e => e.FromSubject)
-                .WithMany(s => s.ExamExecutions)
-                .HasForeignKey(e => e.FromSubjectId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            modelBuilder.Entity<ExamExecution>()
-                .HasOne(e => e.ToSubject)
-                .WithMany()
-                .HasForeignKey(e => e.ToSubjectId)
-                .OnDelete(DeleteBehavior.Restrict);
 
             // Define relationships here
             modelBuilder.Entity<ExamExecution>()
@@ -77,11 +64,6 @@ namespace DataModels.Data
             modelBuilder.Entity<User>()
                 .OwnsOne(u => u.UserSettings);
 
-            modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasIndex(u => u.NormalizedUserName).IsUnique(false);
-            });
-
             // Configure one-to-one relationship
             modelBuilder.Entity<Subject>()
                 .HasOne(m => m.SubjectText)
@@ -91,12 +73,6 @@ namespace DataModels.Data
             // Optional: Configure primary key for ExtraEntity if it's not automatically inferred
             modelBuilder.Entity<SubjectText>()
                 .HasKey(e => e.SubjectId);
-
-            //// Configure inheritance mapping for BaseQuestion
-            //modelBuilder.Entity<BaseQuestion>()
-            //    .HasDiscriminator<string>("DiscriminatorRF")
-            //    .HasValue<Question>("DiscriminatorRF")
-            //    .HasValue<UserQuestion>("DiscriminatorRF");
 
             // Configure inheritance mapping for BaseQuestion using the custom discriminator property
             modelBuilder.Entity<BaseQuestion>()
@@ -114,6 +90,45 @@ namespace DataModels.Data
                 .HasOne(uq => uq.Question)
                 .WithMany(q => q.DerivedUserQuestions)
                 .HasForeignKey(uq => uq.OriginalQuestionId);
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(IAuditable).IsAssignableFrom(entityType.ClrType))
+                {
+                    modelBuilder.Entity(entityType.ClrType)
+                        .Property(nameof(IAuditable.DateCreatedAudit))
+                        .HasDefaultValueSql("CURRENT_TIMESTAMP");
+                }
+            }
+        }
+
+        private void UpdateAuditFields()
+        {
+            var entries = ChangeTracker.Entries<IAuditable>();
+            foreach (var entry in entries)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.DateCreatedAudit = DateTime.UtcNow;
+                    entry.Entity.LastUpdatedAudit = DateTime.UtcNow;
+                }
+                else if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.LastUpdatedAudit = DateTime.UtcNow;
+                }
+            }
+        }
+
+        public override int SaveChanges()
+        {
+            UpdateAuditFields();
+            return base.SaveChanges();
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            UpdateAuditFields();
+            return await base.SaveChangesAsync(cancellationToken);
         }
     }
 }
