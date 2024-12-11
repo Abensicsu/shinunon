@@ -7,7 +7,6 @@
 
 <h3>ComponentQuestion</h3>
 
-@inject SHcx cx
 @inject CustomHttpClientService Http
 @inject NavigationManager Navigation
 
@@ -123,6 +122,7 @@ else
 {
     <h4>Edit Question</h4>
 
+    <br />
     <div>
         <label for="edit-subject">Select a subject:</label>
         <select id="edit-subject" @bind="editingQuestion.SubjectId">
@@ -137,14 +137,11 @@ else
         </select>
     </div>
 
-    <b>Question Type</b>
-    <select @onchange="OnEditQuestionTypeChanged">
-        @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
-        {
-            <option value="@qType" selected="@(qType.Equals(editingQuestion.QuestionType))">@qType</option>
-        }
-    </select>
+    <br />
+    <b><h4>Question Type</h4></b>
+    <h2>@editingQuestion.QuestionType</h2>
 
+    <br />
     @if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
     {
         <h3>Question</h3>
@@ -259,6 +256,8 @@ else
     private void AddQuestionBool()
     {
         addQuestionMode = true;
+        editMode = false;
+        InitializeAnswers();
     }
 
     private void HandleAnswerInput(ChangeEventArgs e)
@@ -279,6 +278,7 @@ else
     protected async Task AddQuestion()
     {
         editMode = false;
+
         if (newQuestion.SubjectId == 0)
         {
             errorMessage = "Please select a subject";
@@ -333,12 +333,12 @@ else
             }
 
             newQuestion.Answers = answers; // Add all answers for Select questions
-
         }
 
         newQuestion.UserId = currentUser.Id;
         await Http.PostAsync<UserQuestion, string>("api/Question/Add", newQuestion);
         await RefreshQuestionsAndResetInputs();
+        StateHasChanged(); // Trigger UI update
     }
 
     private async Task DeleteQuestion(int questionId)
@@ -359,19 +359,12 @@ else
         addQuestionMode = false;
     }
 
-    private void OnEditQuestionTypeChanged(ChangeEventArgs e)
-    {
-        if (Enum.TryParse(typeof(QuestionTypeEnum), e.Value.ToString(), out var parsedType))
-        {
-            editingQuestion.QuestionType = (QuestionTypeEnum)parsedType;
-            InitializeAnswers();
-        }
-    }
-
-    private void EditQuestion(BaseQuestion question)
+    private async void EditQuestion(BaseQuestion question)
     {
         editMode = true;
         addQuestionMode = false;
+        InitializeAnswers();
+
         // Casting to UserQuestion for editing
         if (question.DiscriminatorRF == "Question")
         {
@@ -383,7 +376,8 @@ else
                     SubjectId = question.Subject.SubjectId,
                     UserId = currentUser.Id
                 };
-
+            Question questionIncludeAnswers = await Http.GetAsync<Question>($"api/Question/getQuestion?questionId={question.BaseQuestionId}");
+            question.Answers = questionIncludeAnswers.Answers;
         }
         else if (question.DiscriminatorRF == "UserQuestion")
         {
@@ -395,15 +389,14 @@ else
                     SubjectId = question.Subject.SubjectId,
                     UserId = currentUser.Id
                 };
+            UserQuestion questionIncludeAnswers = await Http.GetAsync<UserQuestion>($"api/Question/getUserQuestion?questionId={question.BaseQuestionId}");
+            question.Answers = questionIncludeAnswers.Answers;
         }
 
-        answers = question.Answers.Select(a => new Answer
-            {
-                AnswerText = a.AnswerText,
-                IsCorrectAnswer = a.IsCorrectAnswer
-            }).ToList();
+        answers = question.Answers.ToList();
 
         correctAnswerText = editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && answers.Any() ? answers.First().AnswerText : string.Empty;
+        StateHasChanged(); // Trigger UI update
     }
 
     private async Task SaveEditedQuestion()

@@ -24,27 +24,57 @@ namespace ShWeb.Controllers
         [HttpGet]
         public async Task<BaseQuestion[]> AllQuestionsAsync()
         {
+            // Get the current user using UserManager
             var currentUser = await _userManager.GetUserAsync(User);
 
-            // Retrieve all questions
-            var questions = Cx.BaseQuestions
+            // Retrieve all Questions with related data
+            var questionsWithUserVersions = Cx.BaseQuestions
                 .Include(bq => bq.Subject)
                 .Include(bq => bq.Answers)
-                .Include(bq => (bq as Question).DerivedUserQuestions) // Include derived UserQuestions
+                .OfType<Question>() // Fetch only Questions (not UserQuestions directly)
+                .Select(q => new
+                {
+                    BaseQuestion = (BaseQuestion)q,
+                    UserQuestion = q.DerivedUserQuestions
+                        .FirstOrDefault(uq => uq.UserId == currentUser.Id) // Find user-specific version if it exists
+                })
                 .ToList();
 
-            // Replace any base question with the user's version if it exists
-            var resultQuestions = questions.Select(q =>
-            {
-                // Check if there's a UserQנuestion derived from this question for the specified user
-                var userQuestion = (q as Question)?.DerivedUserQuestions
-                    .FirstOrDefault(uq => uq.UserId == currentUser.Id);
+            // Retrieve all standalone UserQuestions created by the user
+            var userCreatedQuestions = Cx.BaseQuestions
+                .Include(bq => bq.Subject)
+                .Include(bq => bq.Answers)
+                .OfType<UserQuestion>()
+                .Where(uq => uq.UserId == currentUser.Id && uq.OriginalQuestionId == null) // Created by user and not linked to a Question
+                .Cast<BaseQuestion>() // Cast to BaseQuestion
+                .ToList();
 
-                // If a UserQuestion exists, return it; otherwise, return the original BaseQuestion
-                return userQuestion ?? q;
-            }).ToList();
+            // Replace base questions with user versions if they exist
+            var resultQuestions = questionsWithUserVersions
+                .Select(q => (BaseQuestion)(q.UserQuestion ?? q.BaseQuestion)) // Replace with UserQuestion if available
+                .Union(userCreatedQuestions) // Add standalone UserQuestions
+                .Distinct() // Ensure no duplicates
+                .ToArray();
 
-            return resultQuestions.Distinct().ToArray();
+            return resultQuestions;
+        }
+
+        [HttpGet]
+        public async Task<UserQuestion> getUserQuestion(int questionId)
+        {
+            var question = Cx.BaseQuestions
+                .Where(bq => bq.BaseQuestionId == questionId)
+                .Include(bq => bq.Answers).FirstOrDefault();
+            return (UserQuestion)question;
+        }
+
+        [HttpGet]
+        public async Task<Question> getQuestion(int questionId)
+        {
+            var question = Cx.BaseQuestions
+                .Where(bq => bq.BaseQuestionId == questionId)
+                .Include(bq => bq.Answers).FirstOrDefault();
+            return (Question)question;
         }
 
         [HttpPost]
@@ -108,6 +138,7 @@ namespace ShWeb.Controllers
             // Create a new UserQuestion
             if (question.BaseQuestionId == 0)
             {
+                question.Answers.ToList().ForEach(a => a.AnswerId = 0); // Reset all answer IDs to 0
                 Cx.UserQuestions.Add(question);
                 Cx.SaveChanges();
                 return Ok();
@@ -124,13 +155,20 @@ namespace ShWeb.Controllers
                 existingUserQuestion.SubjectId = question.SubjectId;
                 existingUserQuestion.QuestionText = question.QuestionText;
                 existingUserQuestion.QuestionType = question.QuestionType;
-                // Remove existing answers
-                Cx.Answers.RemoveRange(existingUserQuestion.Answers);
+               
+                // Loop through the answers to update the AnswerText and IsCorrectAnswer
+                for (int i = 0; i < question.Answers.Count; i++)
+                {
+                    // Assuming the answers are in the same order
+                    var existingAnswer = existingUserQuestion.Answers.ElementAtOrDefault(i);
+                    if (existingAnswer != null)
+                    {
+                        existingAnswer.AnswerText = question.Answers.ElementAtOrDefault(i).AnswerText;
+                        existingAnswer.IsCorrectAnswer = question.Answers.ElementAtOrDefault(i).IsCorrectAnswer;
+                    }
+                }
 
-                // Add new answers
-                existingUserQuestion.Answers = question.Answers;
-
-                // Update the existing question
+                // Save the updated question and answers
                 Cx.UserQuestions.Update(existingUserQuestion);
             }
 

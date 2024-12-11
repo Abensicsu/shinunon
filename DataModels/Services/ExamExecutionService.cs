@@ -109,7 +109,7 @@ namespace DataModels.Services
         }
 
         //Select questions for examExecution, QuestionsAmount.
-        public void SelectQuestionsCreateExamAnswers(ExamExecution examExecution)
+        public async void SelectQuestionsCreateExamAnswers(ExamExecution examExecution)
         {
             var fromSubject = Cx.Subjects
                 .Where(sub => sub.SubjectId == examExecution.FromSubjectId)
@@ -141,26 +141,37 @@ namespace DataModels.Services
                         && s.BookId >= fromSubjectBook.BookId && s.BookId <= toSubjectBook.BookId)
                 .ToList();
 
-            // Retrieve all base questions
-            var allQuestions = Cx.BaseQuestions
-                .Where(bq => subjects.Contains(bq.Subject))
-                .Include(bq => (bq as Question).DerivedUserQuestions) // Include derived UserQuestions
+            // Retrieve all Questions with related data
+            var questionsWithUserVersions = Cx.BaseQuestions
+                .Include(bq => bq.Subject) 
+                .Include(bq => bq.Answers) 
+                .OfType<Question>() // Fetch only Questions (not UserQuestions directly)
+                .Select(q => new
+                {
+                    BaseQuestion = (BaseQuestion)q,
+                    UserQuestion = q.DerivedUserQuestions
+                        .FirstOrDefault(uq => uq.UserId == user.Id) // Find user-specific version if it exists
+                })
                 .ToList();
 
-            // Replace any base question with the user's version if it exists
-            var questions = allQuestions.Select(q =>
-            {
-                // Check if there's a UserQuestion derived from this question for the specified user
-                var userQuestion = (q as Question)?.DerivedUserQuestions
-                    .FirstOrDefault(uq => uq.UserId == user.Id);
+            // Retrieve all standalone UserQuestions created by the user
+            var userCreatedQuestions = Cx.BaseQuestions
+                .Include(bq => bq.Subject) 
+                .Include(bq => bq.Answers) 
+                .OfType<UserQuestion>() // Only fetch UserQuestion objects
+                .Where(uq => uq.UserId == user.Id && uq.OriginalQuestionId == null) // Created by user and not linked to a Question
+                .Cast<BaseQuestion>() // Cast to BaseQuestion
+                .ToList();
 
-                // If a UserQuestion exists, return it; otherwise, return the original BaseQuestion
-                return userQuestion ?? q;
-            }).Distinct().ToList();
-
+            // Replace base questions with user versions if they exist
+            BaseQuestion[] questions = questionsWithUserVersions
+                .Select(q => (BaseQuestion)(q.UserQuestion ?? q.BaseQuestion)) // Replace with UserQuestion if available
+                .Union(userCreatedQuestions) // Add standalone UserQuestions
+                .Distinct() // Ensure no duplicates
+                .ToArray();
 
             // Minimum of DefaultQuestionCount from userSettings and the total number of questions available.
-            var amount = Math.Min(user.UserSettings.DefaultQuestionCount, questions.Count);
+            var amount = Math.Min(user.UserSettings.DefaultQuestionCount, questions.Length);
 
             // Shuffle the list of questions
             var random = new Random();
