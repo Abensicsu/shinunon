@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using DataModels.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddScoped<ExamPlanService>();
 builder.Services.AddScoped<ExamExecutionService>();
 builder.Services.AddScoped<SefariaService>();
+builder.Services.AddScoped<HebrewNumberConverter>();
+
 
 builder.Services.AddScoped(sp => new HttpClient
 {

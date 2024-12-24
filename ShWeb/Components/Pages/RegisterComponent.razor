@@ -184,7 +184,7 @@
             if (response != null && !string.IsNullOrEmpty(response.Token))
             {
                 await LocalStorageService.StoreInLocalStorageAsync("jwt_token", response.Token);
-                NavigationManager.NavigateTo("/exams");
+                NavigationManager.NavigateTo("/daily-exam");
             }
         }
         catch (HttpRequestException ex)

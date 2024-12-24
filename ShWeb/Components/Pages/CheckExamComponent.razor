@@ -55,62 +55,62 @@
 
 <style>
     .check-exam-container {
-        max-width: 800px;
-        margin: auto;
-        padding: 20px;
-        background-color: #f9f9f9;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .exam-answer {
-        margin-bottom: 20px;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        background-color: #fff;
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
     }
 
     .question-text {
-        font-size: 18px;
-        font-weight: bold;
-        margin-bottom: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
     }
 
     .answer-section {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
     }
 
-        .answer-section div {
-            width: 48%;
-        }
+    .answer-section div {
+    width: 48%;
+    }
 
     .label {
-        font-weight: bold;
-        margin-bottom: 5px;
+    font-weight: bold;
+    margin-bottom: 5px;
     }
 
     .answer-level {
-        margin-top: 10px;
+    margin-top: 10px;
     }
 
     .submit-button {
-        display: block;
-        width: 100%;
-        padding: 10px;
-        background-color: #007bff;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
     }
 
-        .submit-button:hover {
-            background-color: #0056b3;
-        }
+    .submit-button:hover {
+    background-color: #0056b3;
+    }
 </style>
 
 @code {
@@ -140,8 +140,9 @@
     {
         checkSelectQuestions();
         examExecution.ExamAnswers = examAnswers;
-        examExecution.IsReviewed = true;
+        // examExecution.IsReviewed = true;
 
+        // examExecution.ExamStatus = ExamStatusEnum.Completed;
         await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
 
         // Navigate to Exam Results

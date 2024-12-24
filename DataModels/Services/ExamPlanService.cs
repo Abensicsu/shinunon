@@ -114,7 +114,8 @@ namespace DataModels.Services
                     FromSubjectId = fromSubject.SubjectId,
                     ToSubjectId = toSubject.SubjectId,
                     PlanExamId = planExam.ExamPlanId,
-                    UserId = planExam.UserId
+                    UserId = planExam.UserId,
+                    ExamStatus = ExamStatusEnum.Pending,
                 };
                 Cx.ExamExecutions.Add(newExamExecution);
                 Cx.SaveChanges();

@@ -12,6 +12,7 @@ namespace DataModels.Models
 {
     public class Role : IdentityRole<int>
     {
+
     }
     public class User : IdentityUser<int>
     {

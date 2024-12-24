@@ -1,138 +1,446 @@
-@rendermode InteractiveServer
+﻿@rendermode InteractiveServer
+
+@page "/review-exam"
 
 @inject CustomHttpClientService Http
 @inject ExamExecutionService ExamExecutionService
 @inject NavigationManager Navigation
+@inject HebrewNumberConverter HebrewNumberConverter
 
 @using DataModels.Data
 @using DataModels.Models
 @using DataModels.Services
-@using System.Net.Http.Json
 
-@page "/review-exam"
 
-<h3>Books List</h3>
+<div class="review-container" dir="rtl">
+    <!-- Steps Header -->
+    <div class="stepper-container">
+        <div class="step @(currentStep >= 1 ? "active" : "")" @onclick="() => GoToStep(1)">
+            <div class="step-circle">@GetStepIcon(1)</div>
+            <div class="step-label">סוג ספר</div>
+            <!-- Display selected book type if available -->
+            <small class="step-details">@(isTypeSelected ? GetBookTypeName(selectedBookType) : "")</small>
+        </div>
 
-@if (books == null)
-{
-    <p><em>Loading...</em></p>
-}
-else if (selectedBook == null)
-{
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Select</th>
-                <th>Book Name</th>
-                <th>Book Type</th>
-                <th>Book Order</th>
-                <th>Subjects</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var book in books)
-            {
-                <tr>
-                    <td>
-                        <button @onclick="() => SelectBook(book)">Select</button>
-                    </td>
-                    <td>@book.BookName</td>
-                    <td>@book.BookType</td>
-                    <td>@book.BookOrder</td>
-                    <td>
-                        @if (book.Subjects != null && book.Subjects.Any())
-                        {
-                            <ul>
-                                @foreach (var subject in book.Subjects)
-                                {
-                                    <li>@subject.SubjectName</li>
-                                }
-                            </ul>
-                        }
-                        else
-                        {
-                            <p>No subjects available</p>
-                        }
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
-else
-{
-    <h4>Selected Book: @selectedBook.BookName</h4>
-    <div>
-        <label>From Subject:</label>
-        <select @bind="fromSubjectId">
-            @foreach (var subject in selectedBook.Subjects)
-            {
-                <option value="@subject.SubjectId">@subject.SubjectName</option>
-            }
-        </select>
+        <div class="step @(currentStep >= 2 ? "active" : "")" @onclick="() => GoToStep(2)">
+            <div class="step-circle">@GetStepIcon(2)</div>
+            <div class="step-label">ספר</div>
+            <!-- Display selected book name if available -->
+            <small class="step-details">@(selectedBook?.HebrewBookName ?? "")</small>
+        </div>
+
+        <div class="step @(currentStep >= 3 ? "active" : "")" @onclick="() => GoToStep(3)">
+            <div class="step-circle">@GetStepIcon(3)</div>
+            <div class="step-label">
+                @((selectedBook != null && (selectedBook.BookType == BookTypeEnum.Gemara || selectedBook.BookType == BookTypeEnum.Mishna)) ? "דפים" : "פרקים")
+            </div>
+            <!-- Display selected range if available -->
+            <small class="step-details">@((FromChapter > 0 && ToChapter > 0 && IsSelectedChapter) ? $"{HebrewNumberConverter.ConvertToHebrew(FromChapter)} - {HebrewNumberConverter.ConvertToHebrew(ToChapter)}" : "")</small>
+
+          @*   <small class="step-details">
+                @((FromChapter > 0 && ToChapter > 0 && IsSelectedChapter) ? (FromChapter == ToChapter ? $"{FromChapter}" // פרק יחיד
+                    : $"{FromChapter} - {ToChapter}") // טווח פרקים
+                    : "")
+            </small> *@
+        </div>
     </div>
-    <div>
-        <label>To Subject:</label>
-        <select @bind="toSubjectId">
-            @foreach (var subject in selectedBook.Subjects)
-            {
-                <option value="@subject.SubjectId">@subject.SubjectName</option>
-            }
-        </select>
-    </div>
-    <button @onclick="StartLearning">Start Learning</button>
-}
 
+    <!-- Step 1: Select Book Type -->
+    @if (currentStep == 1)
+    {
+        <h3>בחר סוג ספר</h3>
+        <div class="booktype-selection">
+            @foreach (var bookType in Enum.GetValues(typeof(BookTypeEnum)).Cast<BookTypeEnum>())
+            {
+                <button class="booktype-btn @(selectedBookType == bookType ? "selected" : "")"
+                        @onclick="() => SelectBookType(bookType)">
+                    @GetBookTypeName(bookType)
+                </button>
+            }
+        </div>
+    }
+
+    <!-- Step 2: Select Book -->
+    @if (currentStep == 2)
+    {
+        <h3>בחר ספר</h3>
+        <div class="book-selection">
+            @foreach (var book in filteredBooks)
+            {
+                <button class="book-btn @(selectedBook == book ? "selected" : "")"
+                        @onclick="() => SelectBook(book)">
+                    @book.HebrewBookName
+                </button>
+            }
+        </div>
+    }
+
+    <!-- Step 3: Select Range of Chapters -->
+    @if (currentStep == 3)
+    {
+        <h3>
+            @((selectedBook != null && (selectedBook.BookType == BookTypeEnum.Gemara || selectedBook.BookType == BookTypeEnum.Mishna)) ? "בחר טווח דפים" : "בחר טווח פרקים")
+        </h3>
+
+        <!-- Chapter Grid Display -->
+        <div class="chapter-selection">
+            @foreach (var sub in selectedBook.Subjects)
+            {
+                <button class="chapter-btn @(sub.Ordinal >= FromChapter && sub.Ordinal <= ToChapter ? "selected" : "")"
+                        @onclick="() => UpdateChaptersRange((int)selectedBook.Subjects.ElementAt((int)sub.Ordinal-1).Ordinal)">
+                    @HebrewNumberConverter.ConvertToHebrew((int)sub.Ordinal)
+                </button>
+            }
+        </div>
+
+        <!-- Start Button -->
+        <button class="start-btn" @onclick="StartLearning" disabled="@(!IsChapterRangeValid())">התחל מבחן</button>
+    }
+
+</div>
+
+<!-- CSS -->
+<style>
+    .review-container {
+        max-width: 800px;
+        margin: auto;
+        text-align: center;
+    }
+
+    /* Stepper Container */
+    .stepper-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+        margin: 20px auto;
+        max-width: 700px;
+        color: #003366;
+    }
+
+    /* Step Items */
+    .step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        flex: 1; /* Equal spacing */
+        cursor: pointer;
+        text-align: center;
+    }
+
+    .step-details {
+        min-height: 20px; /* Set a fixed height */
+        font-size: 12px;
+        color: #666;
+        margin-top: 5px;
+        text-align: center;
+    }
+
+    /* Add a connecting line between steps */
+    .step:not(:first-child)::after {
+        content: '';
+        position: absolute;
+        top: 16px;
+        right: -50%;
+        width: 100%;
+        height: 2.5px;
+        background-color: lightgray;
+        z-index: 1;
+        transform: translateY(-50%);
+    }
+
+    /* Highlight active steps */
+    .step.active:not(:first-child)::after {
+        background-color: #003366; /* Highlighted line for active steps */
+    }
+
+    /* Step Circle */
+    .step-circle {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background-color: lightgray;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        z-index: 2;
+    @* margin-bottom: 5px; *@
+    }
+
+    /* Highlighted Step Circle */
+    .step.active .step-circle {
+        background-color: #003366;
+    }
+
+    /* Adjust line spacing */
+    .step.active .step-details {
+        margin-top: 10px;
+        color: #003366;
+    }
+
+    .step-label {
+        margin-top: 5px;
+        color: #003366;
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .booktype-selection {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 20px;
+    }
+
+    .booktype-btn {
+        border: 1px solid #003366;
+        color: #003366;
+        border-radius: 5px;
+        padding: 10px 15px;
+        cursor: pointer;
+        background-color: white;
+        transition: all 0.3s ease;
+    }
+
+    .chapter-range-selection {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .book-selection, .chapter-selection {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 15px;
+        justify-content: center;
+        align-items: center;
+        margin-top: 20px;
+    }
+
+    .book-btn {
+        background-color: white;
+        border: 1px solid #003366;
+        color: #003366;
+        border-radius: 5px;
+        padding: 10px 15px;
+        font-size: 14px;
+        text-align: center;
+        transition: background-color 0.3s ease, color 0.3s ease;
+        cursor: pointer;
+    }
+
+        .book-btn:hover {
+            background-color: #003366;
+            color: white;
+        }
+
+        .book-btn.selected {
+            background-color: #003366;
+            color: white;
+            font-weight: bold;
+        }
+
+    .start-btn {
+        margin-top: 60px;
+        background-color: #003366;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        cursor: pointer;
+    }
+
+        .start-btn[disabled] {
+            background-color: lightgray;
+            cursor: not-allowed;
+        }
+
+    .chapter-btn {
+        background-color: white;
+        border: 1px solid #003366;
+        color: #003366;
+        border-radius: 5px;
+        padding: 10px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .chapter-btn:hover {
+            background-color: #003366;
+            color: white;
+        }
+
+        .chapter-btn.selected {
+            background-color: #003366;
+            color: white;
+            font-weight: bold;
+        }
+
+</style>
 
 @code {
-    [Parameter]
-    public int examExecutionId { get; set; }
+    private int currentStep = 1;
 
-    private User currentUser { get; set; }
+    private BookTypeEnum selectedBookType;
+    private List<Book> books;
+    private List<Book> filteredBooks;
+    private Book selectedBook;
 
-    public List<Book> books;
-    public Book selectedBook;
-    public int fromSubjectId;
-    public int toSubjectId;
-    public ExamExecution exam;
+    private int FromChapter { get; set; } = 0;
+    private int ToChapter { get; set; } = 0;
 
+    private bool IsSelectedChapter = false;
+    private bool isTypeSelected = false;
+
+    private User currentUser;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
-            {
-                currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
-                if (currentUser == null)
-                {
-                    Navigation.NavigateTo("/login");
-                    return;
-                }
-                books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
-
-                StateHasChanged(); // Trigger UI update
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                Navigation.NavigateTo("/login");
-            }
+            currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+            books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
         }
+        else
+        {
+            if (books == null)
+                books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
+        }
+    }
+
+    private string GetStepIcon(int step)
+    {
+        if (currentStep == 3 && step == 3 && IsSelectedChapter)
+            return currentStep >= step ? "✔" : "";
+        return currentStep > step ? "✔" : "";
+    }
+
+    private void GoToStep(int step)
+    {
+        // Only allow going to previous steps or steps that have already been completed
+        if (step <= currentStep || IsStepAvailable(step))
+        {
+            currentStep = step;
+
+            // Clear chapter range when moving to a previous step
+            if (step <= 3)
+            {
+                FromChapter = 0;
+                ToChapter = 0;
+                IsSelectedChapter = false;
+            }
+
+            // Clear book selection when moving to a previous step
+            if (step <= 2)
+            {
+                selectedBook = null;
+            }
+
+            // Clear book type selection when moving to the first step
+            if (step == 1)
+            {
+                // selectedBookType = 0; // Reset enum value to default
+                isTypeSelected = false;
+            }
+
+            // Force UI refresh to update .step-details
+            StateHasChanged();
+        }
+    }
+
+    private bool IsStepAvailable(int step)
+    {
+        return step switch
+        {
+            2 => selectedBookType != 0, // Step 2 is available after selecting book type
+            3 => selectedBook != null, // Step 3 is available after selecting a book
+            _ => true
+        };
+    }
+
+    private void SelectBookType(BookTypeEnum bookType)
+    {
+        isTypeSelected = true;
+        selectedBookType = bookType;
+        filteredBooks = books.Where(b => b.BookType == bookType).ToList();
+        currentStep = 2;
     }
 
     private void SelectBook(Book book)
     {
         selectedBook = book;
-        fromSubjectId = book.Subjects.FirstOrDefault().SubjectId;
-        toSubjectId = book.Subjects.LastOrDefault().SubjectId;
+        FromChapter = 1;
+        ToChapter = book.Subjects.Count;
+        currentStep = 3;
     }
 
-    private void StartLearning()
+    private void EnsureValidRange()
     {
-        exam = ExamExecutionService.createExamExecutionBySubjectsAndExamType(currentUser.Id, fromSubjectId, toSubjectId, ExamTypeEnum.ReviewExam);
-        ExamExecutionService.SelectQuestionsCreateExamAnswers(exam);
-        examExecutionId = exam.ExamExecutionId;
-        Navigation.NavigateTo($"/exam/{examExecutionId}");
+        if (FromChapter > ToChapter)
+        {
+            ToChapter = FromChapter;
+        }
     }
+
+    private void UpdateChaptersRange(int selectedChapter)
+    {
+        IsSelectedChapter = true;
+        // if (selectedBook != null)
+        //     Console.WriteLine(selectedBook.Subjects.Count);
+
+        // אם לחצנו על אותו כפתור פעמיים – נאפס את הטווח
+        if (FromChapter == selectedChapter && ToChapter == 0)
+        {
+            FromChapter = 0;
+            return;
+        }
+
+        // אם עדיין לא נבחרה התחלה או נבחר טווח שלם
+        if (FromChapter == 0 || ToChapter != 0)
+        {
+            FromChapter = selectedChapter;
+            // ToChapter = selectedChapter; // מאפשר בחירת פרק יחיד ??
+            ToChapter = 0; // טווח חדש 
+        }
+        else if (selectedChapter >= FromChapter) // בחרנו סוף לטווח
+        {
+            ToChapter = selectedChapter;
+        }
+        else // אם לחצנו על פרק קטן יותר, הוא יהפוך לתחילת הטווח
+        {
+            ToChapter = FromChapter;
+            FromChapter = selectedChapter;
+        }
+    }
+
+    private bool IsChapterRangeValid()
+    {
+        return FromChapter > 0 && ToChapter >= FromChapter;
+    }
+
+    private async void StartLearning()
+    {
+        var fromSubjectId = selectedBook.Subjects.FirstOrDefault(sub => sub.Ordinal == FromChapter).SubjectId;
+        var toSubjectId = selectedBook.Subjects.FirstOrDefault(sub => sub.Ordinal == ToChapter).SubjectId;
+        var exam = ExamExecutionService.createExamExecutionBySubjectsAndExamType(
+            currentUser.Id, fromSubjectId, toSubjectId, ExamTypeEnum.ReviewExam);
+
+        Navigation.NavigateTo($"/exam/{exam.ExamExecutionId}");
+    }
+
+    private string GetBookTypeName(BookTypeEnum bookType) =>
+        bookType switch
+        {
+            BookTypeEnum.Chumash => "חומש",
+            BookTypeEnum.Neviim => "נביאים",
+            BookTypeEnum.Ketuvim => "כתובים",
+            BookTypeEnum.Gemara => "גמרא",
+            BookTypeEnum.Mishna => "משנה",
+            _ => "לא ידוע"
+        };
 }

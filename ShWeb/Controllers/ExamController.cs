@@ -34,6 +34,31 @@ namespace ShWeb.Controllers
         }
 
         [HttpGet]
+        public async Task<List<ExamExecution>> DailyExamExecutions()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+
+            if (currentUser == null)
+            {
+                //return Unauthorized("User not found.");
+            }
+
+            var today = DateTime.Today;
+
+            // Retrieve all exams for today
+            var exams = await Cx.ExamExecutions
+                .Where(ex => ex.UserId == currentUser.Id
+                             && ex.StartTime.HasValue
+                             && ex.StartTime.Value.Date == today)
+                .OrderByDescending(ex => ex.StartTime)
+                .Include(ex => ex.FromSubject)
+                .ThenInclude(sub => sub.Book)
+                .ToListAsync(); // Return a list of all today's exams
+
+            return exams;
+        }
+
+        [HttpGet]
         public ICollection<ExamAnswer> ExamAnswers(int ExamExecutionId)
         {
             return Cx.ExamAnswers
@@ -43,7 +68,7 @@ namespace ShWeb.Controllers
                 .ToList();
         }
 
-        //????????????????
+        
         [HttpPut]
         public async Task<IActionResult> ExamExecution([FromBody] ExamExecution examExecution)
         {
@@ -67,8 +92,9 @@ namespace ShWeb.Controllers
             Cx.ExamExecutions.Attach(examExecution);
             Cx.Entry(examExecution).State = EntityState.Modified;
 
-            existingExecution.IsReviewed = examExecution.IsReviewed;
-
+            //existingExecution.IsReviewed = examExecution.IsReviewed;
+            existingExecution.CachedExamScore = examExecution.CachedExamScore;
+            existingExecution.ExamStatus = examExecution.ExamStatus;
             // Update the ExamAnswers
             foreach (var examAanswer in examExecution.ExamAnswers)
             {
@@ -97,7 +123,7 @@ namespace ShWeb.Controllers
             var currentUser = await _userManager.GetUserAsync(User);
 
             DateTime today = DateTime.Today;
-            IQueryable<ExamExecution> exams = Cx.ExamExecutions.Where(e => e.UserId == currentUser.Id);
+            IQueryable<ExamExecution> exams = Cx.ExamExecutions.Where(e => e.UserId == currentUser.Id).Include(ex => ex.FromSubject).ThenInclude(sub => sub.Book);
 
             switch (period.ToLower())
             {

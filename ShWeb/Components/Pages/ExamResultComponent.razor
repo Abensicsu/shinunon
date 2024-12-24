@@ -35,7 +35,7 @@
                 <span class="label">Question Answered</span>
             </div>
             <div class="summary-item success-rate">
-                <span class="number">@(SuccessRate)%</span>
+                <span class="number">@(examExecution.CachedExamScore)%</span>
                 <span class="label">Success Rate</span>
             </div>
         </div>
@@ -57,144 +57,144 @@
 
 <style>
     .results-container {
-        width: 100%;
-        height: 50%; 
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 20px;
+    width: 100%;
+    height: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
     }
 
     .results-summary {
-        display: flex;
-        justify-content: space-around;
-        width: 100%;
-        margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-bottom: 20px;
     }
 
     .summary-item {
-        text-align: center;
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-        .summary-item.correct {
-            background-color: #e0f7fa;
-        }
+    .summary-item.correct {
+    background-color: #e0f7fa;
+    }
 
-        .summary-item.partially-correct {
-            background-color: #f7eac7;
-        }
+    .summary-item.partially-correct {
+    background-color: #f7eac7;
+    }
 
-        .summary-item.question-qnswered {
-            background-color: #e1aee9;
-        }
+    .summary-item.question-qnswered {
+    background-color: #e1aee9;
+    }
 
-        .summary-item.incorrect {
-            background-color: #ffcdd2;
-        }
+    .summary-item.incorrect {
+    background-color: #ffcdd2;
+    }
 
-        .summary-item.success-rate {
-            background-color: #c8e6c9;
-        }
+    .summary-item.success-rate {
+    background-color: #c8e6c9;
+    }
 
     .number {
-        font-size: 24px;
-        font-weight: bold;
+    font-size: 24px;
+    font-weight: bold;
     }
 
     .label {
-        font-size: 14px;
+    font-size: 14px;
     }
 
     .timers {
-        display: flex;
-        justify-content: space-around;
-        width: 100%;
-        margin-bottom: 20px;
+    display: flex;
+    justify-content: space-around;
+    width: 100%;
+    margin-bottom: 20px;
     }
 
     .timer {
-        text-align: center;
-        padding: 10px;
-        border-radius: 5px;
-        background-color: #f5f5f5;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f5f5f5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .time {
-        font-size: 24px;
-        font-weight: bold;
+    font-size: 24px;
+    font-weight: bold;
     }
 
     .label {
-        font-size: 14px;
+    font-size: 14px;
     }
 
     .inner-exam-component {
-        width: 30%;
-        height: 50%;
-        margin-top: 10px;
-        padding: 10px;
-        background-color: #ffffff;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 30%;
+    height: 50%;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
-        .inner-exam-component h3 {
-            text-align: center;
-            margin-bottom: 10px;
-        }
+    .inner-exam-component h3 {
+    text-align: center;
+    margin-bottom: 10px;
+    }
 
-        .inner-exam-component .exam-answer {
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            background-color: #f9f9f9;
-        }
+    .inner-exam-component .exam-answer {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    }
 
-        .inner-exam-component .question-text {
-            font-size: 15px;
-            font-weight: bold;
-            margin-bottom: 7px;
-        }
+    .inner-exam-component .question-text {
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 7px;
+    }
 
-        .inner-exam-component .answer-section {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 7px;
-        }
+    .inner-exam-component .answer-section {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 7px;
+    }
 
-            .inner-exam-component .answer-section div {
-                width: 48%;
-            }
+    .inner-exam-component .answer-section div {
+    width: 48%;
+    }
 
-        .inner-exam-component .label {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
+    .inner-exam-component .label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    }
 
-        .inner-exam-component .answer-level {
-            margin-top: 10px;
-        }
+    .inner-exam-component .answer-level {
+    margin-top: 10px;
+    }
 
-        .inner-exam-component .submit-button {
-            display: block;
-            width: 100%;
-            padding: 10px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
+    .inner-exam-component .submit-button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    }
 
-            .inner-exam-component .submit-button:hover {
-                background-color: #0056b3;
-            }
+    .inner-exam-component .submit-button:hover {
+    background-color: #0056b3;
+    }
 </style>
 
 @code {
@@ -213,20 +213,6 @@
     public int wrongAnswersNum;
     public int openQuestionNum;
 
-    // protected override async Task OnInitializedAsync()
-    // {
-    //     examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?examExecutionId={examExecutionId}");
-    //     examAnswers = examExecution.ExamAnswers;
-    //     questionNum = examExecution.ExamAnswers.Count;
-
-    //     CalculateResults();
-
-    //     examExecution.IsReviewed = true;
-    //     await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
-    //     SuccessRate = (examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum);
-    // }
-
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -241,9 +227,10 @@
 
                 CalculateResults();
 
-                examExecution.IsReviewed = true;
+                // examExecution.IsReviewed = true;
+                examExecution.ExamStatus = ExamStatusEnum.Completed;
+                examExecution.CachedExamScore = Math.Round((examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum), 2);
                 await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
-                SuccessRate = (examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum);
                 StateHasChanged();
             }
             catch (Exception ex)

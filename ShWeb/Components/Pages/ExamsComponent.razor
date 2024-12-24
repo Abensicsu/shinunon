@@ -64,7 +64,7 @@
                     <strong>Type:</strong> @exam.ExamType
                     <strong>Id:</strong> @exam.ExamExecutionId
 
-                    @if (exam.EndTime == null && DateTime.Now > exam.StartTime)
+                    @* @if (exam.EndTime == null && DateTime.Now > exam.StartTime)
                     {
                         <button class="btn btn-primary" @onclick="@(() => TakeExam(exam.ExamExecutionId))">Start Exam</button>
                     }
@@ -75,7 +75,7 @@
                     else if (exam.EndTime != null && exam.IsReviewed == true)
                     {
                         <button class="btn btn-primary" @onclick="@(() => ViewResults(exam.ExamExecutionId))">View Results</button>
-                    }
+                    } *@
                 </li>
             }
         </ul>
@@ -101,7 +101,7 @@
                     <strong>Type:</strong> @exam.ExamType
                     <strong>Id:</strong> @exam.ExamExecutionId
 
-                    @if (exam.EndTime == null)
+                   @*  @if (exam.EndTime == null)
                     {
                         <button class="btn btn-primary" @onclick="@(() => TakeExam(exam.ExamExecutionId))">Start Exam</button>
                     }
@@ -112,7 +112,7 @@
                     else if (exam.EndTime != null && exam.IsReviewed == true)
                     {
                         <button class="btn btn-primary" @onclick="@(() => ViewResults(exam.ExamExecutionId))">View Results</button>
-                    }
+                    } *@
                 </li>
             }
         </ul>
@@ -162,20 +162,7 @@
 
     private async Task CheckExam(int examExecutionId)
     {
-        // examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
-        // int openQuestionNum = examExecution.ExamAnswers.Count(answer => !string.IsNullOrEmpty(answer.TextAnswer));
-
-        // if (openQuestionNum > 0)
-        // {
-            Navigation.NavigateTo($"/check-exam/{examExecutionId}");
-        // }
-        // else
-        // {
-
-        //     examExecution.IsReviewed = true;
-        //     await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
-        //     Navigation.NavigateTo($"/exam-results/{examExecutionId}");
-        // }
+        Navigation.NavigateTo($"/check-exam/{examExecutionId}");
     }
 
     private void ReviewExam()

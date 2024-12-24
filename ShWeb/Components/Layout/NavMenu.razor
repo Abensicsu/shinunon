@@ -8,51 +8,70 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-        <div class="nav-item px-3">
+        
+       @*  <div class="nav-item px-3">
             <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
             </NavLink>
+        </div> *@
+
+        <!-- NavLink for Daily-exam -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="daily-exam">
+                <span class="bi bi-alarm-nav-menu" aria-hidden="true"></span> מבחן יומי
+            </NavLink>
         </div>
 
-        <!-- NavLink for ExamsComponent -->
+        <!-- NavLink for Review -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="review-exam">
+                <span class="bi bi-card-text-nav-menu" aria-hidden="true"></span> חזרה יזומה
+            </NavLink>
+        </div>
+
+        <!-- NavLink for Daily-Info -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="daily-info">
+                <span class="bi bi-calendar-fill-nav-menu" aria-hidden="true"></span> מידע יומי
+            </NavLink>
+        </div>
+
+        <!-- NavLink for Statistics -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="statistics">
+                <span class="bi bi-bar-chart-nav-menu" aria-hidden="true"></span> סטטיסטיקה
+            </NavLink>
+        </div>
+
+        <!-- NavLink for Exams -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="exams">
-                <span class="bi bi-calendar-fill-nav-menu" aria-hidden="true"></span> Exams
+                <span class="bi bi-calendar-fill-nav-menu" aria-hidden="true"></span> מבחנים
             </NavLink>
         </div>
 
-        <!-- NavLink for BooksComponent -->
+        <!-- NavLink for Books -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="books">
-                <span class="bi bi-book-fill-nav-menu" aria-hidden="true"></span> Books
+                <span class="bi bi-book-nav-menu" aria-hidden="true"></span> ספרים
             </NavLink>
         </div>
 
-        <!-- NavLink for QuestionsComponent -->
+        <!-- NavLink for Questions -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="questions">
-                <span class="bi bi-question-square-fill-nav-menu" aria-hidden="true"></span> Questions
+                <span class="bi bi-question-square-fill-nav-menu" aria-hidden="true"></span> שאלות
             </NavLink>
         </div>
 
-        <!-- NavLink for ForumComponent -->
+        <!-- NavLink for Forum -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="forum">
-                <span class="bi bi-chat-square-fill-nav-menu" aria-hidden="true"></span> Forum
+                <span class="bi bi-chat-square-fill-nav-menu" aria-hidden="true"></span> פורום
             </NavLink>
         </div>
     </nav>
 </div>
 
 
-@code {
-    // [Parameter]
-    // public int UserId { get; set; } = 1;
-
-    // private string examsUrl;
-
-    // protected override void OnInitialized()
-    // {
-    //     examsUrl = $"exams/{UserId}";
-    // }
-}
+      

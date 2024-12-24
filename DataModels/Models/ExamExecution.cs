@@ -15,6 +15,14 @@ namespace DataModels.Models
         ReviewExam
     }
 
+    public enum ExamStatusEnum
+    {
+        Pending,               // Exam is pending
+        Completed,             // Exam is completed
+        Partially_Completed,   // Exam is partially completed
+        WaitingForReview       // Exam is completed but awaiting review by the user
+    }
+
     public class ExamExecution
     {
         public int ExamExecutionId { get; set; }
@@ -24,10 +32,10 @@ namespace DataModels.Models
         public int PartiallyCorrectAnswersNum { get; set; }
         public int WrongAnswersNum { get; set; }
         public int QuestionsAnswered { get; set; }
-
+        public double CachedExamScore { get; set; }
         public ExamTypeEnum ExamType { get; set; }
+        public ExamStatusEnum ExamStatus { get; set; }
         public int? ExamRepeatNumber { get; set; }  //How many times has the exam been done before?
-        public bool? IsReviewed { get; set; }
         public int? BaseQuestionId { get; set; }
         [ForeignKey(nameof(BaseQuestionId))]
         public BaseQuestion CurrentQuestion { get; set; }

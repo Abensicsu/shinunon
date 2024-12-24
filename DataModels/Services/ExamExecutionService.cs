@@ -81,6 +81,7 @@ namespace DataModels.Services
                     FromSubjectId = examExecution.FromSubjectId,
                     ToSubjectId = examExecution.ToSubjectId,
                     UserId = user.Id,
+                    ExamStatus = ExamStatusEnum.Pending,
                 };
                 Cx.ExamExecutions.Add(newExamExecution);
             }
@@ -100,6 +101,7 @@ namespace DataModels.Services
                 FromSubjectId = fromSubjectId,
                 ToSubjectId = toSubjectId,
                 UserId = userId,
+                ExamStatus = ExamStatusEnum.Pending,
             };
 
             Cx.Add(newExamExecution);
@@ -141,11 +143,15 @@ namespace DataModels.Services
                         && s.BookId >= fromSubjectBook.BookId && s.BookId <= toSubjectBook.BookId)
                 .ToList();
 
+            // Retrieve the list of SubjectIds
+            var subjectIds = subjects.Select(s => s.SubjectId).ToList();
+
             // Retrieve all Questions with related data
             var questionsWithUserVersions = Cx.BaseQuestions
-                .Include(bq => bq.Subject) 
-                .Include(bq => bq.Answers) 
+                .Include(bq => bq.Subject)
+                .Include(bq => bq.Answers)
                 .OfType<Question>() // Fetch only Questions (not UserQuestions directly)
+                .Where(q => subjectIds.Contains(q.SubjectId)) // Filter by related subjects using Contains
                 .Select(q => new
                 {
                     BaseQuestion = (BaseQuestion)q,
@@ -156,10 +162,11 @@ namespace DataModels.Services
 
             // Retrieve all standalone UserQuestions created by the user
             var userCreatedQuestions = Cx.BaseQuestions
-                .Include(bq => bq.Subject) 
-                .Include(bq => bq.Answers) 
+                .Include(bq => bq.Subject)
+                .Include(bq => bq.Answers)
                 .OfType<UserQuestion>() // Only fetch UserQuestion objects
-                .Where(uq => uq.UserId == user.Id && uq.OriginalQuestionId == null) // Created by user and not linked to a Question
+                .Where(uq => uq.UserId == user.Id && uq.OriginalQuestionId == null // Created by user and not linked to a Question
+                                && subjectIds.Contains(uq.SubjectId)) // Filter by related subjects using Contains
                 .Cast<BaseQuestion>() // Cast to BaseQuestion
                 .ToList();
 
@@ -169,6 +176,12 @@ namespace DataModels.Services
                 .Union(userCreatedQuestions) // Add standalone UserQuestions
                 .Distinct() // Ensure no duplicates
                 .ToArray();
+
+            if(questions.Length == 0)
+            {
+                Console.WriteLine("0 questions!!");
+                return;
+            }
 
             // Minimum of DefaultQuestionCount from userSettings and the total number of questions available.
             var amount = Math.Min(user.UserSettings.DefaultQuestionCount, questions.Length);

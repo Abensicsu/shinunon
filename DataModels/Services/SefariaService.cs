@@ -36,10 +36,10 @@ namespace DataModels.Services
                 {"Devarim", "דברים"},
                 {"Yehoshua", "יהושע"},
                 {"Shoftim", "שופטים"},
-                {"I Samuel", "שמואל א"},
-                {"II Samuel", "שמואל ב"},
-                {"I Kings", "מלכים א"},
-                {"II Kings", "מלכים ב"},
+                {"I Samuel", "שמואל א'"},
+                {"II Samuel", "שמואל ב'"},
+                {"I Kings", "מלכים א'"},
+                {"II Kings", "מלכים ב'"},
                 {"Yeshayahu", "ישעיהו"},
                 {"Yirmeyahu", "ירמיהו"},
                 {"Yechezkel", "יחזקאל"},
@@ -66,8 +66,8 @@ namespace DataModels.Services
                 {"Daniel", "דניאל"},
                 {"Ezra", "עזרא"},
                 {"Nehemiah", "נחמיה"},
-                {"I Chronicles", "דברי הימים א"},
-                {"II Chronicles", "דברי הימים ב"},
+                {"I Chronicles", "דברי הימים א'"},
+                {"II Chronicles", "דברי הימים ב'"},
             };
 
             MishnaTractates = new Dictionary<string, string>
