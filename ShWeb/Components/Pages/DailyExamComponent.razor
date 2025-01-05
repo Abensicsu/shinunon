@@ -29,17 +29,11 @@
             @foreach (var DailyExam in DailyExams)
             {
                 <div class="exam-card" @onclick="() => NavigateToExam(DailyExam)">
-                    @* <span>@GetStatusInHebrew(DailyExam.ExamStatus)</span> *@
                     <span class="exam-details">@DailyExam.FromSubject.Book.HebrewBookName | @GetCorrectOrdinal(DailyExam.FromSubject)</span>
-                    @* <span>@DailyExam.StartTime?.ToString("dd/MM/yyyy")</span> *@
                     <span class="exam-date">@GetHebrewDate(DailyExam.StartTime)</span>
-                    @* <span class="exam-score">@DailyExam.CachedExamScore%</span> *@
                     <span class="exam-score">
-                        @(DailyExam.ExamStatus == ExamStatusEnum.Completed @* || DailyExam.ExamStatus == ExamStatusEnum.WaitingForReview *@
-                            ? $"{@DailyExam.CachedExamScore}%"
-                            : "")
+                        @(DailyExam.ExamStatus == ExamStatusEnum.Completed ? $"{@DailyExam.CachedExamScore}%" : "")
                     </span>
-
                     <span class="status @(DailyExam.ExamStatus == ExamStatusEnum.Completed ? "completed" :
                      DailyExam.ExamStatus == ExamStatusEnum.Partially_Completed ? "partially" :
                      DailyExam.ExamStatus == ExamStatusEnum.WaitingForReview ? "waiting-review" : "pending")">
@@ -62,16 +56,10 @@
             @foreach (var exam in FilteredPreviousExams)
             {
                 <div class="exam-card" @onclick="() => NavigateToExam(exam)">
-                    @* <span>@GetStatusInHebrew(exam.ExamStatus)</span> *@
                     <span class="exam-details">@exam.FromSubject.Book.HebrewBookName | @GetCorrectOrdinal(exam.FromSubject)</span>
-                    @* <span>@exam.StartTime?.ToString("dd/MM/yyyy")</span> *@
                     <span class="exam-date">@GetHebrewDate(exam.StartTime)</span>
-                    @* <span class="exam-score">@exam.CachedExamScore%</span> *@
-                    @* <span class="exam-score">@(exam.CachedExamScore > 0 ? $"{exam.CachedExamScore} %" : "")</span> *@
                     <span class="exam-score">
-                        @(exam.ExamStatus == ExamStatusEnum.Completed @* || DailyExam.ExamStatus == ExamStatusEnum.WaitingForReview *@
-                            ? $"{@exam.CachedExamScore}%"
-                            : "")
+                        @(exam.ExamStatus == ExamStatusEnum.Completed ? $"{@exam.CachedExamScore}%" : "")
                     </span>
                     <span class="status @(exam.ExamStatus == ExamStatusEnum.Completed ? "completed" :
                      exam.ExamStatus == ExamStatusEnum.Partially_Completed ? "partially" :
@@ -91,7 +79,7 @@
 <style>
     .daily-exam-container {
         font-family: Arial, sans-serif;
-        max-width: 900px;
+        max-width: 1100px;
         margin: 0 auto;
         background-color: #f9faff;
         padding: 20px;
@@ -127,15 +115,15 @@
 
             .filters input[type="text"] {
                 background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23003366" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.346a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>');
-                background-position: 10px center; 
-                background-repeat: no-repeat; 
-                padding-right: 20px; 
-                direction: rtl; 
-                text-align: right; 
-                color: #003366; 
-                font-size: 14px; 
-                border: 1px solid #003366; 
-                border-radius: 8px; 
+                background-position: 10px center;
+                background-repeat: no-repeat;
+                padding-right: 20px;
+                direction: rtl;
+                text-align: right;
+                color: #003366;
+                font-size: 14px;
+                border: 1px solid #003366;
+                border-radius: 8px;
             }
 
 

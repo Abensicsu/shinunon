@@ -8,11 +8,10 @@
 @inject NavigationManager NavigationManager
 @inject LocalStorageService LocalStorageService
 
-@page "/login"
 
-<h3>LoginComponent</h3>
+@* <h3>LoginComponent</h3> *@
 
-<div class="auth-container">
+<div class="auth-container" dir="rtl">
     <div class="form-container">
         <h1 class="form-title">התחברות</h1>
         <div class="form-group">
@@ -60,7 +59,7 @@
         font-size: 24px;
         font-weight: bold;
         margin-bottom: 20px;
-        color: #0068d0;
+        color: #003366;
     }
 
     .form-group {
@@ -84,7 +83,7 @@
         }
 
     .submit-button {
-        background-color: #0068d0;
+        background-color: #003366;
         color: #ffffff;
         padding: 10px 15px;
         border: none;
@@ -96,7 +95,7 @@
     }
 
         .submit-button:hover {
-            background-color: #0056a8;
+            background-color: #003366;
         }
 
     .error-message {
@@ -111,7 +110,7 @@
     }
 
         .auth-links a {
-            color: #0068d0;
+            color: #003366;
             text-decoration: none;
         }
 

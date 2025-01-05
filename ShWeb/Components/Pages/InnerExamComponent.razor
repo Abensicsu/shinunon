@@ -3,7 +3,6 @@
 @inject CustomHttpClientService Http
 @inject LocalStorageService LocalStorageService
 @inject ExamExecutionService ExamExecutionService
-@* @inject IJSRuntime JS *@
 @inject NavigationManager Navigation
 
 @using System.Text.Json
@@ -12,200 +11,641 @@
 @using DataModels.Models
 @using DataModels.Services
 
-<h3>InnerExamComponent</h3>
+<PageTitle>ביצוע מבחן</PageTitle>
 
-@if (currentQuestion != null)
-{
-    <div class="question-container">
-        <h4>@currentQuestion.QuestionText</h4>
+<div class="exam-container" dir="rtl">
+    <!-- Header -->
+    @if (Permission)
+    {
+        <div class="exam-header">
+            @* <div class="header-right"> *@
+            <span class="progress-indicator">
+                <i class="bi bi-check-circle">  </i>
+                ענית על @answeredQuestions שאלות מתוך @questionNum
+            </span>
+            @* </div> *@
+            @* <div class="header-left">
+            <button class="back-button" @onclick="BackToAllExams">
+                <i class="bi bi-box-arrow-left"></i> יציאה
+            </button>
+            <button class="edit-question-button" @onclick="EditQuestion">
+                <i class="bi bi-pen"></i> עריכת שאלה
+            </button>
+            <button class="hint-button" @onclick="ShowHint">
+                <i class="bi bi-lightbulb"></i> רמז
+            </button>
+        </div> *@
 
-        <div class="question">
-            @if (currentQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+        </div>
+    }
+
+    <!-- Body -->
+    <div class="exam-body">
+        <!-- Question Content -->
+        @if (currentQuestion != null)
+        {
+            @*  <!-- Question Header -->
+                <div class="question-header">
+                    <h3 class="question-title">@examExecution.FromSubject.Book.HebrewBookName | @GetCorrectOrdinal(examExecution.FromSubject)</h3>
+                    <span class="question-counter">שאלה מס' @(currentQuestionIndex + 1) </span>
+                </div> *@
+
+            <!-- Question Header -->
+            <div class="question-header">
+                <div class="header-left">
+                    <h3 class="question-title">@examExecution.FromSubject.Book.HebrewBookName | @GetCorrectOrdinal(examExecution.FromSubject)</h3>
+                    <h6 class="question-counter">שאלה מס' @(currentQuestionIndex + 1)</h6>
+                </div>
+                <div class="header-right">
+                    @if (Permission)
+                    {
+                        <button class="hint-button">
+                            <i class="bi bi-lightbulb"></i> רמז
+                        </button>
+                    }
+                    <button class="edit-question-button">
+                        <i class="bi bi-pen"></i> עריכת שאלה
+                    </button>
+                    @if (Permission)
+                    {
+                        <button class="back-button" @onclick="BackToAllExams">
+                            <i class="bi bi-box-arrow-left"></i> יציאה
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="question-container">
+                <!-- Question Text -->
+                <div class="question-text">
+                    <h4>@currentQuestion.QuestionText</h4>
+                </div>
+
+                <!-- Question Options (Dynamic based on type) -->
+                <div class="question-options">
+                    @if (currentQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+                    {
+                        <div class="answers-list">
+                            @foreach (var answer in currentQuestion.Answers)
+                            {
+                                <div class="answer-option">
+                                    <input type="radio" id="@answer.AnswerId" name="option" value="@answer.AnswerId"
+                                           checked="@IsAnswerSelected(answer.AnswerId)" @onchange="SelectAnswer"
+                                           disabled="@(Permission ? null : true)" />
+                                    <label for="@answer.AnswerId">@answer.AnswerText</label>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (currentQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+                    {
+                        <textarea class="open-question-textarea" value="@examAnswers.ElementAt(currentQuestionIndex).TextAnswer" @oninput="UpdateOpenAnswerText"
+                                  @onchange="openAnswer" readonly="@(!Permission ? true : null)"></textarea>
+                    }
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="navigation-buttons">
+                    <button class="prev-button" @onclick="PrevQuestion" disabled="@isFirstQuestion">הקודם</button>
+                    <button class="next-button" @onclick="NextQuestion" disabled="@isLastQuestion">הבא</button>
+                    @if (answeredQuestions == questionNum && Permission)
+                    {
+                        <button class="end-test-button" @onclick="EndTest">בדיקה</button>
+                    }
+                    @*  else
+                    {
+                        <button @onclick="BackToAllExams">All Exams</button>
+                    } *@
+                </div>
+            </div>
+        }
+        @* </div> *@
+    </div>
+
+    <!-- Footer -->
+    <div class="exam-footer">
+        <!-- Pagination Table -->
+        <div class="question-number-table no-radio">
+            <table>
+                <tbody>
+                    <tr>
+                        @for (int i = 0; i < questionNum; i++)
+                        {
+                            <td class="@(i == currentQuestionIndex ? "current" : (answeredQuestionsArray[i] ? "answered" : "unanswered"))">
+
+                                <label>
+                                    <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" />
+                                    <span class="circle"></span>
+                                </label>
+
+                                @* <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" /> *@
+                                @* <label>@(i + 1)</label> *@
+                            </td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-container">
+            @if (Permission)
             {
-                @foreach (var answer in currentQuestion.Answers)
-                {
-                    <div class="option @(GetAnswerClass(answer.AnswerId))">
-                        <input type="radio" name="option" id="@answer.AnswerId" value="@answer.AnswerId" checked="@IsAnswerSelected(answer.AnswerId)" @onchange="SelectAnswer" disabled="@(Permission ? null : true)" />
-                        <label for="@answer.AnswerId">@answer.AnswerText</label>
-                    </div>
-                }
+                @*  <div class="timer">
+                    <span class="timer-icon"><i class="bi bi-stopwatch"></i></span>
+                    <span>@remainingTime נותרו</span>
+                </div> *@
+
+                <div class="timer-circle">
+                    <span class="time-label">נותרו</span>
+                    <span class="time-text">@remainingTime</span>
+                </div>
+                @* <div class="total-time">
+                    <span>@examDuration.Duration()</span>
+                </div> *@
             }
-            else if (currentQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+            @* else
             {
-                <textarea class="@GetAnswerClass(currentQuestion.Answers.FirstOrDefault().AnswerId)" value="@examAnswers.ElementAt(currentQuestionIndex).TextAnswer" @oninput="UpdateOpenAnswerText" @onchange="openAnswer" readonly="@(!Permission ? true : null)"></textarea>
+                <div class="timer">
+                     <span class="timer-icon"><i class="bi bi-stopwatch"></i></span>
+                <span>@examExecution.EndTime - @examExecution.StartTime זמן מבחן כולל</span> 
+                </div>} *@
+            else
+            {
+                <div class="timer">
+                    <span> זמן מבחן כולל</span>
+                </div>
             }
         </div>
-        <button @onclick="PrevQuestion" disabled="@isFirstQuestion">Previous</button>
-        <button @onclick="NextQuestion" disabled="@isLastQuestion">Next</button>
-        @if (Permission)
-        {
-            <button @onclick="EndTest">End Test</button>
-        }
-        else
-        {
-            <button @onclick="BackToAllExams">All Exams</button>
-        }
     </div>
-}
-
-<div class="question-number-table">
-    <table>
-        <thead>
-            <tr>
-                @for (int i = 1; i <= questionNum; i++)
-                {
-                    <th>@i</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                @for (int i = 0; i < questionNum; i++)
-                {
-                    <td>
-                        <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" />
-                    </td>
-                }
-            </tr>
-        </tbody>
-    </table>
 </div>
-
-@if (Permission)
-{
-    <div class="timer-container">
-        <div class="elapsed-timer">
-            <span>Elapsed Time:</span>
-            <span>@elapsedTime</span>
-        </div>
-        <div class="remaining-timer">
-            <span>Remaining Time:</span>
-            <span>@remainingTime</span>
-        </div>
-    </div>
-}
 
 @* <ConfirmationPopupComponent @ref="confirmationDialog"></ConfirmationPopupComponent> *@
 
 <style>
-    .question-container {
-        background-color: #f5f5f5;
-        padding: 20px;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        position: relative;
+    .exam-container {
+        width: 1200px;
+        background-color: #FFFFFF;
+        border-radius: 8px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        font-family: Arial, sans-serif;
     }
 
-
-    .option {
-        margin-bottom: 10px;
+    .exam-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #FFFFFF;
+        padding: 5px 10px;
     }
 
-        .option input[type="radio"] {
-            margin-right: 5px;
+    .progress-indicator {
+        background-color: #FFFFFF;
+        border: 1px solid #FEC000;
+        padding: 7px 17px;
+        border-radius: 12px;
+        font-size: 16px;
+        color: #003366;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        margin: auto;
+        width: fit-content;
+    }
+
+        .progress-indicator i {
+            margin-left: 8px;
         }
 
-    .button-container {
-        position: absolute;
-        top: 10px;
-        right: 10px;
+    .exam-body {
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
     }
 
-        .button-container button {
-            margin-left: 10px;
-            font-size: 16px;
+    .question-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        color: #003366;
+    }
+
+    .header-left {
+        text-align: right;
+    }
+
+    .header-right {
+        display: flex;
+    }
+
+        .header-right button {
+            background-color: white;
+            color: #003366;
+            padding: 5px;
+            border: none;
+            border-radius: 4px;
             cursor: pointer;
         }
 
-    .btn-primary {
-        background-color: #007bff;
-        color: white;
-        border: 1px solid #007bff;
-        border-radius: 4px;
-        padding: 10px 20px;
-    }
-
-        .btn-primary:hover {
-            background-color: #0056b3;
-            border-color: #004085;
+        .header-right i {
+            font-size: 16px;
         }
 
-    .btn-danger {
-        background-color: #dc3545;
-        color: white;
-        border: 1px solid #dc3545;
-        border-radius: 4px;
-        padding: 10px 20px;
+    .question-container {
+        background-color: #FFFFFF;
+        border: 1px solid #D1D5DB; /* מסגרת אפורה עדינה */
+        border-radius: 12px; /* פינות מעוגלות */
+        padding: 20px;
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* צל עדין */
     }
 
-        .btn-danger:hover {
-            background-color: #c82333;
-            border-color: #bd2130;
-        }
-
-    .btn-info {
-        background-color: #17a2b8;
-        color: white;
-        border: 1px solid #17a2b8;
-        border-radius: 4px;
-        padding: 10px 20px;
+    .question-text {
+        font-size: 18px;
+        font-weight: 600;
+        color: #003366;
+        margin-bottom: 20px;
     }
 
-        .btn-info:hover {
-            background-color: #138496;
-            border-color: #117a8b;
-        }
-
-
-    .question-number-table table {
-        width: 100%;
-        border-collapse: collapse;
+    .answers-list {
+        margin-bottom: 20px;
     }
 
-    .question-number-table th,
-    .question-number-table td {
-        padding: 8px;
-        text-align: center;
-        border: 1px solid #ddd;
-    }
-
-    button {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        margin-right: 10px;
-    }
-
-        button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-    textarea {
-        width: 600px;
-        height: 150px;
-        padding: 10px;
-        border-radius: 5px;
-        border: 1px solid #ccc;
+    .answer-option {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
         font-size: 16px;
+        font-family: Arial, sans-serif;
+    }
+
+        .answer-option input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #003366;
+            border-radius: 50%;
+            outline: none;
+            margin-right: 10px;
+            position: relative;
+            cursor: pointer;
+        }
+
+            .answer-option input[type="radio"]:checked::before {
+                content: "✔";
+                color: #003366;
+                font-weight: bold;
+                font-size: 10px;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+        .answer-option label {
+            cursor: pointer;
+            color: #003366;
+            font-weight: normal;
+            transition: font-weight 0.2s ease-in-out;
+            margin-right: 10px;
+        }
+
+        .answer-option input[type="radio"]:checked + label {
+            font-weight: bold;
+            color: #003366;
+        }
+
+    .open-question-textarea {
+        width: 100%;
+        height: 150px;
+        border: 1px solid #D1D5DB;
+        border-radius: 8px;
+        padding: 15px;
+        font-size: 16px;
+        color: #374151;
+    }
+
+    .navigation-buttons {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+    }
+
+        .navigation-buttons button {
+            background-color: #003366;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+
+            .navigation-buttons button:hover {
+                background-color: #003366;
+            }
+
+        .navigation-buttons .end-test-button {
+            background-color: #FBBF24; /* צהוב */
+            color: #1F2937;
+        }
+
+            .navigation-buttons .end-test-button:hover {
+                background-color: #F59E0B;
+            }
+
+    @* .exam-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #FFFFFF;
+        padding: 10px 20px;
+        border-top: 1px solid #E5E5E5;
+        margin-top: 20px;
     }
 
     .timer-container {
         display: flex;
-        justify-content: center;
-        margin-bottom: 20px;
+        align-items: center;
+        font-size: 16px;
+        color: #3D3C3C;
     }
 
-    .elapsed-timer,
-    .remaining-timer {
-        background-color: #fff;
-        padding: 10px;
+    .timer-icon {
+        color: #FEC000;
+        margin-right: 5px;
+    }
+
+    .pagination {
+        display: flex;
+        gap: 10px;
+    }
+
+    .pagination-item {
+        background-color: #FFFFFF;
+        border: 1px solid #003366;
+        color: #003366;
+        padding: 5px 10px;
         border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        margin: 0 10px;
+        cursor: pointer;
+    }
+
+        .pagination-item.active {
+            background-color: #003366;
+            color: #FFFFFF;
+        } *@
+
+    @*  .exam-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background-color: #FFFFFF;
+        border-top: 1px solid #E5E5E5;
+    }
+
+    .timer-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 150px;
+    }
+
+    .timer-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 3px solid #FEC000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #FFFFFF;
+        color: #003366;
+        font-weight: bold;
+    }
+
+    .time-text {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .time-label {
+        font-size: 12px;
+        color: #3D3C3C;
+    }
+
+    .question-number-table {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+        .question-number-table table {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+         .question-number-table td {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #003366;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            line-height: 30px;
+            color: #003366;
+        }
+
+            .question-number-table td label {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+            }
+
+                .question-number-table td label .circle {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    border: 2px solid #003366;
+                    display: inline-block;
+                    background-color: transparent;
+                }
+
+
+        .question-number-table tr {
+            border-color: inherit;
+            border-style: solid;
+            border-width: 0;
+            display: flex;
+            flex-direction: row;
+            gap: 5px;
+        }*@
+
+    @* .question-number-table td.current {
+            background-color: #FEC000;
+            color: #FFFFFF;
+        }
+
+        .question-number-table td.answered {
+            background-color: #003366;
+            color: #FFFFFF;
+        }
+
+        .question-number-table td.unanswered {
+            background-color: #FFFFFF;
+            color: #003366;
+        } *@
+
+
+    @* td.current label .circle {
+        background-color: #FEC000; /* צהוב */
+    }
+
+    td.answered label .circle {
+        background-color: #003366; /* כחול */
+        color: #FFFFFF;
+    }
+
+    td.unanswered label .circle {
+        background-color: #FFFFFF; /* לבן */
+    }
+
+        .question-number-table td input[type="radio"] {
+            display: none;
+        }
+
+        .question-number-table td label {
+            display: block;
+            width: 100%;
+            height: 100%;
+            line-height: 30px;
+            text-align: center;
+            cursor: pointer;
+        } *@
+
+    .exam-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        background-color: #FFFFFF;
+        border-top: 1px solid #E5E5E5;
+    }
+
+    .timer-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .timer-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 2px solid #FEC000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #FFFFFF;
+        color: #003366;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    .time-text {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .time-label {
+        font-size: 12px;
+        color: #3D3C3C;
+    }
+
+    .question-number-table {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+        .question-number-table tr {
+            border-color: inherit;
+            border-style: solid;
+            border-width: 0;
+            display: flex;
+        }
+
+        .question-number-table td {
+            width: 30px;
+            height: 30px;
+            border: 2px solid #003366;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            color: #003366;
+        }
+
+    td.current .circle {
+        background-color: #FEC000; /* Yellow */
+    }
+
+    td.answered .circle {
+        background-color: #003366; /* Blue */
+        color: #FFFFFF;
+    }
+
+    td.unanswered .circle {
+        background-color: #FFFFFF; /* White */
+    }
+
+    .question-number-table td label {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+
+    .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: inline-block;
+        background-color: transparent;
+        border: 2px solid #003366;
+    }
+
+    @* .input[type="radio"] {
+        display: none;
+    } *@
+
+    .no-radio input[type="radio"] {
+        display: none;
     }
 
     .correct-answer {
@@ -222,7 +662,6 @@
         background-color: #f7eac7;
         color: #856404;
     }
-
 </style>
 
 @code {
@@ -253,6 +692,7 @@
     public DateTime startTime;
     public TimeSpan examDuration = TimeSpan.FromMinutes(15);
     public DateTime questionStartTime; // Question Time
+    private bool[] answeredQuestionsArray;
 
     public string previousLocation; //location before navigate to other page in app
 
@@ -342,6 +782,12 @@
                         InitializeTimers();
                 }
             }
+            answeredQuestionsArray = new bool[questionNum];
+
+            for (int i = 0; i < questionNum; i++)
+            {
+                answeredQuestionsArray[i] = false;
+            }
             StateHasChanged(); // Trigger a re-render
         }
     }
@@ -356,7 +802,7 @@
         if (previousLocation.StartsWith(Navigation.BaseUri + "exam/") && Permission && !endTest)
         {
             examExecution.ExamStatus = ExamStatusEnum.Partially_Completed;//אחרי לחיצה על סיום מבחן Partially_Completed
-            // await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
+                                                                          // await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
             await SaveDataToLocalStorage();
         }
         // Update the previous location
@@ -413,6 +859,19 @@
         remainingTimer.Start();
     }
 
+    public string GetCorrectOrdinal(Subject subject)
+    {
+        return subject.Book.BookType switch
+        {
+            BookTypeEnum.Chumash => $"פרק {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            BookTypeEnum.Neviim => $"פרק {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            BookTypeEnum.Ketuvim => $"פרק {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            BookTypeEnum.Gemara => $"דף {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            BookTypeEnum.Mishna => $"דף {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            _ => "לא ידוע"
+        };
+    }
+
     private async Task SaveDataToLocalStorage() //index, timers, examExecution
     {
         elapsedTimer?.Stop();
@@ -453,6 +912,9 @@
                     existingAnswer.Answer = selectedAnswer;
                     existingAnswer.AnswerId = selectedAnswer.AnswerId;
                 }
+                // Update answeredQuestionsArray for the current question
+                answeredQuestionsArray[currentQuestionIndex] = true;
+
                 // Add updated answers to examExecution
                 examExecution.ExamAnswers = examAnswers;
             }
@@ -461,7 +923,27 @@
 
     private void UpdateOpenAnswerText(ChangeEventArgs e)
     {
-        currentOpenAnswerText = e.Value.ToString();
+        // if (e.Value.ToString() != "")
+        // {
+        //     answeredQuestionsArray[currentQuestionIndex] = true;
+        //     currentOpenAnswerText = e.Value.ToString();
+        // }
+        // else
+        // {
+        //     answeredQuestionsArray[currentQuestionIndex] = false;
+        //     currentOpenAnswerText = string.Empty;
+        // }
+
+        if (!string.IsNullOrWhiteSpace(e.Value.ToString()))
+        {
+            answeredQuestionsArray[currentQuestionIndex] = true;
+            currentOpenAnswerText = e.Value.ToString();
+        }
+        else
+        {
+            answeredQuestionsArray[currentQuestionIndex] = false;
+            currentOpenAnswerText = string.Empty;
+        }
     }
 
     private void openAnswer(ChangeEventArgs e)
@@ -507,7 +989,9 @@
         if (int.TryParse(e.Value.ToString(), out int selectedIndex))
         {
             if (Permission)
+            {
                 UpdateCurrentQuestionTime();
+            }
             currentQuestionIndex = selectedIndex;
             SetCurrentQuestion();
         }
@@ -554,6 +1038,7 @@
 
     private bool isFirstQuestion => currentQuestionIndex == 0;
     private bool isLastQuestion => currentQuestionIndex == questionNum - 1;
+    private int answeredQuestions => examAnswers?.Count(e => !string.IsNullOrEmpty(e.TextAnswer) || e.AnswerId != null) ?? 0;
 
     private async void EndTest()
     {
@@ -577,7 +1062,7 @@
         ExamExecutionService.ProcessExamExecution(examExecution);
 
         // Navigate to the Exam Component
-        Navigation.NavigateTo($"/exams");
+        Navigation.NavigateTo($"/daily-exam");
     }
 
     private void BackToAllExams()

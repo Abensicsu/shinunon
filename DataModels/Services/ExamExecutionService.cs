@@ -111,7 +111,7 @@ namespace DataModels.Services
         }
 
         //Select questions for examExecution, QuestionsAmount.
-        public async void SelectQuestionsCreateExamAnswers(ExamExecution examExecution)
+        public void SelectQuestionsCreateExamAnswers(ExamExecution examExecution)
         {
             var fromSubject = Cx.Subjects
                 .Where(sub => sub.SubjectId == examExecution.FromSubjectId)

@@ -9,11 +9,11 @@
 @inject NavigationManager NavigationManager
 @inject LocalStorageService LocalStorageService
 
-<h3>RegisterComponent</h3>
-
 @page "/register"
 
-<div class="auth-container">
+@* <h3>RegisterComponent</h3> *@
+
+<div class="auth-container" dir="rtl">
     <div class="form-container">
         <h1 class="form-title">הרשמה</h1>
         <div class="form-group">
@@ -36,7 +36,7 @@
         }
 
         <div class="auth-links">
-            <p>רשום כבר? <a href="/login">התחבר</a></p>
+            <p>רשום כבר? <a href="/">התחבר</a></p>
         </div>
     </div>
 </div>
@@ -65,7 +65,7 @@
         font-size: 24px;
         font-weight: bold;
         margin-bottom: 20px;
-        color: #0068d0;
+        color: #003366;
     }
 
     .form-group {
@@ -89,7 +89,7 @@
         }
 
     .submit-button {
-        background-color: #0068d0;
+        background-color: #003366;
         color: #ffffff;
         padding: 10px 15px;
         border: none;
@@ -101,7 +101,7 @@
     }
 
         .submit-button:hover {
-            background-color: #0056a8;
+            background-color: #003366;
         }
 
     .error-message {
@@ -116,7 +116,7 @@
     }
 
         .auth-links a {
-            color: #0068d0;
+            color: #003366;
             text-decoration: none;
         }
 

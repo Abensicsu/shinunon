@@ -27,6 +27,8 @@ namespace ShWeb.Controllers
                 .Include(e => e.ExamAnswers)
                 .ThenInclude(ea => ea.BaseQuestion)
                 .ThenInclude(q => q.Answers)
+                .Include(e => e.FromSubject)
+                .ThenInclude(sub => sub.Book)
                 .Where(x => x.ExamExecutionId == ExamExecutionId)
                 .FirstOrDefault();
 
