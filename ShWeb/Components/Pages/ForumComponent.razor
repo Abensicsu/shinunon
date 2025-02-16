@@ -10,9 +10,8 @@
 
 @page "/forum"
 
-<h3 class="forum-title">ForumComponent</h3>
 
-<div class="forum-container">
+<div class="forum-container" dir="rtl">
     <button class="btn btn-primary new-topic-btn" @onclick="OpenNewTopicModal">+ נושא חדש</button>
     <div class="forum-list">
         @if (forumQuestions != null)
@@ -31,6 +30,7 @@
                         <div class="forum-footer">
                             <span class="forum-user-date">
                                 @(question.User != null ? question.User.UserFullName : "משתמש לא ידוע") | @question.CreateDate.ToString("dd.MM.yyyy")
+                                | @(lastComments.ContainsKey(question.ForumQuestionId) ? lastComments[question.ForumQuestionId] : "")
                             </span>
                             <div class="forum-meta">
                                 <span>@question.ViewsCount צפיות <i class="fa fa-eye"></i></span>
@@ -68,7 +68,7 @@
 
             <!-- Dropdown for subjects -->
             <select @bind="newForumQuestion.SubjectId">
-                <option value="">בחר נושא</option>
+                <option value="">בחר ספר</option>
                 @foreach (var subject in subjects)
                 {
                     <option value="@subject.SubjectId">@subject.SubjectName</option>
@@ -197,39 +197,91 @@
     }
 
     .modal-content {
-        background-color: #fff;
-        padding: 20px;
-        border-radius: 8px;
-        max-width: 500px;
-        width: 90%;
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 10px;
+        max-width: 600px;
+        width: 100%;
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
         position: relative;
+        direction: rtl;
+        left: 90px;
     }
 
     .close-button {
         position: absolute;
-        top: 10px;
-        left: 10px;
-        font-size: 1.5rem;
+        top: 15px;
+        left: 15px;
+        font-size: 20px;
+        color: #718096;
         background: none;
         border: none;
         cursor: pointer;
+    }
+
+        .close-button:hover {
+            color: #2d3748;
+        }
+
+    .modal-content h3 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #2d3748;
+        margin-bottom: 20px;
+    }
+
+    .modal-content select,
+    .modal-content input,
+    .modal-content textarea {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #2d3748;
+        background-color: #f7fafc;
+    }
+
+    .modal-content textarea {
+        height: 100px;
+        resize: none;
     }
 
     .modal-actions {
         display: flex;
         gap: 10px;
         justify-content: flex-end;
-        margin-top: 15px;
+        margin-top: 20px;
     }
 
-    .comment-input {
-        width: 100%;
-        height: 100px;
-        padding: 10px;
-        border: 1px solid #e2e8f0;
-        border-radius: 5px;
-        resize: none;
-    }
+        .modal-actions .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .modal-actions .btn-primary {
+            background-color: #2b6cb0;
+            color: white;
+        }
+
+            .modal-actions .btn-primary:hover {
+                background-color: #2c5282;
+            }
+
+        .modal-actions .btn-secondary {
+            background-color: #e2e8f0;
+            color: #2d3748;
+        }
+
+            .modal-actions .btn-secondary:hover {
+                background-color: #cbd5e0;
+            }
+
 </style>
 
 
@@ -241,6 +293,8 @@
     private bool showNewTopicModal = false;
     private ForumQuestion newForumQuestion { get; set; } = new ForumQuestion { };
     private int numComments = 0;
+    private Dictionary<int, string> lastComments = new Dictionary<int, string>();
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -256,6 +310,11 @@
                 }
                 forumQuestions = await Http.GetAsync<List<ForumQuestion>>("api/forum/AllForumQuestions");
                 subjects = await Http.GetAsync<List<Subject>>("api/subject/AllSubjects");
+                foreach (var question in forumQuestions)
+                {
+                    lastComments[question.ForumQuestionId] = await GetLastCommentAsync(question);
+                }
+
                 StateHasChanged(); // Trigger UI update
             }
             catch (Exception ex)
@@ -277,6 +336,43 @@
             _ => ""
         };
     }
+
+    private async Task<string> GetLastCommentAsync(ForumQuestion question)
+    {
+        if (question.Comments == null || question.Comments.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var lastComment = question.Comments.Where(c => c.ParentCommentId == null).OrderByDescending(c => c.CreateDate).FirstOrDefault();
+        if (lastComment == null)
+        {
+            return string.Empty;
+        }
+
+        var user = await Http.GetAsync<User>($"api/Auth/GetUserById/{lastComment.UserId}");
+        string timeAgo = GetTimeAgo(lastComment.CreateDate);
+
+        return $"{user.UserFullName} הגיב/ה {timeAgo}";
+    }
+
+
+    private string GetTimeAgo(DateTime commentDate)
+    {
+        TimeSpan timeSince = DateTime.Now - commentDate;
+
+        if (timeSince.TotalMinutes < 1)
+            return "לפני כמה רגעים";
+        if (timeSince.TotalMinutes < 60)
+            return $"לפני {(int)timeSince.TotalMinutes} דקות";
+        if (timeSince.TotalHours < 24)
+            return $"לפני {(int)timeSince.TotalHours} שעות";
+        if (timeSince.TotalDays < 7)
+            return $"לפני {(int)timeSince.TotalDays} ימים";
+
+        return $"בתאריך {commentDate.ToString("dd/MM/yyyy")}"; // תאריך מלא אם יותר משבוע
+    }
+
 
     private void NavigateToQuestion(int questionId)
     {
@@ -317,8 +413,7 @@
             };
 
 
-        await Http.PostAsync<ForumQuestion, string>
-    ("api/forum/AddForumQuestion", newQuestion);
+        await Http.PostAsync<ForumQuestion, string>("api/forum/AddForumQuestion", newQuestion);
 
         CloseNewTopicModal();
         await loadQuestions();

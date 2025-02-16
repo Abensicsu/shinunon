@@ -20,8 +20,8 @@
         <!-- Question Header and Details -->
         <div class="question-header">
             <div class="question-type">@GetForumTypeLabel(forumQuestion.ForumQuestionType)</div>
-            <h2>@forumQuestion.ForumQuestionText</h2>
-            <h3>@forumQuestion.ForumQuestionDescription</h3>
+            <h3>@forumQuestion.ForumQuestionText</h3>
+            <h4>@forumQuestion.ForumQuestionDescription</h4>
             <div class="question-meta">
                 <span>@(forumQuestion.User != null ? forumQuestion.User.UserFullName : "") | @forumQuestion.CreateDate.ToString("dd.MM.yyyy")</span>
                 <span>  @forumQuestion.ViewsCount צפיות</span>
@@ -41,7 +41,7 @@
                             <span class="comment-author">@comment.User?.UserFullName</span>
                             <span class="comment-date">@comment.CreateDate.ToString("dd.MM.yyyy")</span>
                             <p>@comment.Comment</p>
-                            <button class="btn btn-secondary reply-to-comment-button" @onclick="() => OpenReplyToCommentModal(comment)">תגובה לתגובה</button>
+                            <button class="btn btn-secondary reply-to-comment-button" @onclick="() => OpenReplyToCommentModal(comment)">תגובה לכותב</button>
                         </div>
                     </div>
                 }
@@ -336,8 +336,9 @@
     }
 
     .reply-to-comment-button {
+        width: max-content;
         margin-top: 10px;
-        background-color: #ffc107;
+        background-color: #f6ad55;
         color: black;
         border: none;
         padding: 5px 10px;

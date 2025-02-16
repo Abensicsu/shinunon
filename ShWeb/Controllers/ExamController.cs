@@ -52,7 +52,7 @@ namespace ShWeb.Controllers
                 .Where(ex => ex.UserId == currentUser.Id
                              && ex.StartTime.HasValue
                              && ex.StartTime.Value.Date == today)
-                .OrderByDescending(ex => ex.StartTime)
+                .OrderBy(ex => ex.StartTime)
                 .Include(ex => ex.FromSubject)
                 .ThenInclude(sub => sub.Book)
                 .ToListAsync(); // Return a list of all today's exams
@@ -70,7 +70,6 @@ namespace ShWeb.Controllers
                 .ToList();
         }
 
-        
         [HttpPut]
         public async Task<IActionResult> ExamExecution([FromBody] ExamExecution examExecution)
         {
@@ -123,20 +122,27 @@ namespace ShWeb.Controllers
         public async Task<ActionResult<List<ExamExecution>>> GetExamsForUserAsync(string period)
         {
             var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("User not found.");
+            }
 
             DateTime today = DateTime.Today;
-            IQueryable<ExamExecution> exams = Cx.ExamExecutions.Where(e => e.UserId == currentUser.Id).Include(ex => ex.FromSubject).ThenInclude(sub => sub.Book);
+            IQueryable<ExamExecution> exams = Cx.ExamExecutions
+                                                .Where(e => e.UserId == currentUser.Id)
+                                                .Include(ex => ex.FromSubject)
+                                                .ThenInclude(sub => sub.Book);
 
             switch (period.ToLower())
             {
                 case "future":
-                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date > today);
+                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date > today).OrderBy(e => e.StartTime);
                     break;
                 case "present":
-                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date == today);
+                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date == today).OrderBy(e => e.StartTime);
                     break;
                 case "past":
-                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date < today);
+                    exams = exams.Where(e => e.StartTime.HasValue && e.StartTime.Value.Date < today).OrderByDescending(e => e.StartTime);
                     break;
                 default:
                     return BadRequest("Invalid period. Use 'future', 'present' or 'past'.");
@@ -150,6 +156,42 @@ namespace ShWeb.Controllers
             }
 
             return Ok(examsList);
+        }
+
+
+        [HttpGet]
+        [Produces("application/json")]
+        public async Task<ActionResult<List<ExamExecution>>> GetUserPreviousExams(int FromSubjectId, int ToSubjectId, int examExecutionId)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("User not found");
+            }
+
+            var currentExam = await Cx.ExamExecutions
+                .Where(e => e.ExamExecutionId == examExecutionId)
+                .FirstOrDefaultAsync();
+
+            if (currentExam == null || !currentExam.EndTime.HasValue)
+            {
+                return BadRequest("Current exam not found or not completed.");
+            }
+
+            DateTime currentExamEndTime = currentExam.EndTime.Value;
+
+            IQueryable<ExamExecution> exams = Cx.ExamExecutions
+                .Where(e => e.UserId == currentUser.Id &&
+                            e.ExamExecutionId != examExecutionId &&
+                            e.FromSubjectId == FromSubjectId &&
+                            e.ToSubjectId == ToSubjectId &&
+                            e.ExamStatus == ExamStatusEnum.Completed &&
+                            e.EndTime.Value < currentExamEndTime)
+                .OrderByDescending(e => e.EndTime).Take(2);
+
+            // המרה לרשימה והחזרת התוצאה
+            var result = await exams.ToListAsync();
+            return Ok(result);
         }
     }
 }

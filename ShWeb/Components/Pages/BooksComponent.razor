@@ -4,6 +4,7 @@
 
 @inject CustomHttpClientService Http
 @inject SefariaService SefariaService
+@inject NavigationManager Navigation
 
 @using DataModels.Data
 @using DataModels.Models
@@ -12,36 +13,62 @@
 
 @page "/books"
 
-<h3>BooksComponent</h3>
+<div dir="rtl">
+    <div class="buttons-container">
+        <button class="nav-btn" @onclick="NavigateToMirkurim">✨ מירקורים</button>
+        <button class="nav-btn" @onclick="NavigateToPageSummary">✍️ סיכום דף</button>
+    </div>
 
-@if (books == null)
-{
-    <p><em>Loading...</em></p>
-}
-else if (selectedBook == null)
-{
-    <h4>Select a Book</h4>
-    <ul>
+    @if (books == null)
+    {
+        <p><em>טוען...</em></p>
+    }
+    else if (selectedBook == null)
+    {
+        <h4>📖 בחר ספר</h4>
+        @* <ul>
         @foreach (var book in books)
         {
             <li @onclick="() => SelectBook(book)">@book.HebrewBookName</li>
         }
-    </ul>
-}
-else if (selectedSubject == null)
-{
-    <h4>Select a Subject in @selectedBook.HebrewBookName</h4>
+    </ul> *@
+
+        <!-- שדה חיפוש -->
+        <input type="text" placeholder="🔎 חפש ספר..." @bind="SearchQuery" @bind:event="oninput" class="search-input" />
+
+        <ul>
+            @foreach (var book in filteredBooks)
+            {
+                <li @onclick="() => SelectBook(book)">@book.HebrewBookName</li>
+            }
+        </ul>
+    }
+    else if (selectedSubject == null)
+    {
+        @*  <h4>📖 נושאים בתוך @selectedBook.HebrewBookName</h4>
     <ul>
         @foreach (var subject in selectedBook.Subjects)
         {
             <li @onclick="() => SelectSubject(subject)">@subject.SubjectName</li>
         }
     </ul>
-    <button @onclick="DeselectBook">Back to Books</button>
-}
-else
-{
-    <h4>Subject Detail: @selectedSubject.SubjectName</h4>
+    <button @onclick="DeselectBook">חזרה לספרים</button> *@
+
+        <div class="header-container">
+            <h4>נושאים בתוך @selectedBook.HebrewBookName</h4>
+            <button class="nav-btn" @onclick="DeselectBook">חזרה לספרים</button>
+        </div>
+
+        <ul>
+            @foreach (var subject in selectedBook.Subjects)
+            {
+                <li @onclick="() => SelectSubject(subject)">@subject.SubjectName</li>
+            }
+        </ul>
+    }
+    else
+    {
+        @*  <h4>נושא: @selectedSubject.SubjectName</h4>
     // <p>@selectedSubject.SubjectText?.SubjectTextContent</p>
     <ul style="direction:rtl;font-size:xx-large">
         @foreach (var item in TextData)
@@ -49,16 +76,115 @@ else
             <li>@((MarkupString)item)</li>
         }
     </ul>
-    <button @onclick="DeselectSubject">Back to Subjects</button>
-    <button @onclick="DeselectBook">Back to Books</button>
-}
 
-@* <button @onclick="readDataFromSefaria">read data</button> *@
+    <div class="buttons-container">
+        <button @onclick="DeselectSubject">חזרה לנושאים</button>
+        <button @onclick="DeselectBook">חזרה לספרים</button>
+    </div> *@
+
+        <div class="header-container">
+            <h4>נושא: @selectedSubject.SubjectName</h4>
+
+            <div class="buttons-container">
+                <button class="nav-btn" @onclick="DeselectBook">חזרה לספרים</button>
+                <button class="nav-btn" @onclick="DeselectSubject">חזרה לנושאים</button>
+            </div>
+        </div>
+
+        <ul class="text-content">
+            @foreach (var item in TextData)
+            {
+                <li>@((MarkupString)item)</li>
+            }
+        </ul>
+    }
+
+    @* <button @onclick="readDataFromSefaria">read data</button> *@
+</div>
+
+<style>
+    /* כפתורי ניווט */
+    .buttons-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .nav-btn {
+        background-color: #003366;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+        .nav-btn:hover {
+            background-color: #002244;
+        }
+
+
+    /* שדה חיפוש */
+    .search-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    /* טקסט */
+    .text-content {
+        direction: rtl;
+        font-size: larger;
+        text-align: right;
+    }
+
+    /* רשימה */
+    ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    li {
+        cursor: pointer;
+        padding: 10px;
+        background-color: #f5f5f5;
+        margin-bottom: 5px;
+        border-radius: 5px;
+        text-align: right;
+    }
+
+        li:hover {
+            background-color: #ddd;
+        }
+
+    /* עיצוב כותרות */
+    .header-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+</style>
 
 @code {
     public List<Book> books;
+    public List<Book> filteredBooks;
     public Book selectedBook;
     public Subject selectedSubject;
+
+    public string _searchQuery = string.Empty;
+    private string SearchQuery
+    {
+        get => _searchQuery;
+        set
+        {
+            _searchQuery = value;
+            ApplyFilter(); // if filter Name change
+        }
+    }
 
     public List<string> TextData => selectedSubject != null ?
                                  JArray.Parse(selectedSubject.SubjectText.SubjectTextContent)
@@ -70,8 +196,32 @@ else
         if (firstRender)
         {
             books = await Http.GetAsync<List<Book>>("api/Book/AllBooksIncludeSubjects");
+            filteredBooks = new List<Book>(books);
             StateHasChanged(); // Trigger UI update
         }
+    }
+
+    private void ApplyFilter()
+    {
+        // Filter exams based on name and date
+        // FilterBooks = books
+        //     .Where(exam =>
+        //         (string.IsNullOrWhiteSpace(FilterName) || exam.FromSubject.Book.HebrewBookName.Contains(FilterName)) &&
+        //         (!FilterDate.HasValue || exam.StartTime?.Date == FilterDate.Value.Date))
+        //     .ToList();
+
+        if (string.IsNullOrWhiteSpace(SearchQuery))
+        {
+            filteredBooks = new List<Book>(books); // יצירת רשימה חדשה
+        }
+        else
+        {
+            filteredBooks = books
+                .Where(b => b.HebrewBookName.Contains(SearchQuery, StringComparison.OrdinalIgnoreCase))
+                .ToList(); // חובה ליצור רשימה חדשה
+        }
+
+        StateHasChanged(); // עדכון UI
     }
 
     public void SelectBook(Book book)
@@ -102,5 +252,15 @@ else
     public async Task readDataFromSefaria()
     {
         await SefariaService.FetchAndSaveAllBooks();
+    }
+
+    public void NavigateToMirkurim()
+    {
+        // Navigation.NavigateTo($"/mirkurim/{selectedSubject.SubjectId}");
+    }
+
+    public void NavigateToPageSummary()
+    {
+        // Navigation.NavigateTo($"/page-summary/{selectedSubject.SubjectId}");
     }
 }

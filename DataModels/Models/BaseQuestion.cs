@@ -24,6 +24,7 @@ namespace DataModels.Models
         public int SubjectId { get; set; }
         [ForeignKey(nameof(SubjectId))]
         public Subject Subject { get; set; }
+        public string Hint { get; set; }
         public ICollection<Answer> Answers { get; set; }
 
         public DateTime DateCreatedAudit { get; set; }

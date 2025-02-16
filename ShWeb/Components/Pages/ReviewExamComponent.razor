@@ -36,14 +36,48 @@
             </div>
             <!-- Display selected range if available -->
             <small class="step-details">@((FromChapter > 0 && ToChapter > 0 && IsSelectedChapter) ? $"{HebrewNumberConverter.ConvertToHebrew(FromChapter)} - {HebrewNumberConverter.ConvertToHebrew(ToChapter)}" : "")</small>
-
-          @*   <small class="step-details">
-                @((FromChapter > 0 && ToChapter > 0 && IsSelectedChapter) ? (FromChapter == ToChapter ? $"{FromChapter}" // פרק יחיד
-                    : $"{FromChapter} - {ToChapter}") // טווח פרקים
-                    : "")
-            </small> *@
         </div>
     </div>
+
+    @* <button class="advanced-search-btn" @onclick="ToggleAdvancedSearch">חיפוש מתקדם</button> *@
+    <button class="advanced-search-btn" @onclick="ToggleAdvancedSearch">
+        חיפוש מתקדם
+        <span class="search-icon"></span>
+    </button>
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <p class="error-message">@ErrorMessage</p>
+    }
+
+    @if (isAdvancedSearchVisible)
+    {
+        <div class="advanced-search-modal">
+            <div class="advanced-search-header">
+                <h3>חיפוש מתקדם לספר</h3>
+                <button class="close-btn" @onclick="ToggleAdvancedSearch">✖</button>
+            </div>
+            <div class="advanced-search-body">
+                <label>שם הספר</label>
+                <input type="text" @bind="advancedSearchCriteria.BookName" @oninput="ClearErrorMessage" />
+
+                <label>שם המחבר</label>@* @bind="advancedSearchCriteria.AuthorName" *@
+                <input type="text" @oninput="ClearErrorMessage" />
+
+                <label>פרק</label>
+                <input type="number" @bind="advancedSearchCriteria.Ordinal" @oninput="ClearErrorMessage" />
+
+                <label>תיאור</label> @* @bind="advancedSearchCriteria.Description" *@ 
+                                                <textarea @oninput="ClearErrorMessage"></textarea>
+
+                <div class="advanced-search-actions">
+                    <button class="search-btn" @onclick="PerformAdvancedSearch">חיפוש</button>
+                    <button class="cancel-btn" @onclick="ToggleAdvancedSearch">ביטול</button>
+                </div>
+            </div>
+        </div>
+    }
+
 
     <!-- Step 1: Select Book Type -->
     @if (currentStep == 1)
@@ -105,6 +139,123 @@
         max-width: 800px;
         margin: auto;
         text-align: center;
+        color: #003366;
+    }
+
+    @*    .advanced-search-btn {
+        background-color: #003366;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-bottom: 15px;
+    } *@
+
+    .advanced-search-btn {
+        background-color: #003366;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: row-reverse;
+        gap: 8px;
+        font-weight: bold;
+        transition: background-color 0.3s ease;
+        place-self: anchor-center;
+    }
+
+    .advanced-search-btn:hover {
+        background-color: #002855;
+    }
+
+    .error-message {
+        color: #fe8686;
+        font-size: 20px;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+
+
+    .search-icon {
+        width: 16px;
+        height: 16px;
+        display: inline-block;
+        background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="%23FFFFFF" class="bi bi-search" viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242 1.346a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>');
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+
+    .advanced-search-modal {
+        position: fixed;
+        top: 56%;
+        left: 58%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 20px;
+        width: 400px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .advanced-search-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    .advanced-search-body label {
+        display: block;
+        margin-top: 10px;
+        font-size: 14px;
+        color: #003366;
+    }
+
+    .advanced-search-body input, .advanced-search-body textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        margin-top: 5px;
+        color: #003366;
+        border-color: #003366;
+    }
+
+    .advanced-search-actions {
+        margin-top: 15px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .search-btn {
+        background-color: #003366;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .cancel-btn {
+        background-color: #ccc;
+        color: #003366;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
     }
 
     /* Stepper Container */
@@ -298,6 +449,11 @@
     private bool isTypeSelected = false;
 
     private User currentUser;
+    private string ErrorMessage { get; set; }
+
+    private bool isAdvancedSearchVisible = false;
+    private AdvancedSearchCriteria advancedSearchCriteria = new AdvancedSearchCriteria();
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -363,6 +519,7 @@
         };
     }
 
+
     private void SelectBookType(BookTypeEnum bookType)
     {
         isTypeSelected = true;
@@ -387,31 +544,75 @@
         }
     }
 
+    private void ClearErrorMessage()
+    {
+        ErrorMessage = string.Empty;
+    }
+
+    private void ToggleAdvancedSearch()
+    {
+        isAdvancedSearchVisible = !isAdvancedSearchVisible;
+        advancedSearchCriteria.Ordinal = 1;
+        advancedSearchCriteria.BookName = string.Empty;
+        // advancedSearchCriteria.Description = string.Empty;
+        // advancedSearchCriteria.Ordinal = 1;
+    }
+
+    private async Task PerformAdvancedSearch()
+    {
+
+        if (advancedSearchCriteria.Ordinal > 0 && !string.IsNullOrEmpty(advancedSearchCriteria.BookName))
+        {
+            var results = await Http.PostAsync<AdvancedSearchCriteria, List<Book>>("api/Book/AdvancedSearch", advancedSearchCriteria);
+
+            if (results != null && results.Count > 0)
+            {
+                SelectBookType(selectedBookType);
+                SelectBook(results.FirstOrDefault());
+                if (results.Where(b => b.Subjects.Any(s => s.Ordinal == advancedSearchCriteria.Ordinal)) != null)
+                    FromChapter = ToChapter = advancedSearchCriteria.Ordinal;
+
+                ToggleAdvancedSearch();
+            }
+            else
+            {
+                ToggleAdvancedSearch();
+                ErrorMessage = "לא נמצא ספר";
+                Console.WriteLine("No results found.");
+            }
+        }
+        else
+        {
+            ToggleAdvancedSearch();
+            ErrorMessage = "לא נמצא ספר";
+            Console.WriteLine("No results found.");
+        }
+
+    }
+
+
     private void UpdateChaptersRange(int selectedChapter)
     {
         IsSelectedChapter = true;
         // if (selectedBook != null)
         //     Console.WriteLine(selectedBook.Subjects.Count);
 
-        // אם לחצנו על אותו כפתור פעמיים – נאפס את הטווח
         if (FromChapter == selectedChapter && ToChapter == 0)
         {
             FromChapter = 0;
             return;
         }
 
-        // אם עדיין לא נבחרה התחלה או נבחר טווח שלם
         if (FromChapter == 0 || ToChapter != 0)
         {
             FromChapter = selectedChapter;
-            // ToChapter = selectedChapter; // מאפשר בחירת פרק יחיד ??
-            ToChapter = 0; // טווח חדש 
+            ToChapter = 0;
         }
-        else if (selectedChapter >= FromChapter) // בחרנו סוף לטווח
+        else if (selectedChapter >= FromChapter)
         {
             ToChapter = selectedChapter;
         }
-        else // אם לחצנו על פרק קטן יותר, הוא יהפוך לתחילת הטווח
+        else
         {
             ToChapter = FromChapter;
             FromChapter = selectedChapter;
@@ -434,13 +635,22 @@
     }
 
     private string GetBookTypeName(BookTypeEnum bookType) =>
-        bookType switch
-        {
-            BookTypeEnum.Chumash => "חומש",
-            BookTypeEnum.Neviim => "נביאים",
-            BookTypeEnum.Ketuvim => "כתובים",
-            BookTypeEnum.Gemara => "גמרא",
-            BookTypeEnum.Mishna => "משנה",
-            _ => "לא ידוע"
-        };
+    bookType switch
+    {
+        BookTypeEnum.Chumash => "חומש",
+        BookTypeEnum.Neviim => "נביאים",
+        BookTypeEnum.Ketuvim => "כתובים",
+        BookTypeEnum.Gemara => "גמרא",
+        BookTypeEnum.Mishna => "משנה",
+        _ => "לא ידוע"
+    };
+
+
+    public class AdvancedSearchCriteria
+    {
+        public string BookName { get; set; }
+        // public string AuthorName { get; set; }
+        public int Ordinal { get; set; }
+        // public string Description { get; set; }
+    }
 }

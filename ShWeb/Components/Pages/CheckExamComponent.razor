@@ -2,6 +2,8 @@
 
 @page "/check-exam/{examExecutionId:int}"
 
+<PageTitle>בדיקת המבחן</PageTitle>
+
 @inject CustomHttpClientService Http
 @inject LocalStorageService LocalStorageService
 @inject IJSRuntime JS
@@ -12,9 +14,7 @@
 @using DataModels.Data
 @using DataModels.Models
 
-<h3>CheckExamComponent</h3>
-
-<div class="check-exam-container">
+<div class="check-exam-container" dir="rtl">
     @if (examExecution != null)
     {
         @foreach (var examAnswer in examAnswers)
@@ -22,96 +22,118 @@
             @if (examAnswer.BaseQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && examAnswer.TextAnswer != null)
             {
                 <div class="exam-answer">
-                    <h4 class="question-text">@examAnswer.BaseQuestion.QuestionText</h4>
+                    <div class="question-number">
+                        שאלה: @examAnswer.BaseQuestion.QuestionText
+                    </div>
                     <div class="answer-section">
-                        <div class="user-answer">
-                            <p class="label">Your Answer:</p>
+                        <div class="answer-box">
+                            <strong>תשובתך:</strong>
                             <p>@examAnswer.TextAnswer</p>
                         </div>
-                        <div class="correct-answer">
-                            <p class="label">Correct Answer:</p>
+                        <div class="answer-box correct-answer">
+                            <strong>תשובה נכונה:</strong>
                             <p>@examAnswer.Answer?.AnswerText</p>
                         </div>
                     </div>
-                    <div class="answer-level">
-                        <p>Choose your answer level:</p>
-                        @foreach (AnswerCorrectnessLevelEnum level in Enum.GetValues(typeof(AnswerCorrectnessLevelEnum)))
-                        {
-                            <label>
-                                <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, level)" /> @level
-                            </label>
-                        }
+                    <div class="radio-container">
+                        <label>
+                            <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, AnswerCorrectnessLevelEnum.Correct)" />
+                            נכון
+                        </label>
+                        <label>
+                            <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, AnswerCorrectnessLevelEnum.PartiallyCorrect)" />
+                            נכון חלקית
+                        </label>
+                        <label>
+                            <input type="radio" name="answer_@examAnswer.ExamAnswerId" @onchange="() => SetUserMarkedCorrect(examAnswer, AnswerCorrectnessLevelEnum.Wrong)" />
+                            שגוי
+                        </label>
                     </div>
                 </div>
             }
         }
 
-        if (shoResultsBtn)
+        @if (shoResultsBtn)
         {
-            <button class="submit-button" @onclick="getExamResults">Get Exam Result</button>
+            <button class="submit-button" @onclick="getExamResults">צפייה בתוצאות</button>
         }
     }
 </div>
 
 <style>
     .check-exam-container {
-    max-width: 800px;
-    margin: auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        max-width: 800px;
+        margin: auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .exam-answer {
-    margin-bottom: 20px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #fff;
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #d6d6d6;
+        border-radius: 8px;
+        background-color: #ffffff;
     }
 
-    .question-text {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 10px;
+    .question-number {
+        font-size: 16px;
+        font-weight: bold;
+        color: #003366;
+        margin-bottom: 10px;
     }
 
     .answer-section {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 10px;
+        margin-top: 10px;
     }
 
-    .answer-section div {
-    width: 48%;
+    .answer-box {
+        margin-top: 5px;
+        padding: 10px;
+        border: 1px solid #cccccc;
+        border-radius: 4px;
+        background-color: #f5f5f5;
+        font-size: 14px;
+        color: #333;
     }
 
-    .label {
-    font-weight: bold;
-    margin-bottom: 5px;
+    .radio-container {
+        display: flex;
+        align-items: center;
+        margin-top: 15px;
     }
 
-    .answer-level {
-    margin-top: 10px;
-    }
+        .radio-container label {
+            margin-left: 10px;
+            font-size: 14px;
+            color: #003366;
+        }
+
+        .radio-container input[type="radio"] {
+            margin-right: 5px;
+        }
 
     .submit-button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #003366;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 20px;
     }
 
-    .submit-button:hover {
-    background-color: #0056b3;
-    }
+        .submit-button:hover {
+            background-color: #003366;
+        }
+
 </style>
+
 
 @code {
     [Parameter]
@@ -140,7 +162,6 @@
     {
         checkSelectQuestions();
         examExecution.ExamAnswers = examAnswers;
-        // examExecution.IsReviewed = true;
 
         // examExecution.ExamStatus = ExamStatusEnum.Completed;
         await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);

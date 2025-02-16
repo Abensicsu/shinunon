@@ -36,7 +36,7 @@ namespace DataModels.Services
                 issuer: _configuration["JWT:ValidIssuer"],
                 audience: _configuration["JWT:ValidAudience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(1),
+                expires: DateTime.UtcNow.AddHours(2),
                 signingCredentials: credentials
             );
 

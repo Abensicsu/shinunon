@@ -8,193 +8,239 @@
 @inject NavigationManager Navigation
 
 @using System.Text.Json
+@using DataModels.Services
 @using ShWeb.Components.BAServices
 @using DataModels.Data
 @using DataModels.Models
 
-<h3>Exam Results</h3>
+<PageTitle>תוצאות מבחן</PageTitle>
 
 @if (examExecution != null)
 {
-    <div class="results-container">
-        <div class="results-summary">
-            <div class="summary-item correct">
-                <span class="number">@examExecution.CorrectAnswersNum</span>
-                <span class="label">Correct Answers</span>
-            </div>
-            <div class="summary-item partially-correct">
-                <span class="number">@examExecution.PartiallyCorrectAnswersNum</span>
-                <span class="label">Partially Correct Answers</span>
-            </div>
-            <div class="summary-item incorrect">
-                <span class="number">@examExecution.WrongAnswersNum</span>
-                <span class="label">Wrong Answers</span>
-            </div>
-            <div class="summary-item question-qnswered">
-                <span class="number">@(examExecution.QuestionsAnswered)</span>
-                <span class="label">Question Answered</span>
-            </div>
-            <div class="summary-item success-rate">
-                <span class="number">@(examExecution.CachedExamScore)%</span>
-                <span class="label">Success Rate</span>
+    <div class="exam-results-header">
+        <h3 class="exam-title">תוצאות מבחן @examExecution.FromSubject.Book.HebrewBookName | @GetCorrectOrdinal(examExecution.FromSubject)</h3>
+        <span class="exam-date">@GetHebrewDate(examExecution.StartTime)</span>
+        <div class="results-container">
+            @*             <div class="previous-scores-container">
+ *@                @if (previousExamExecutions != null && previousExamExecutions.Any())
+            {
+                <div class="previous-scores-container">
+                    @* <h4>ציונים קודמים</h4> *@
+                    <div class="previous-scores">
+                        @foreach (var previousExam in previousExamExecutions.Take(2))
+                        {
+                            <div class="score-item">
+                                <div class="score-value">@previousExam.CachedExamScore%</div>
+                                <div class="score-date">@GetHebrewDate(previousExam.StartTime)</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            @* </div> *@
+
+
+            <!-- תוצאות המבחן -->
+            <div class="results-summary">
+                <div class="score">
+                    <span class="percentage">@examExecution.CachedExamScore%</span>
+                </div>
+                <div class="answers-summary" dir="rtl">
+                    <div class="answer-item correct-answers">
+                        @* <span class="icon correct-icon"></span> *@
+                        <span class="icon">✔</span>
+                        <span class="text correct-text">@examExecution.CorrectAnswersNum</span>
+                        <span class="text correct-text">@(examExecution.CorrectAnswersNum == 1 ? "תשובה נכונה" : "תשובות נכונות")</span>
+                    </div>
+                    <div class="answer-item partially-correct">
+                        <span class="icon">🟡</span>
+                        <span class="text partially-correct-text">@examExecution.PartiallyCorrectAnswersNum</span>
+                        <span class="text partially-correct-text">@(examExecution.PartiallyCorrectAnswersNum == 1 ? "תשובה נכונה חלקית" : "תשובות נכונות חלקיות")</span>
+                    </div>
+                    <div class="answer-item incorrect-answers">
+                        <span class="icon">❌</span>
+                        <span class="text incorrect-text">@examExecution.WrongAnswersNum</span>
+                        <span class="text incorrect-text">@(examExecution.WrongAnswersNum == 1 ? "תשובה לא נכונה" : "תשובות לא נכונות")</span>
+                    </div>
+                </div>
             </div>
         </div>
+        @* 
+        <!-- הטיימרים -->
         <div class="timers">
             <div class="timer">
-                <span class="label">Total Time</span>
-                <span class="time">@totalTime.ToString(@"hh\:mm\:ss")</span>
+                <p class="timer-label">זמן כולל</p>
+                <p class="time-value">@totalTime.ToString(@"hh\:mm\:ss")</p>
             </div>
             <div class="timer">
-                <span class="label">End Time</span>
-                <span class="time">@examExecution?.EndTime.Value.TimeOfDay.ToString(@"hh\:mm\:ss")</span>
+                <p class="timer-label">זמן סיום</p>
+                <p class="time-value">@examExecution?.EndTime.Value.TimeOfDay.ToString(@"hh\:mm\:ss")</p>
             </div>
-        </div>
+        </div> *@
     </div>
+
+
     <div class="inner-exam-component">
         <InnerExamComponent Permission=false examExecutionId=examExecutionId currentQuestionIndex="0" />
     </div>
 }
 
 <style>
-    .results-container {
-    width: 100%;
-    height: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
+    .exam-results-header {
+        text-align: center;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        margin: 20px auto;
+        max-width: 750px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
+
+    .exam-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #003366;
+        margin-bottom: 20px;
+    }
+
+    .results-container {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: inherit;
+    }
+
+    .previous-scores-container {
+        margin-top: 20px;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin: 15px;
+    }
+
+    .previous-scores h4 {
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #003366;
+    }
+
+    .previous-scores {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        flex-direction: column;
+    }
+
+    .score-item {
+        text-align: center;
+        font-size: 1rem;
+        color: #003366;
+    }
+
+    .score-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #003366;
+    }
+
+    .score-date {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
 
     .results-summary {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    margin-bottom: 20px;
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 30px;
+        flex-direction: column;
     }
 
-    .summary-item {
-    text-align: center;
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    .score {
+        font-size: 3rem;
+        font-weight: bold;
+        color: #003366;
     }
 
-    .summary-item.correct {
-    background-color: #e0f7fa;
+    .answers-summary {
+        display: flex;
+        justify-content: space-around;
+        gap: 20px;
     }
 
-    .summary-item.partially-correct {
-    background-color: #f7eac7;
+    .answer-item {
+        text-align: center;
+        font-size: 1rem;
+        font-weight: bold;
+        color: #003366;
     }
 
-    .summary-item.question-qnswered {
-    background-color: #e1aee9;
+    .correct-answers .icon {
+        color: #28a745;
     }
 
-    .summary-item.incorrect {
-    background-color: #ffcdd2;
+    .partially-correct .icon {
+        color: #ffc107;
     }
 
-    .summary-item.success-rate {
-    background-color: #c8e6c9;
+    .incorrect-answers .icon {
+        color: #dc3545;
     }
 
-    .number {
-    font-size: 24px;
-    font-weight: bold;
+    .correct-text {
+        color: #28a745;
     }
 
-    .label {
-    font-size: 14px;
+    .partially-correct-text {
+        color: #ffc107;
     }
+
+    .incorrect-text {
+        color: #dc3545;
+    }
+
+    .correct-icon::before {
+        content: "✔";
+        color: #28a745; /* ירוק */
+        font-size: 1.5rem;
+        margin-right: 5px;
+    }
+
 
     .timers {
-    display: flex;
-    justify-content: space-around;
-    width: 100%;
-    margin-bottom: 20px;
+        display: flex;
+        justify-content: space-around;
+        margin-top: 20px;
     }
 
     .timer {
-    text-align: center;
-    padding: 10px;
-    border-radius: 5px;
-    background-color: #f5f5f5;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        background-color: #ffffff;
+        padding: 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: 45%;
     }
 
-    .time {
-    font-size: 24px;
-    font-weight: bold;
+    .timer-label {
+        font-size: 1rem;
+        color: #6c757d;
+        margin-bottom: 5px;
     }
 
-    .label {
-    font-size: 14px;
+    .time-value {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #003366;
     }
 
-    .inner-exam-component {
-    width: 30%;
-    height: 50%;
-    margin-top: 10px;
-    padding: 10px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    .icon {
+        font-size: 1.2rem; /* גודל הסמל */
+        margin-right: 5px; /* רווח קטן מימין לסמל */
     }
 
-    .inner-exam-component h3 {
-    text-align: center;
-    margin-bottom: 10px;
-    }
-
-    .inner-exam-component .exam-answer {
-    margin-bottom: 10px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-    }
-
-    .inner-exam-component .question-text {
-    font-size: 15px;
-    font-weight: bold;
-    margin-bottom: 7px;
-    }
-
-    .inner-exam-component .answer-section {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 7px;
-    }
-
-    .inner-exam-component .answer-section div {
-    width: 48%;
-    }
-
-    .inner-exam-component .label {
-    font-weight: bold;
-    margin-bottom: 5px;
-    }
-
-    .inner-exam-component .answer-level {
-    margin-top: 10px;
-    }
-
-    .inner-exam-component .submit-button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    }
-
-    .inner-exam-component .submit-button:hover {
-    background-color: #0056b3;
-    }
 </style>
 
 @code {
@@ -203,6 +249,7 @@
 
     private ExamExecution examExecution;
     public ICollection<ExamAnswer> examAnswers;
+    private List<ExamExecution> previousExamExecutions;
     public int questionNum;
     public double SuccessRate;
     public int i = 0;
@@ -225,18 +272,22 @@
                 examAnswers = examExecution.ExamAnswers;
                 questionNum = examExecution.ExamAnswers.Count;
 
+                // Load previous exams with the same FromSubjectId and ToSubjectId
+                previousExamExecutions = await Http.GetAsync<List<ExamExecution>>(
+                    $"api/Exam/GetUserPreviousExams?FromSubjectId={examExecution.FromSubjectId}&ToSubjectId={examExecution.ToSubjectId}&examExecutionId={examExecutionId}");
+
                 CalculateResults();
 
                 // examExecution.IsReviewed = true;
                 examExecution.ExamStatus = ExamStatusEnum.Completed;
-                examExecution.CachedExamScore = Math.Round((examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100 / questionNum), 2);
+                examExecution.CachedExamScore = Math.Round((examExecution.CorrectAnswersNum + (examExecution.PartiallyCorrectAnswersNum / 2.0)) * (100.00 / questionNum), 0);
                 await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
                 StateHasChanged();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error: {ex.Message}");
-                Navigation.NavigateTo("/login");
+                Navigation.NavigateTo("");
             }
         }
     }
@@ -277,13 +328,41 @@
         examExecution.QuestionsAnswered = examAnswers.Count(ea => ea.AnswerId != null);
     }
 
+    public string GetCorrectOrdinal(Subject subject)
+    {
+        return subject.Book.BookType switch
+        {
+            BookTypeEnum.Chumash => $"פרק {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            BookTypeEnum.Neviim => $"פרק {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            BookTypeEnum.Ketuvim => $"פרק {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            BookTypeEnum.Gemara => $"דף {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            BookTypeEnum.Mishna => $"דף {HebrewNumberConverter.ConvertToHebrew((int)subject.Ordinal)}",
+            _ => "לא ידוע"
+        };
+    }
+
+    private string GetHebrewDate(DateTime? dateTime)
+    {
+        if (!dateTime.HasValue)
+            return "תאריך לא זמין";
+
+        // Create HebrewCalendar instance
+        var hebrewCalendar = new System.Globalization.HebrewCalendar();
+
+        // Format the date in Hebrew
+        var hebrewCulture = new System.Globalization.CultureInfo("he-IL");
+        hebrewCulture.DateTimeFormat.Calendar = hebrewCalendar;
+
+        return dateTime.Value.ToString("dd MMMM yyyy", hebrewCulture);
+    }
+
 
     public async Task clearLocalStorage()
     {
-        await LocalStorageService.RemoveFromLocalStorageAsync("examExecution");
-        await LocalStorageService.RemoveFromLocalStorageAsync("examExecutionId");
-        await LocalStorageService.RemoveFromLocalStorageAsync("elapsedTime");
-        await LocalStorageService.RemoveFromLocalStorageAsync("remainingTime");
-        await LocalStorageService.RemoveFromLocalStorageAsync("currentQuestionIndex");
+        await LocalStorageService.RemoveFromLocalStorageAsync($"examExecution_{examExecutionId}");
+        await LocalStorageService.RemoveFromLocalStorageAsync($"examExecutionId_{examExecutionId}");
+        await LocalStorageService.RemoveFromLocalStorageAsync($"elapsedTime_{examExecutionId}");
+        await LocalStorageService.RemoveFromLocalStorageAsync($"remainingTime_{examExecutionId}");
+        await LocalStorageService.RemoveFromLocalStorageAsync($"currentQuestionIndex_{examExecutionId}");
     }
 }

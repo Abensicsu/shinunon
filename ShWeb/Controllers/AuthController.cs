@@ -86,5 +86,17 @@ namespace ShWeb.Controllers
             // If registration failed, return errors
             return BadRequest(new { Errors = result.Errors.Select(e => e.Description).ToArray() });
         }
+
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> GetUserById(int userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId.ToString());
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            return Ok(user);
+        }
     }
 }

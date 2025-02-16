@@ -5,7 +5,6 @@
 @using Npgsql
 @using System.Collections.Generic
 
-<h3>ComponentQuestion</h3>
 
 @inject CustomHttpClientService Http
 @inject NavigationManager Navigation
@@ -21,11 +20,10 @@ else
     <table class="table">
         <thead>
             <tr>
-                <th>SubjectName</th>
-                <th>questiontype</th>
-                <th>QuestionText</th>
-                <th>Base\User Question</th>
-                <th>Actions</th>
+                <th>נושא</th>
+                <th>סוג שאלה</th>
+                <th>שאלה</th>
+                <th>פעולות</th>
             </tr>
         </thead>
         <tbody>
@@ -35,16 +33,15 @@ else
                     <td>@question.Subject.SubjectName</td>
                     <td>@question.QuestionType</td>
                     <td>@question.QuestionText</td>
-                    <td>@question.DiscriminatorRF</td>
                     <td>
                         @if (question.DiscriminatorRF == "UserQuestion")
                         {
-                            <button @onclick="() => EditQuestion(question)">Edit</button>
-                            <button @onclick="() => DeleteQuestion(question.BaseQuestionId)">Delete</button>
+                            <button @onclick="() => EditQuestion(question)">עריכה</button>
+                            <button @onclick="() => DeleteQuestion(question.BaseQuestionId)">מחיקה</button>
                         }
                         else
                         {
-                            <button @onclick="() => EditQuestion(question)">Edit</button>
+                            <button @onclick="() => EditQuestion(question)">עריכה</button>
                         }
                     </td>
                 </tr>
@@ -53,16 +50,16 @@ else
     </table>
 }
 
-<button @onclick="AddQuestionBool" class="btn btn-primary">Add</button>
+<button @onclick="AddQuestionBool" class="btn btn-primary">הוספת שאלה</button>
 
 @if (addQuestionMode)
 {
-    <h4>Add Question</h4>
+    <h4>הוספת שאלה</h4>
 
     <div>
-        <label for="subject">Select a subject:</label>
+        <label for="subject">בחר נושא:</label>
         <select id="subject" @bind="newQuestion.SubjectId">
-            <option value="0">Select</option>
+            <option value="0">בחר</option>
             @if (subjects != null)
             {
                 @foreach (var subject in subjects)
@@ -73,7 +70,7 @@ else
         </select>
     </div>
 
-    <b>Question Type</b>
+    <b>בחר סוג שאלה</b>
     <select @bind="@newQuestion.QuestionType">
 
         @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
@@ -84,27 +81,29 @@ else
 
     @if (newQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
     {
-        <h3>Question</h3>
-        <input type="text" @bind="newQuestion.QuestionText" placeholder="question" class="form-control" />
-        <h4>Correct answer:</h4>
-        <textarea @bind="correctAnswerText" @oninput="HandleAnswerInput" placeholder="Correct answer" class="form-control answer-textarea"></textarea>
-
+        <h3>שאלה</h3>
+        <input type="text" @bind="newQuestion.QuestionText" placeholder="שאלה" class="form-control" />
+        <h4>תשובה נכונה:</h4>
+        <textarea @bind="correctAnswerText" @oninput="HandleAnswerInput" placeholder="תשובה נכונה" class="form-control answer-textarea"></textarea>
     }
     else if (newQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
     {
-        <h3>Question</h3>
-        <input type="text" @bind="newQuestion.QuestionText" placeholder="question" class="form-control" />
+        <h3>שאלה</h3>
+        <input type="text" @bind="newQuestion.QuestionText" placeholder="שאלה" class="form-control" />
 
-        <h4>Answers</h4>
+        <h4>תשובות</h4>
 
         @foreach (var answer in answers.Select((answer, index) => new { answer, index }))
         {
             <div id="answer-@answer.index" class="answer-option" @key="answer.index">
                 <input type="radio" name="correctAnswer" @onclick="() => MarkCorrectAnswer(answer.index)" checked="@answer.answer.IsCorrectAnswer" />
-                <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"answer {answer.index + 1}")" class="form-control" />
+                <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"תשובה {answer.index + 1}")" class="form-control" />
             </div>
         }
     }
+
+    <input type="text" @bind="newQuestion.Hint" placeholder="רמז" class="form-control" />
+
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -114,19 +113,19 @@ else
     }
 
     <br />
-    <button @onclick="AddQuestion" class="btn btn-primary">Add</button>
+    <button @onclick="AddQuestion" class="btn btn-primary">שמירה</button>
 }
 
 
 @if (editMode)
 {
-    <h4>Edit Question</h4>
+    <h4>עריכת שאלה</h4>
 
     <br />
     <div>
-        <label for="edit-subject">Select a subject:</label>
+        <label for="edit-subject">בחר נושא:</label>
         <select id="edit-subject" @bind="editingQuestion.SubjectId">
-            <option value="0">Select</option>
+            <option value="0">בחר</option>
             @if (subjects != null)
             {
                 @foreach (var subject in subjects)
@@ -138,31 +137,38 @@ else
     </div>
 
     <br />
-    <b><h4>Question Type</h4></b>
+    <b><h4>סוג שאלה</h4></b>
     <h2>@editingQuestion.QuestionType</h2>
 
     <br />
     @if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
     {
-        <h3>Question</h3>
-        <input type="text" @bind="editingQuestion.QuestionText" placeholder="question" class="form-control" />
-        <h4>Correct answer:</h4>
-        <textarea @bind="correctAnswerText" placeholder="Correct answer" class="form-control answer-textarea"></textarea>
+        <h3>שאלה</h3>
+        <input type="text" @bind="editingQuestion.QuestionText" placeholder="שאלה" class="form-control" />
+        <h4>תשובה נכונה:</h4>
+        <textarea @bind="correctAnswerText" placeholder="תשובה נכונה" class="form-control answer-textarea"></textarea>
     }
     else if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
     {
-        <h3>Question</h3>
-        <input type="text" @bind="editingQuestion.QuestionText" placeholder="question" class="form-control" />
+        <h3>שאלה</h3>
+        <input type="text" @bind="editingQuestion.QuestionText" placeholder="שאלה" class="form-control" />
 
-        <h4>Answers</h4>
+        <h4>תשובות</h4>
         @foreach (var answer in answers.Select((answer, index) => new { answer, index }))
         {
             <div class="answer-option">
                 <input type="radio" name="correctAnswer" @onclick="() => MarkCorrectAnswer(answer.index)" checked="@answer.answer.IsCorrectAnswer" />
-                <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"answer {answer.index + 1}")" class="form-control" />
+                <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"תשובה {answer.index + 1}")" class="form-control" />
             </div>
         }
     }
+
+    if (!string.IsNullOrWhiteSpace(editingQuestion.Hint))
+    {
+        <h3>רמז</h3>
+        <input type="text" @bind="editingQuestion.Hint" placeholder="רמז" class="form-control" />
+    }
+
 
     @if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -172,7 +178,7 @@ else
     }
 
     <br />
-    <button @onclick="SaveEditedQuestion" class="btn btn-primary">Save Changes</button>
+    <button @onclick="SaveEditedQuestion" class="btn btn-primary">שמור שינויים</button>
 }
 
 <style>
@@ -281,32 +287,32 @@ else
 
         if (newQuestion.SubjectId == 0)
         {
-            errorMessage = "Please select a subject";
+            errorMessage = "בחר נושא";
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newQuestion.QuestionText) || (newQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && string.IsNullOrWhiteSpace(correctAnswerText)))
         {
-            errorMessage = "Please enter question and answer";
+            errorMessage = "הכנס שאלה ותשובה";
             return;
         }
 
         if (string.IsNullOrWhiteSpace(newQuestion.QuestionText))
         {
-            errorMessage = "Please fill out the question and answers text";
+            errorMessage = "הכנס שאלה ותשובות";
             return;
         }
 
         if (newQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Count < 4)
         {
-            errorMessage = "Provide at least 4 answers for Select questions";
+            errorMessage = "הכנס לפחות 4 תשובות";
             return;
         }
 
         // Check if any answer is empty, null, or whitespace
         if (newQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
         {
-            errorMessage = "Please fill out all answers";
+            errorMessage = "מלא את כל התשובות";
             return;
         }
 
@@ -328,7 +334,7 @@ else
             var correctAnswerExists = answers.Any(a => a.IsCorrectAnswer);
             if (!correctAnswerExists)
             {
-                errorMessage = "At least one answer must be marked as correct for Select questions.";
+                errorMessage = "סמן את התשובה הנכונה";
                 return;
             }
 
@@ -374,6 +380,7 @@ else
                     QuestionText = question.QuestionText,
                     QuestionType = question.QuestionType,
                     SubjectId = question.Subject.SubjectId,
+                    Hint = question.Hint,
                     UserId = currentUser.Id
                 };
             Question questionIncludeAnswers = await Http.GetAsync<Question>($"api/Question/getQuestion?questionId={question.BaseQuestionId}");
@@ -387,6 +394,7 @@ else
                     QuestionText = question.QuestionText,
                     QuestionType = question.QuestionType,
                     SubjectId = question.Subject.SubjectId,
+                    Hint = question.Hint,
                     UserId = currentUser.Id
                 };
             UserQuestion questionIncludeAnswers = await Http.GetAsync<UserQuestion>($"api/Question/getUserQuestion?questionId={question.BaseQuestionId}");
@@ -403,32 +411,32 @@ else
     {
         if (editingQuestion.SubjectId == 0)
         {
-            errorMessage = "Please select a subject";
+            errorMessage = "בחר נושא";
             return;
         }
 
         if (string.IsNullOrWhiteSpace(editingQuestion.QuestionText) || (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && string.IsNullOrWhiteSpace(correctAnswerText)))
         {
-            errorMessage = "Please enter question and answer";
+            errorMessage = "הכנס שאלה ותשובה";
             return;
         }
 
         if (string.IsNullOrWhiteSpace(editingQuestion.QuestionText))
         {
-            errorMessage = "Please fill out the question and answers text";
+            errorMessage = "הכנס שאלה";
             return;
         }
 
         if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Count < 4)
         {
-            errorMessage = "Provide at least 4 answers for Select questions";
+            errorMessage = "הכנס לפחות 4 תשובות";
             return;
         }
 
         // Check if any answer is empty, null, or whitespace
         if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
         {
-            errorMessage = "Please fill out all answers";
+            errorMessage = "הכנס את כל התשובות";
             return;
         }
 
@@ -450,7 +458,7 @@ else
             var correctAnswerExists = answers.Any(a => a.IsCorrectAnswer);
             if (!correctAnswerExists)
             {
-                errorMessage = "At least one answer must be marked as correct for Select questions.";
+                errorMessage = "סמן את התשובה הנכונה";
                 return;
             }
 

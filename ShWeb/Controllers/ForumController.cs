@@ -25,6 +25,7 @@ namespace ShWeb.Controllers
                 .Include(fq => fq.Subject)
                     .ThenInclude(s => s.Book) // אם יש הפניה למחלקה נוספת ב-Subject
                 .Include(fq => fq.User)
+                .OrderByDescending(fq => fq.CreateDate)
                 .ToList();
             return fqs;
         }
@@ -34,9 +35,9 @@ namespace ShWeb.Controllers
         {
             var fq = Cx.ForumQuestions
                        .Where(fq => fq.ForumQuestionId == questionId)
-                       .Include(fq => fq.Comments)
-                           .ThenInclude(comment => comment.Comments)
-                               .ThenInclude(innerComment => innerComment.User)
+                       .Include(fq => fq.Comments.OrderBy(c => c.CreateDate))
+                           .ThenInclude(comment => comment.Comments.OrderBy(c => c.CreateDate))
+                               //.ThenInclude(innerComment => innerComment.User)
                        .Include(fq => fq.Comments)
                            .ThenInclude(comment => comment.User)
                        .Include(fq => fq.User)

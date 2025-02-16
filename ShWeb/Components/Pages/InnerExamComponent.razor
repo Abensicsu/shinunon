@@ -14,6 +14,14 @@
 <PageTitle>ביצוע מבחן</PageTitle>
 
 <div class="exam-container" dir="rtl">
+
+    @if (Permission)
+    {
+        <button class="back-link" @onclick="NavigateBackToDailyInfo">
+            חזרה <span class="rotated-arrow">↪</span>
+        </button>
+    }
+
     <!-- Header -->
     @if (Permission)
     {
@@ -23,19 +31,6 @@
                 <i class="bi bi-check-circle">  </i>
                 ענית על @answeredQuestions שאלות מתוך @questionNum
             </span>
-            @* </div> *@
-            @* <div class="header-left">
-            <button class="back-button" @onclick="BackToAllExams">
-                <i class="bi bi-box-arrow-left"></i> יציאה
-            </button>
-            <button class="edit-question-button" @onclick="EditQuestion">
-                <i class="bi bi-pen"></i> עריכת שאלה
-            </button>
-            <button class="hint-button" @onclick="ShowHint">
-                <i class="bi bi-lightbulb"></i> רמז
-            </button>
-        </div> *@
-
         </div>
     }
 
@@ -44,12 +39,6 @@
         <!-- Question Content -->
         @if (currentQuestion != null)
         {
-            @*  <!-- Question Header -->
-                <div class="question-header">
-                    <h3 class="question-title">@examExecution.FromSubject.Book.HebrewBookName | @GetCorrectOrdinal(examExecution.FromSubject)</h3>
-                    <span class="question-counter">שאלה מס' @(currentQuestionIndex + 1) </span>
-                </div> *@
-
             <!-- Question Header -->
             <div class="question-header">
                 <div class="header-left">
@@ -59,7 +48,7 @@
                 <div class="header-right">
                     @if (Permission)
                     {
-                        <button class="hint-button">
+                        <button class="hint-button" @onclick="getHint">
                             <i class="bi bi-lightbulb"></i> רמז
                         </button>
                     }
@@ -74,6 +63,14 @@
                     }
                 </div>
             </div>
+            @if (hintText != null)
+            {
+                <div class="hint-container">
+                    <div class="hint-text">
+                        @hintText
+                    </div>
+                </div>
+            }
 
             <div class="question-container">
                 <!-- Question Text -->
@@ -88,7 +85,7 @@
                         <div class="answers-list">
                             @foreach (var answer in currentQuestion.Answers)
                             {
-                                <div class="answer-option">
+                                <div class="answer-option option @( GetAnswerClass(currentQuestionIndex,answer.AnswerId))">
                                     <input type="radio" id="@answer.AnswerId" name="option" value="@answer.AnswerId"
                                            checked="@IsAnswerSelected(answer.AnswerId)" @onchange="SelectAnswer"
                                            disabled="@(Permission ? null : true)" />
@@ -99,7 +96,7 @@
                     }
                     else if (currentQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
                     {
-                        <textarea class="open-question-textarea" value="@examAnswers.ElementAt(currentQuestionIndex).TextAnswer" @oninput="UpdateOpenAnswerText"
+                        <textarea class="open-question-textarea @GetAnswerClass(currentQuestionIndex, currentQuestion.Answers.FirstOrDefault().AnswerId)" value="@examAnswers.ElementAt(currentQuestionIndex).TextAnswer" @oninput="UpdateOpenAnswerText"
                                   @onchange="openAnswer" readonly="@(!Permission ? true : null)"></textarea>
                     }
                 </div>
@@ -112,10 +109,6 @@
                     {
                         <button class="end-test-button" @onclick="EndTest">בדיקה</button>
                     }
-                    @*  else
-                    {
-                        <button @onclick="BackToAllExams">All Exams</button>
-                    } *@
                 </div>
             </div>
         }
@@ -128,19 +121,19 @@
         <div class="question-number-table no-radio">
             <table>
                 <tbody>
+                    <h5 class="question-progress">שאלה @(currentQuestionIndex + 1) מתוך @questionNum</h5>
                     <tr>
                         @for (int i = 0; i < questionNum; i++)
                         {
-                            <td class="@(i == currentQuestionIndex ? "current" : (answeredQuestionsArray[i] ? "answered" : "unanswered"))">
-
+                            @* <td class="@(Permission ? ((i == currentQuestionIndex) ? "current" : (answeredQuestionsArray[i] ?  "") :  (GetAnswerClass((int)examAnswers.ElementAt(i).AnswerId)))"> *@
+                            @* <td class="@GetCellClass(i, (int)examAnswers.ElementAt(i).AnswerId)"> *@
+                            <td class="@GetCellClass(i)">
                                 <label>
                                     <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" />
-                                    <span class="circle"></span>
+                                    <span @* class="circle" *@></span>
                                 </label>
-
-                                @* <input type="radio" name="questionNumber" value="@i" checked="@(i == currentQuestionIndex)" @onchange="GoToQuestion" /> *@
-                                @* <label>@(i + 1)</label> *@
                             </td>
+                            <small>@(i + 1)</small>
                         }
                     </tr>
                 </tbody>
@@ -151,29 +144,22 @@
         <div class="timer-container">
             @if (Permission)
             {
-                @*  <div class="timer">
-                    <span class="timer-icon"><i class="bi bi-stopwatch"></i></span>
-                    <span>@remainingTime נותרו</span>
-                </div> *@
-
                 <div class="timer-circle">
-                    <span class="time-label">נותרו</span>
                     <span class="time-text">@remainingTime</span>
+                    <span class="time-label">נותרו</span>
                 </div>
-                @* <div class="total-time">
-                    <span>@examDuration.Duration()</span>
-                </div> *@
+                <div class="total-time">
+                    <span class="time-label">@examDuration.ToString(@"mm\:ss") דקות</span>
+                </div>
             }
-            @* else
-            {
-                <div class="timer">
-                     <span class="timer-icon"><i class="bi bi-stopwatch"></i></span>
-                <span>@examExecution.EndTime - @examExecution.StartTime זמן מבחן כולל</span> 
-                </div>} *@
             else
             {
-                <div class="timer">
-                    <span> זמן מבחן כולל</span>
+                <div class="timer-circle">
+                    <span class="time-text">@totalTime.ToString(@"mm\:ss")</span>
+                    <span class="time-label">דקות</span>
+                </div>
+                <div class="total-time">
+                    <span class="time-label">@examDuration.ToString(@"mm\:ss") דקות</span>
                 </div>
             }
         </div>
@@ -183,6 +169,37 @@
 @* <ConfirmationPopupComponent @ref="confirmationDialog"></ConfirmationPopupComponent> *@
 
 <style>
+    .back-link {
+        background: none;
+        border: none;
+        color: #333;
+        font-size: 1rem;
+        font-family: inherit;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        padding: 0;
+        text-decoration: none;
+        line-height: 1;
+        flex-direction: row-reverse;
+        direction: rtl;
+        margin-left: 40px;
+        margin-top: 20px;
+    }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .back-link .rotated-arrow {
+            transform: rotate(180deg);
+            margin-left: 6px;
+            font-size: 1rem;
+            vertical-align: middle;
+            display: inline-block;
+            line-height: 1;
+        }
+
     .exam-container {
         width: 1200px;
         background-color: #FFFFFF;
@@ -256,10 +273,10 @@
 
     .question-container {
         background-color: #FFFFFF;
-        border: 1px solid #D1D5DB; /* מסגרת אפורה עדינה */
-        border-radius: 12px; /* פינות מעוגלות */
+        border: 1px solid #D1D5DB;
+        border-radius: 12px;
         padding: 20px;
-        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* צל עדין */
+        box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     }
 
     .question-text {
@@ -352,7 +369,7 @@
             }
 
         .navigation-buttons .end-test-button {
-            background-color: #FBBF24; /* צהוב */
+            background-color: #FBBF24;
             color: #1F2937;
         }
 
@@ -360,184 +377,26 @@
                 background-color: #F59E0B;
             }
 
-    @* .exam-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        background-color: #FFFFFF;
-        padding: 10px 20px;
-        border-top: 1px solid #E5E5E5;
+    .hint-container {
         margin-top: 20px;
-    }
-
-    .timer-container {
-        display: flex;
-        align-items: center;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
         font-size: 16px;
-        color: #3D3C3C;
+        color: #333;
+        text-align: right;
+        direction: rtl;
+        display: inline-block;
     }
 
-    .timer-icon {
-        color: #FEC000;
-        margin-right: 5px;
-    }
-
-    .pagination {
-        display: flex;
-        gap: 10px;
-    }
-
-    .pagination-item {
-        background-color: #FFFFFF;
-        border: 1px solid #003366;
-        color: #003366;
-        padding: 5px 10px;
-        border-radius: 5px;
-        cursor: pointer;
-    }
-
-        .pagination-item.active {
-            background-color: #003366;
-            color: #FFFFFF;
-        } *@
-
-    @*  .exam-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 20px;
-        background-color: #FFFFFF;
-        border-top: 1px solid #E5E5E5;
-    }
-
-    .timer-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 150px;
-    }
-
-    .timer-circle {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        border: 3px solid #FEC000;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        background-color: #FFFFFF;
+    .hint-text {
         color: #003366;
         font-weight: bold;
     }
 
-    .time-text {
-        font-size: 16px;
-        font-weight: bold;
+    .hint-container.hidden {
+        display: none;
     }
-
-    .time-label {
-        font-size: 12px;
-        color: #3D3C3C;
-    }
-
-    .question-number-table {
-        flex: 1;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-        .question-number-table table {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-         .question-number-table td {
-            width: 30px;
-            height: 30px;
-            border: 2px solid #003366;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 12px;
-            cursor: pointer;
-            text-align: center;
-            line-height: 30px;
-            color: #003366;
-        }
-
-            .question-number-table td label {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                cursor: pointer;
-            }
-
-                .question-number-table td label .circle {
-                    width: 20px;
-                    height: 20px;
-                    border-radius: 50%;
-                    border: 2px solid #003366;
-                    display: inline-block;
-                    background-color: transparent;
-                }
-
-
-        .question-number-table tr {
-            border-color: inherit;
-            border-style: solid;
-            border-width: 0;
-            display: flex;
-            flex-direction: row;
-            gap: 5px;
-        }*@
-
-    @* .question-number-table td.current {
-            background-color: #FEC000;
-            color: #FFFFFF;
-        }
-
-        .question-number-table td.answered {
-            background-color: #003366;
-            color: #FFFFFF;
-        }
-
-        .question-number-table td.unanswered {
-            background-color: #FFFFFF;
-            color: #003366;
-        } *@
-
-
-    @* td.current label .circle {
-        background-color: #FEC000; /* צהוב */
-    }
-
-    td.answered label .circle {
-        background-color: #003366; /* כחול */
-        color: #FFFFFF;
-    }
-
-    td.unanswered label .circle {
-        background-color: #FFFFFF; /* לבן */
-    }
-
-        .question-number-table td input[type="radio"] {
-            display: none;
-        }
-
-        .question-number-table td label {
-            display: block;
-            width: 100%;
-            height: 100%;
-            line-height: 30px;
-            text-align: center;
-            cursor: pointer;
-        } *@
 
     .exam-footer {
         display: flex;
@@ -546,12 +405,14 @@
         padding: 20px;
         background-color: #FFFFFF;
         border-top: 1px solid #E5E5E5;
+        color: #003366;
     }
 
     .timer-container {
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-direction: column;
     }
 
     .timer-circle {
@@ -572,17 +433,26 @@
     .time-text {
         font-size: 16px;
         font-weight: bold;
+        margin-top: 10px;
     }
 
     .time-label {
-        font-size: 12px;
-        color: #3D3C3C;
+        font-size: 15px;
+        color: #003366;
+    }
+
+    .totl-time {
+        margin-top: 5px;
+    }
+
+    .question-progress {
+        margin-bottom: 15px;
     }
 
     .question-number-table {
         flex: 1;
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         flex-wrap: wrap;
         gap: 10px;
@@ -593,11 +463,16 @@
             border-style: solid;
             border-width: 0;
             display: flex;
+            gap: 5px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 10px;
+            margin: 23px;
         }
 
         .question-number-table td {
-            width: 30px;
-            height: 30px;
+            width: 15px;
+            height: 15px;
             border: 2px solid #003366;
             border-radius: 50%;
             display: flex;
@@ -609,17 +484,17 @@
             color: #003366;
         }
 
-    td.current .circle {
-        background-color: #FEC000; /* Yellow */
+    td.current {
+        background-color: #FEC000;
     }
 
-    td.answered .circle {
-        background-color: #003366; /* Blue */
+    td.answered {
+        background-color: #003366;
         color: #FFFFFF;
     }
 
-    td.unanswered .circle {
-        background-color: #FFFFFF; /* White */
+    td.unanswered {
+        background-color: #FFFFFF;
     }
 
     .question-number-table td label {
@@ -631,36 +506,29 @@
         height: 100%;
     }
 
-    .circle {
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        display: inline-block;
-        background-color: transparent;
-        border: 2px solid #003366;
-    }
-
-    @* .input[type="radio"] {
-        display: none;
-    } *@
-
     .no-radio input[type="radio"] {
         display: none;
     }
 
     .correct-answer {
-        background-color: #d4edda;
-        color: #155724;
+        background-color: #00c366b3;
     }
 
     .incorrect-answer {
-        background-color: #f8d7da;
-        color: #721c24;
+        background-color: #ff0d0d99;
     }
 
     .partially-correct-answer {
-        background-color: #f7eac7;
-        color: #856404;
+        background-color: #ffa11499;
+    }
+
+    .unanswered-check {
+        background-color: #828282;
+    }
+
+    .current-check {
+        height: 23px !important;
+        width: 23px !important;
     }
 </style>
 
@@ -685,16 +553,25 @@
     public bool isFirstRender = true;
     public bool endTest = false;
 
-    public string elapsedTime = "00:00:00";
-    public string remainingTime = "00:15:00";
+    public string elapsedTime = "00:00";
+    public string remainingTime = "15:00";
     public System.Timers.Timer elapsedTimer;
     public System.Timers.Timer remainingTimer;
     public DateTime startTime;
     public TimeSpan examDuration = TimeSpan.FromMinutes(15);
+    public TimeSpan totalTime;
+
     public DateTime questionStartTime; // Question Time
     private bool[] answeredQuestionsArray;
+    private string[] answersCorrectnessLevelArray;
+    private string hintText;
 
     public string previousLocation; //location before navigate to other page in app
+
+    private bool isFirstQuestion => currentQuestionIndex == 0;
+    private bool isLastQuestion => currentQuestionIndex == questionNum - 1;
+    private int answeredQuestions => examAnswers?.Count(e => !string.IsNullOrEmpty(e.TextAnswer) || e.AnswerId != null) ?? 0;
+
 
     protected override void OnInitialized()
     {
@@ -709,14 +586,14 @@
             if (isFirstRender)
             {
                 if (Permission == true)//if false currentQuestionIndex = 0 from parameter
-                    currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
+                    currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>($"currentQuestionIndex_{examExecutionId}");
                 else
                     currentQuestionIndex = 0;
                 // First render, check if examExecution is in local storage
-                elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime") ?? "00:00:00";
-                remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime") ?? "00:15:00";
+                elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime") ?? "00:00";
+                remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime") ?? "15:00";
 
-                examExecution = await LocalStorageService.GetFromLocalStorageAsync<ExamExecution>("examExecution");
+                examExecution = await LocalStorageService.GetFromLocalStorageAsync<ExamExecution>($"examExecution_{examExecutionId}");
                 if (examExecution == null)
                 {
                     // If not found in local storage, fetch from the database
@@ -758,12 +635,12 @@
             else
             {
                 // Subsequent renders, load examExecution from local storage
-                examExecution = await LocalStorageService.GetFromLocalStorageAsync<ExamExecution>("examExecution");
+                examExecution = await LocalStorageService.GetFromLocalStorageAsync<ExamExecution>($"examExecution_{examExecutionId}");
 
                 // Restore state from local storage
-                currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>("currentQuestionIndex");
-                elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>("elapsedTime");// ?? "00:00:00";
-                remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>("remainingTime");// ?? "00:15:00";
+                currentQuestionIndex = await LocalStorageService.GetFromLocalStorageAsync<int>($"currentQuestionIndex_{examExecutionId}");
+                elapsedTime = await LocalStorageService.GetFromLocalStorageAsync<string>($"elapsedTime_{examExecutionId}");// ?? "00:00:00";
+                remainingTime = await LocalStorageService.GetFromLocalStorageAsync<string>($"remainingTime_{examExecutionId}");// ?? "00:15:00";
 
                 if (examExecution != null)
                 {
@@ -783,10 +660,31 @@
                 }
             }
             answeredQuestionsArray = new bool[questionNum];
+            answersCorrectnessLevelArray = new string[questionNum];
 
             for (int i = 0; i < questionNum; i++)
             {
                 answeredQuestionsArray[i] = false;
+
+                if (!Permission)
+                {
+                    var answerId = examAnswers.ElementAt(i)?.AnswerId;
+
+                    if (answerId.HasValue)
+                    {
+                        answersCorrectnessLevelArray[i] = GetAnswerClass(i, answerId.Value);
+                    }
+                }
+            }
+
+            if (!Permission)
+            {
+                totalTime = TimeSpan.Zero;
+
+                foreach (var examAnswer in examExecution.ExamAnswers)
+                {
+                    totalTime = totalTime.Add(examAnswer.TimeSpent);
+                }
             }
             StateHasChanged(); // Trigger a re-render
         }
@@ -803,7 +701,7 @@
         {
             examExecution.ExamStatus = ExamStatusEnum.Partially_Completed;//אחרי לחיצה על סיום מבחן Partially_Completed
                                                                           // await Http.PutAsync<ExamExecution, object>("api/Exam/ExamExecution", examExecution);
-            await SaveDataToLocalStorage();
+            await SaveDataToLocalStorage(); //fix
         }
         // Update the previous location
         previousLocation = currentLocation;
@@ -834,7 +732,7 @@
         Navigation.LocationChanged -= OnLocationChanged;
     }
 
-    private void InitializeTimers(TimeSpan? remaining = null)
+    private async Task InitializeTimers(TimeSpan? remaining = null)
     {
         elapsedTimer = new System.Timers.Timer(1000);
         elapsedTimer.Elapsed += (sender, e) =>
@@ -848,7 +746,7 @@
         remainingTimer.Elapsed += (sender, e) =>
         {
             var remainingTimeSpan = remaining.HasValue ? remaining.Value : examDuration - (DateTime.Now - startTime);
-            remainingTime = remainingTimeSpan.ToString(@"hh\:mm\:ss");
+            remainingTime = remainingTimeSpan.ToString(@"mm\:ss");
             if (remainingTimeSpan <= TimeSpan.Zero)
             {
                 remainingTimer.Stop();
@@ -876,10 +774,10 @@
     {
         elapsedTimer?.Stop();
         remainingTimer?.Stop();
-        // await LocalStorageService.StoreInLocalStorageAsync("currentQuestionIndex", currentQuestionIndex);
-        // await LocalStorageService.StoreInLocalStorageAsync("elapsedTime", elapsedTime);
-        // await LocalStorageService.StoreInLocalStorageAsync("remainingTime", remainingTime);
-        // await LocalStorageService.StoreInLocalStorageAsync("examExecution", examExecution);
+        await LocalStorageService.StoreInLocalStorageAsync($"currentQuestionIndex_{examExecutionId}", currentQuestionIndex);
+        await LocalStorageService.StoreInLocalStorageAsync($"elapsedTime_{examExecutionId}", elapsedTime);
+        await LocalStorageService.StoreInLocalStorageAsync($"remainingTime_{examExecutionId}", remainingTime);
+        await LocalStorageService.StoreInLocalStorageAsync($"examExecution_{examExecutionId}", examExecution);
         Console.WriteLine("data saved to local storage.");
     }
 
@@ -887,6 +785,7 @@
     {
         if (examAnswers != null && examAnswers.Any())
         {
+            hintText = string.Empty;
             currentQuestion = examAnswers.ElementAt(currentQuestionIndex).BaseQuestion;
             questionStartTime = DateTime.Now;
             examExecution.CurrentQuestion = currentQuestion;
@@ -923,17 +822,6 @@
 
     private void UpdateOpenAnswerText(ChangeEventArgs e)
     {
-        // if (e.Value.ToString() != "")
-        // {
-        //     answeredQuestionsArray[currentQuestionIndex] = true;
-        //     currentOpenAnswerText = e.Value.ToString();
-        // }
-        // else
-        // {
-        //     answeredQuestionsArray[currentQuestionIndex] = false;
-        //     currentOpenAnswerText = string.Empty;
-        // }
-
         if (!string.IsNullOrWhiteSpace(e.Value.ToString()))
         {
             answeredQuestionsArray[currentQuestionIndex] = true;
@@ -969,6 +857,7 @@
             if (Permission)
                 UpdateCurrentQuestionTime();
             currentQuestionIndex--;
+            hintText = string.Empty;
             SetCurrentQuestion();
         }
     }
@@ -980,6 +869,7 @@
             if (Permission)
                 UpdateCurrentQuestionTime();
             currentQuestionIndex++;
+            hintText = string.Empty;
             SetCurrentQuestion();
         }
     }
@@ -993,6 +883,7 @@
                 UpdateCurrentQuestionTime();
             }
             currentQuestionIndex = selectedIndex;
+            hintText = string.Empty;
             SetCurrentQuestion();
         }
     }
@@ -1008,11 +899,11 @@
         }
     }
 
-    private string GetAnswerClass(int answerId)
+    private string GetAnswerClass(int index, int answerId)
     {
         if (!Permission)
         {
-            var currentExamAnswer = examAnswers.ElementAt(currentQuestionIndex);
+            var currentExamAnswer = examAnswers.ElementAt(index);
 
             if (!currentExamAnswer.AnswerCorrectnessLevel.HasValue)
                 return "";
@@ -1036,9 +927,60 @@
         return "";
     }
 
-    private bool isFirstQuestion => currentQuestionIndex == 0;
-    private bool isLastQuestion => currentQuestionIndex == questionNum - 1;
-    private int answeredQuestions => examAnswers?.Count(e => !string.IsNullOrEmpty(e.TextAnswer) || e.AnswerId != null) ?? 0;
+    // private string GetCellClass(int index, int answerId)
+    // {
+    //     if (Permission)
+    //     {
+    //         if (index == currentQuestionIndex) return "current";
+    //         if (answeredQuestionsArray[index]) return "answered";
+    //         return "unanswered";
+    //     }
+
+    //     return GetAnswerClass(answerId);
+    // }
+
+    private string GetCellClass(int index)
+    {
+        if (Permission)
+        {
+            if (index == currentQuestionIndex) return "current";
+            if (answeredQuestionsArray[index]) return "answered";
+            return "unanswered";
+        }
+
+        // var answerId = examAnswers.ElementAt(index)?.AnswerId;
+        // if (answerId.HasValue)
+        // {
+        //     return GetAnswerClass(answerId.Value);
+        // }
+
+        if (index == currentQuestionIndex) return "current-check" + " " + answersCorrectnessLevelArray[index];
+        //if didn't answer a question - give class unanswered-check --??
+        return answersCorrectnessLevelArray[index]; // אם אין מידע על השאלה
+    }
+
+    private async Task getHint()
+    {
+        try
+        {
+            // קריאה ל-API לקבלת הרמז
+            hintText = currentQuestion.Hint;
+            if (string.IsNullOrEmpty(hintText))
+            {
+                hintText = "אין רמז לשאלה זו.";
+            }
+
+            // עדכון התצוגה
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            hintText = "שגיאה בטעינת הרמז.";
+            Console.WriteLine(ex.Message);
+            StateHasChanged();
+        }
+    }
+
 
     private async void EndTest()
     {
@@ -1065,8 +1007,17 @@
         Navigation.NavigateTo($"/daily-exam");
     }
 
-    private void BackToAllExams()
+    private async Task BackToAllExams()
     {
-        Navigation.NavigateTo($"/exams");
+        await SaveDataToLocalStorage(); //fix - show popup?
+
+        Navigation.NavigateTo($"/daily-exam");
+    }
+
+    private async Task NavigateBackToDailyInfo()
+    {
+        await SaveDataToLocalStorage(); //fix - show popup?
+
+        Navigation.NavigateTo("/daily-exam");
     }
 }

@@ -155,6 +155,7 @@ namespace ShWeb.Controllers
                 existingUserQuestion.SubjectId = question.SubjectId;
                 existingUserQuestion.QuestionText = question.QuestionText;
                 existingUserQuestion.QuestionType = question.QuestionType;
+                existingUserQuestion.Hint = question.Hint;
                
                 // Loop through the answers to update the AnswerText and IsCorrectAnswer
                 for (int i = 0; i < question.Answers.Count; i++)
