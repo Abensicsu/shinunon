@@ -11,8 +11,6 @@
 @using DataModels.Models
 @using DataModels.Services
 
-<PageTitle>ביצוע מבחן</PageTitle>
-
 <div class="exam-container" dir="rtl">
 
     @if (Permission)
@@ -46,21 +44,18 @@
                     <h6 class="question-counter">שאלה מס' @(currentQuestionIndex + 1)</h6>
                 </div>
                 <div class="header-right">
-                    @if (Permission)
-                    {
-                        <button class="hint-button" @onclick="getHint">
-                            <i class="bi bi-lightbulb"></i> רמז
-                        </button>
-                    }
-                    <button class="edit-question-button">
-                        <i class="bi bi-pen"></i> עריכת שאלה
+                    <button class="hint-button" @onclick="getHint">
+                        <i class="bi bi-lightbulb"></i> רמז
                     </button>
-                    @if (Permission)
+                    @if (!Permission)
                     {
-                        <button class="back-button" @onclick="BackToAllExams">
-                            <i class="bi bi-box-arrow-left"></i> יציאה
+                        <button class="edit-question-button" @onclick="() => OpenEditPopup(currentQuestion)">
+                            <i class="bi bi-pen"></i> עריכת שאלה
                         </button>
                     }
+                    <button class="back-button" @onclick="BackToAllExams">
+                        <i class="bi bi-box-arrow-left"></i> יציאה
+                    </button>
                 </div>
             </div>
             @if (hintText != null)
@@ -164,6 +159,62 @@
             }
         </div>
     </div>
+
+    @if (showEditPopup)
+    {
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <button class="close-button" @onclick="CloseEditPopup">✖</button>
+                <h3>עריכת שאלה</h3>
+
+                <label>נושא</label>
+                <select @bind="editingQuestion.SubjectId">
+                    @foreach (var subject in subjects)
+                    {
+                        <option value="@subject.SubjectId">@subject.SubjectName</option>
+                    }
+                </select>
+
+                <label>סוג שאלה</label>
+                <input type="text" @bind="editingQuestion.QuestionType" disabled />
+
+                <label>השאלה</label>
+                <input type="text" @bind="editingQuestion.QuestionText" class="form-control" />
+
+                @if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+                {
+                    <label>תשובה נכונה</label>
+                    <textarea @bind="correctAnswerText" class="form-control"></textarea>
+                }
+                else if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+                {
+                    <label>תשובות</label>
+                    @foreach (var answer in answers.Select((answer, index) => new { answer, index }))
+                    {
+                        <div class="answer-option">
+                            <input type="radio" name="correctAnswer" @onclick="() => MarkCorrectAnswer(answer.index)" checked="@answer.answer.IsCorrectAnswer" />
+                            <input type="text" @bind="answer.answer.AnswerText" class="form-control" />
+                        </div>
+                    }
+                }
+
+                <label>רמז</label>
+                <input type="text" @bind="editingQuestion.Hint" class="form-control" />
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        @errorMessage
+                    </div>
+                }
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" @onclick="CloseEditPopup">ביטול</button>
+                    <button class="btn btn-primary" @onclick="SaveEditedQuestion">שמור שינויים</button>
+                </div>
+            </div>
+        </div>
+    }
+
 </div>
 
 @* <ConfirmationPopupComponent @ref="confirmationDialog"></ConfirmationPopupComponent> *@
@@ -530,6 +581,80 @@
         height: 23px !important;
         width: 23px !important;
     }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background-color: #ffffff;
+        padding: 30px;
+        border-radius: 10px;
+        max-width: 600px;
+        width: 100%;
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+        position: relative;
+        direction: rtl;
+    }
+
+    .close-button {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        font-size: 20px;
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+
+    .modal-content h3 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+    }
+
+    .modal-content input, .modal-content textarea, .modal-content select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+        .modal-actions .btn {
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .modal-actions .btn-primary {
+            background-color: #003366;
+            color: white;
+        }
+
+        .modal-actions .btn-secondary {
+            background-color: #e2e8f0;
+            color: #2d3748;
+        }
 </style>
 
 @code {
@@ -542,13 +667,17 @@
     [Parameter]
     public int currentQuestionIndex { get; set; }
 
+    private User currentUser { get; set; }
+
     public ConfirmationPopupComponent confirmationDialog; //for popup
 
     public ExamExecution examExecution;
     public int questionNum;
+
     public ICollection<ExamAnswer> examAnswers;
     public BaseQuestion currentQuestion;
     public string currentOpenAnswerText;
+    public Subject[] subjects { get; set; }
 
     public bool isFirstRender = true;
     public bool endTest = false;
@@ -572,8 +701,14 @@
     private bool isLastQuestion => currentQuestionIndex == questionNum - 1;
     private int answeredQuestions => examAnswers?.Count(e => !string.IsNullOrEmpty(e.TextAnswer) || e.AnswerId != null) ?? 0;
 
+    private bool showEditPopup = false;
+    private UserQuestion editingQuestion { get; set; } = new UserQuestion();
+    private List<Answer> answers { get; set; } = new List<Answer>();
+    private string correctAnswerText = string.Empty;
+    private string errorMessage = string.Empty;
 
-    protected override void OnInitialized()
+
+    protected async override void OnInitialized()
     {
         Navigation.LocationChanged += OnLocationChanged;
         previousLocation = Navigation.Uri; // Initialize with the current location on load
@@ -583,6 +718,13 @@
     {
         if (firstRender)
         {
+            currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+            if (currentUser == null)
+            {
+                Navigation.NavigateTo("/login");
+                return;
+            }
+
             if (isFirstRender)
             {
                 if (Permission == true)//if false currentQuestionIndex = 0 from parameter
@@ -686,6 +828,9 @@
                     totalTime = totalTime.Add(examAnswer.TimeSpent);
                 }
             }
+
+            subjects = await Http.GetAsync<Subject[]>("api/Subject/AllSubjects");
+
             StateHasChanged(); // Trigger a re-render
         }
     }
@@ -956,21 +1101,19 @@
 
         if (index == currentQuestionIndex) return "current-check" + " " + answersCorrectnessLevelArray[index];
         //if didn't answer a question - give class unanswered-check --??
-        return answersCorrectnessLevelArray[index]; // אם אין מידע על השאלה
+        return answersCorrectnessLevelArray[index];
     }
 
     private async Task getHint()
     {
         try
         {
-            // קריאה ל-API לקבלת הרמז
             hintText = currentQuestion.Hint;
             if (string.IsNullOrEmpty(hintText))
             {
                 hintText = "אין רמז לשאלה זו.";
             }
 
-            // עדכון התצוגה
             StateHasChanged();
         }
         catch (Exception ex)
@@ -978,6 +1121,142 @@
             hintText = "שגיאה בטעינת הרמז.";
             Console.WriteLine(ex.Message);
             StateHasChanged();
+        }
+    }
+
+    // פתיחת פופ-אפ לעריכת שאלה
+    private async void OpenEditPopup(BaseQuestion question)
+    {
+        showEditPopup = true;
+
+        if (question.DiscriminatorRF == "Question")
+        {
+            editingQuestion = new UserQuestion
+                {
+                    OriginalQuestionId = question.BaseQuestionId,
+                    QuestionText = question.QuestionText,
+                    QuestionType = question.QuestionType,
+                    SubjectId = question.SubjectId,
+                    Hint = question.Hint,
+                    UserId = currentUser.Id
+                };
+
+            Question questionIncludeAnswers = await Http.GetAsync<Question>($"api/Question/getQuestion?questionId={question.BaseQuestionId}");
+            answers = questionIncludeAnswers.Answers.ToList();
+        }
+        else if (question.DiscriminatorRF == "UserQuestion")
+        {
+            // עריכת UserQuestion קיים
+            editingQuestion = new UserQuestion
+                {
+                    BaseQuestionId = question.BaseQuestionId,
+                    QuestionText = question.QuestionText,
+                    QuestionType = question.QuestionType,
+                    SubjectId = question.SubjectId,
+                    Hint = question.Hint,
+                    UserId = currentUser.Id
+                };
+
+            UserQuestion questionIncludeAnswers = await Http.GetAsync<UserQuestion>($"api/Question/getUserQuestion?questionId={question.BaseQuestionId}");
+            answers = questionIncludeAnswers.Answers.ToList();
+        }
+
+        correctAnswerText = editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && answers.Any() ? answers.First().AnswerText : string.Empty;
+        StateHasChanged(); // Force UI update
+    }
+
+    private void InitializeAnswers()
+    {
+        answers.Clear();
+        for (int i = 0; i < 4; i++)
+        {
+            answers.Add(new Answer
+                {
+                    AnswerText = string.Empty,
+                    IsCorrectAnswer = false
+                });
+        }
+    }
+
+    private void CloseEditPopup()
+    {
+        showEditPopup = false;
+
+        editingQuestion = new UserQuestion();
+        InitializeAnswers(); // Reset the answers list after adding a question
+        errorMessage = string.Empty;// Reset error message if valid
+    }
+
+    private async Task SaveEditedQuestion()
+    {
+        if (editingQuestion.SubjectId == 0)
+        {
+            errorMessage = "בחר נושא";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(editingQuestion.QuestionText) || (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion && string.IsNullOrWhiteSpace(correctAnswerText)))
+        {
+            errorMessage = "הכנס שאלה ותשובה";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(editingQuestion.QuestionText))
+        {
+            errorMessage = "הכנס שאלה";
+            return;
+        }
+
+        if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Count < 4)
+        {
+            errorMessage = "הכנס לפחות 4 תשובות";
+            return;
+        }
+
+        // Check if any answer is empty, null, or whitespace
+        if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion && answers.Any(a => string.IsNullOrWhiteSpace(a.AnswerText)))
+        {
+            errorMessage = "הכנס את כל התשובות";
+            return;
+        }
+
+        // Add answers based on question type
+        if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+        {
+            editingQuestion.Answers = new List<Answer>
+            {
+                new Answer
+                {
+                    AnswerText = correctAnswerText,
+                    IsCorrectAnswer = false
+                }
+            };
+        }
+        else if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+        {
+            // Ensure at least one correct answer is set
+            var correctAnswerExists = answers.Any(a => a.IsCorrectAnswer);
+            if (!correctAnswerExists)
+            {
+                errorMessage = "סמן את התשובה הנכונה";
+                return;
+            }
+
+            editingQuestion.Answers = answers; // Add all answers for Select questions
+        }
+
+        editingQuestion.UserId = currentUser.Id;
+        // editingQuestion.Hint
+        await Http.PutAsync<UserQuestion, string>("api/Question/Edit", editingQuestion);
+        // await RefreshQuestionsAndResetInputs();
+        showEditPopup = false;
+    }
+
+    private void MarkCorrectAnswer(int index)
+    {
+        for (int i = 0; i < answers.Count; i++)
+        {
+            answers[i].IsCorrectAnswer = (i == index);
         }
     }
 

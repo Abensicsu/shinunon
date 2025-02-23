@@ -5,7 +5,6 @@
 @using Npgsql
 @using System.Collections.Generic
 
-
 @inject CustomHttpClientService Http
 @inject NavigationManager Navigation
 
@@ -37,7 +36,10 @@ else
                         @if (question.DiscriminatorRF == "UserQuestion")
                         {
                             <button @onclick="() => EditQuestion(question)">עריכה</button>
-                            <button @onclick="() => DeleteQuestion(question.BaseQuestionId)">מחיקה</button>
+                            @* <button @onclick="() => DeleteQuestion(question.BaseQuestionId)">מחיקה</button> *@
+
+                            <button @onclick="() => OpenDeletePopup(question.BaseQuestionId)">מחיקה</button>
+
                         }
                         else
                         {
@@ -52,7 +54,8 @@ else
 
 <button @onclick="AddQuestionBool" class="btn btn-primary">הוספת שאלה</button>
 
-@if (addQuestionMode)
+<!-- Add Question Modal -->
+@* @if (addQuestionMode)
 {
     <h4>הוספת שאלה</h4>
 
@@ -114,10 +117,76 @@ else
 
     <br />
     <button @onclick="AddQuestion" class="btn btn-primary">שמירה</button>
+} *@
+
+<!-- Add Question Modal -->
+@if (addQuestionMode)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-button" @onclick="CloseAddPopup">✖</button>
+            <h4>הוספת שאלה</h4>
+
+            <label for="subject">בחר נושא:</label>
+            <select id="subject" @bind="newQuestion.SubjectId">
+                <option value="0">בחר</option>
+                @if (subjects != null)
+                {
+                    @foreach (var subject in subjects)
+                    {
+                        <option value="@subject.SubjectId">@subject.SubjectName</option>
+                    }
+                }
+            </select>
+
+            <b>בחר סוג שאלה</b>
+            <select @bind="@newQuestion.QuestionType">
+                @foreach (var qType in Enum.GetValues(typeof(QuestionTypeEnum)))
+                {
+                    <option value="@qType">@qType</option>
+                }
+            </select>
+
+            @if (newQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+            {
+                <h3>שאלה</h3>
+                <input type="text" @bind="newQuestion.QuestionText" placeholder="שאלה" class="form-control" />
+                <h4>תשובה נכונה:</h4>
+                <textarea @bind="correctAnswerText" placeholder="תשובה נכונה" class="form-control answer-textarea"></textarea>
+            }
+            else if (newQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+            {
+                <h3>שאלה</h3>
+                <input type="text" @bind="newQuestion.QuestionText" placeholder="שאלה" class="form-control" />
+                <h4>תשובות</h4>
+
+                @foreach (var answer in answers.Select((answer, index) => new { answer, index }))
+                {
+                    <div class="answer-option">
+                        <input type="radio" name="correctAnswer" @onclick="() => MarkCorrectAnswer(answer.index)" checked="@answer.answer.IsCorrectAnswer" />
+                        <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"תשובה {answer.index + 1}")" class="form-control" />
+                    </div>
+                }
+            }
+
+            <input type="text" @bind="newQuestion.Hint" placeholder="רמז" class="form-control" />
+
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CloseAddPopup">ביטול</button>
+                <button class="btn btn-primary" @onclick="AddQuestion">שמירה</button>
+            </div>
+        </div>
+    </div>
 }
 
 
-@if (editMode)
+<!-- Edit Question Modal -->
+@* @if (editMode)
 {
     <h4>עריכת שאלה</h4>
 
@@ -179,6 +248,74 @@ else
 
     <br />
     <button @onclick="SaveEditedQuestion" class="btn btn-primary">שמור שינויים</button>
+} *@
+
+<!-- Edit Question Modal -->
+@if (editMode)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <button class="close-button" @onclick="CloseEditPopup">✖</button>
+            <h4>עריכת שאלה</h4>
+
+            <label>נושא</label>
+            <select @bind="editingQuestion.SubjectId">
+                @foreach (var subject in subjects)
+                {
+                    <option value="@subject.SubjectId">@subject.SubjectName</option>
+                }
+            </select>
+
+            <label>סוג שאלה</label>
+            <input type="text" value="@editingQuestion.QuestionType" class="form-control" disabled />
+
+            <label>שאלה</label>
+            <input type="text" @bind="editingQuestion.QuestionText" class="form-control" />
+
+            @if (editingQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+            {
+                <label>תשובה נכונה</label>
+                <textarea @bind="correctAnswerText" class="form-control"></textarea>
+            }
+            else if (editingQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+            {
+                <h3>שאלה</h3>
+                <input type="text" @bind="editingQuestion.QuestionText" placeholder="שאלה" class="form-control" />
+
+                <h4>תשובות</h4>
+                @foreach (var answer in answers.Select((answer, index) => new { answer, index }))
+                {
+                    <div class="answer-option">
+                        <input type="radio" name="correctAnswer" @onclick="() => MarkCorrectAnswer(answer.index)" checked="@answer.answer.IsCorrectAnswer" />
+                        <input type="text" @bind="answer.answer.AnswerText" placeholder="@($"תשובה {answer.index + 1}")" class="form-control" />
+                    </div>
+                }
+            }
+
+            <label>רמז</label>
+            <input type="text" @bind="editingQuestion.Hint" class="form-control" />
+
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CloseEditPopup">ביטול</button>
+                <button class="btn btn-primary" @onclick="SaveEditedQuestion">שמור שינויים</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Delete Confirmation Modal -->
+@if (deleteMode)
+{
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <h4>מחיקת שאלה</h4>
+            <p>האם אתה בטוח שברצונך למחוק את השאלה?</p>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" @onclick="CloseDeletePopup">ביטול</button>
+                <button class="btn btn-danger" @onclick="ConfirmDeleteQuestion">מחיקה</button>
+            </div>
+        </div>
+    </div>
 }
 
 <style>
@@ -201,6 +338,44 @@ else
         width: 100%;
         max-width: 400px;
     }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 30%;
+        text-align: right;
+        direction: rtl;
+    }
+
+    .close-button {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
 </style>
 
 
@@ -218,6 +393,16 @@ else
     private UserQuestion editingQuestion { get; set; } = new UserQuestion { };
     private bool editMode = false;
     private bool addQuestionMode = false;
+
+    private bool deleteMode = false;
+    private int questionToDelete;
+
+    private void OpenAddPopup() => addQuestionMode = true;
+    private void CloseAddPopup() => addQuestionMode = false;
+
+    private void CloseDeletePopup() => deleteMode = false;
+    private void CloseEditPopup() => editMode = false;
+
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -468,5 +653,23 @@ else
         editingQuestion.UserId = currentUser.Id;
         await Http.PutAsync<UserQuestion, string>("api/Question/Edit", editingQuestion);
         await RefreshQuestionsAndResetInputs();
+    }
+
+    private void OpenEditPopup(BaseQuestion question)
+    {
+        editMode = true;
+        editingQuestion = (UserQuestion)question;
+    }
+
+    private void OpenDeletePopup(int questionId)
+    {
+        deleteMode = true;
+        questionToDelete = questionId;
+    }
+
+    private async Task ConfirmDeleteQuestion()
+    {
+        await DeleteQuestion(questionToDelete);
+        CloseDeletePopup();
     }
 }
