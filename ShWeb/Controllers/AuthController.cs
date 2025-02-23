@@ -8,6 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using DataModels.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace ShWeb.Controllers
 {
@@ -69,7 +70,8 @@ namespace ShWeb.Controllers
             {
                 UserName = request.Email,
                 Email = request.Email,
-                UserFullName = request.UserFullName
+                UserFullName = request.UserFullName,
+                UserSettings = new UserSettings() // Initialize UserSettings when creating a new user
             };
 
             var result = await _userManager.CreateAsync(user, request.Password);
@@ -97,6 +99,51 @@ namespace ShWeb.Controllers
             }
 
             return Ok(user);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetUserSettings()
+        {
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.Users
+                .Include(u => u.UserSettings) // load UserSettings
+                .FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
+
+            if (user == null)
+                return Unauthorized();
+
+            return Ok(user.UserSettings ?? new UserSettings()); // Return default settings if null
+        }
+
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateUserSettings([FromBody] UserSettings updatedSettings)
+        {
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.Users
+                .Include(u => u.UserSettings) // ✅ Ensure UserSettings is loaded
+                .FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
+
+            if (user == null)
+                return Unauthorized();
+
+            // ✅ Ensure UserSettings is not null before updating
+            if (user.UserSettings == null)
+            {
+                user.UserSettings = new UserSettings(); // Initialize if missing
+            }
+
+            // Update user settings
+            user.UserSettings.IsSingleChapterMode = updatedSettings.IsSingleChapterMode;
+            user.UserSettings.MemoryLevel = updatedSettings.MemoryLevel;
+            user.UserSettings.DefaultQuestionCount = updatedSettings.DefaultQuestionCount;
+            user.UserSettings.DefaultTimeExam = updatedSettings.DefaultTimeExam;
+
+            // Save changes
+            await _userManager.UpdateAsync(user);
+
+            return Ok();
         }
     }
 }
