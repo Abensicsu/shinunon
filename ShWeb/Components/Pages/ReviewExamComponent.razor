@@ -38,7 +38,6 @@
         </div>
     </div>
 
-    @* <button class="advanced-search-btn" @onclick="ToggleAdvancedSearch">חיפוש מתקדם</button> *@
     <button class="advanced-search-btn" @onclick="ToggleAdvancedSearch">
         חיפוש מתקדם
         <span class="search-icon"></span>
@@ -67,7 +66,7 @@
                 <input type="number" @bind="advancedSearchCriteria.Ordinal" @oninput="ClearErrorMessage" />
 
                 <label>תיאור</label> @* @bind="advancedSearchCriteria.Description" *@ 
-                        <textarea @oninput="ClearErrorMessage"></textarea>
+                                    <textarea @oninput="ClearErrorMessage"></textarea>
 
                 <div class="advanced-search-actions">
                     <button class="search-btn" @onclick="PerformAdvancedSearch">חיפוש</button>
@@ -76,6 +75,32 @@
             </div>
         </div>
     }
+
+    <button class="btn btn-primary" @onclick="() => showReviewPopup = true">חזרות יזומות קודמות</button>
+
+    @if (showReviewPopup)
+    {
+        <div class="popup-overlay">
+            <div class="popup">
+                <h3>:חזרות יזומות קודמות</h3>
+                <p>בחר חזרה יזומה שתרצה להמשיך ממנה:</p>
+
+                <ul class="review-list">
+                    @foreach (var review in PastreviewExams)
+                    {
+                        <li @onclick="() => ContinueReview(review)">
+                            @review.Book.BookName  @GetCorrectRange(review)  <br />
+                        </li>
+                    }
+                </ul>
+
+                <div class="popup-buttons">
+                    <button class="btn btn-secondary" @onclick="() => showReviewPopup = false">❌ סגור</button>
+                </div>
+            </div>
+        </div>
+    }
+
 
 
     <!-- Step 1: Select Book Type -->
@@ -124,7 +149,7 @@
 
         <!-- Chapter Grid Display -->
         <div class="chapter-selection">
-            @foreach (var sub in selectedBook.Subjects)
+            @foreach (var sub in selectedBook.Subjects.OrderBy(s => s.Ordinal))
             {
                 <button class="chapter-btn @(sub.Ordinal >= FromChapter && sub.Ordinal <= ToChapter ? "selected" : "")"
                         @onclick="() => UpdateChaptersRange((int)selectedBook.Subjects.ElementAt((int)sub.Ordinal-1).Ordinal)">
@@ -132,11 +157,21 @@
                 </button>
             }
         </div>
+        @* 
+        <!-- Chapter Grid Display -->
+<div class="chapter-selection">
+    {
+        <button class="chapter-btn @(sub.Ordinal >= FromChapter && sub.Ordinal <= ToChapter ? "selected" : "")"
+                @onclick="() => UpdateChaptersRange((int)sub.Ordinal)">
+            @HebrewNumberConverter.ConvertToHebrew((int)sub.Ordinal)
+        </button>
+    }
+</div> *@
+
 
         <!-- Start Button -->
         <button class="start-btn" @onclick="StartLearning" disabled="@(!IsChapterRangeValid())">התחל מבחן</button>
     }
-
 </div>
 
 <!-- CSS -->
@@ -147,16 +182,6 @@
         text-align: center;
         color: #003366;
     }
-
-    @*    .advanced-search-btn {
-        background-color: #003366;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 5px;
-        cursor: pointer;
-        margin-bottom: 15px;
-    } *@
 
     .advanced-search-btn {
         background-color: #003366;
@@ -176,9 +201,9 @@
         place-self: anchor-center;
     }
 
-    .advanced-search-btn:hover {
-        background-color: #002855;
-    }
+        .advanced-search-btn:hover {
+            background-color: #002855;
+        }
 
     .error-message {
         color: #fe8686;
@@ -482,6 +507,59 @@
         input:checked + .slider:before {
             transform: translateX(26px);
         }
+
+    .popup-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .popup {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        width: 400px;
+        text-align: center;
+    }
+
+    .review-list {
+        list-style: none;
+        padding: 0;
+    }
+
+        .review-list li {
+            cursor: pointer;
+            padding: 10px;
+            border-radius: 5px;
+            background: #f5f5f5;
+            margin: 5px 0;
+        }
+
+            .review-list li:hover {
+                background: #ddd;
+            }
+
+    .popup-buttons {
+        margin-top: 15px;
+    }
+
+        .popup-buttons button {
+            margin-right: 10px;
+        }
+
+    .btn-primary {
+        color: #fff;
+        background-color: #003366;
+        border-color: #003366;
+        margin-top: 12px;
+        margin-left: 10px;
+    }
 </style>
 
 @code {
@@ -516,6 +594,9 @@
         }
     }
 
+    private List<DeliberateReview> PastreviewExams = new();
+    private bool showReviewPopup = false;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -528,6 +609,8 @@
             {
                 IsSingleChapterMode = userSettings.IsSingleChapterMode;
             }
+
+            PastreviewExams = await Http.GetAsync<List<DeliberateReview>>($"api/Exam/GetDeliberateReviews");
         }
         else
         {
@@ -585,7 +668,6 @@
             _ => true
         };
     }
-
 
     private void SelectBookType(BookTypeEnum bookType)
     {
@@ -667,6 +749,97 @@
         await Http.PutAsync<UserSettings, string>("api/Auth/UpdateUserSettings", updatedSettings);
     }
 
+    // private async Task ContinueReview(DeliberateReview review)
+    // {
+    //     showReviewPopup = false;
+
+    //     // Select the book type (depends on your existing logic)
+    //     SelectBookType(review.book.BookType);
+
+    //     // Select the book
+    //     SelectBook(review.book);
+
+    //     // Set chapter range
+    //     FromChapter = review.FromSubjectId;
+    //     ToChapter = review.ToSubjectId ?? review.FromSubjectId;
+    // }
+
+
+    public string GetCorrectRange(DeliberateReview review)
+    {
+        // Fetch the book information based on the review
+        var book = review.Book;
+        if (book == null)
+            return "ספר לא נמצא";
+
+        // Fetch total chapters/pages count
+        int totalSubjects = review.Book.Subjects.Count();
+
+        // Determine the review range
+        int fromSubject = (int)review.FromSubject.Ordinal;
+        int toSubject = (int)review.ToSubject.Ordinal > 0 ? (int)review.ToSubject.Ordinal : (int)review.FromSubject.Ordinal;
+
+        // Ensure `toSubject` does not exceed the total chapters/pages
+        if (toSubject > totalSubjects)
+            toSubject = totalSubjects;
+
+        // Get the correct Hebrew representation for the ordinal values
+        string fromText = HebrewNumberConverter.ConvertToHebrew(fromSubject);
+        string toText = HebrewNumberConverter.ConvertToHebrew(toSubject);
+
+        // Determine the type of reference (Chapter or Page)
+        string referenceType = book.BookType switch
+        {
+            BookTypeEnum.Chumash => "פרק",
+            BookTypeEnum.Neviim => "פרק",
+            BookTypeEnum.Ketuvim => "פרק",
+            BookTypeEnum.Gemara => "דף",
+            BookTypeEnum.Mishna => "דף",
+            _ => "לא ידוע"
+        };
+
+        // Construct the correct string output
+        return fromSubject == toSubject
+            ? $"{book.HebrewBookName} {referenceType} {fromText}"
+            : $"{book.HebrewBookName} {referenceType} {fromText}-{toText}";
+    }
+
+
+    private async Task ContinueReview(DeliberateReview review)
+    {
+        showReviewPopup = false;
+
+        // Select the book type
+        SelectBookType(review.Book.BookType);
+
+        // Select the book
+        SelectBook(review.Book);
+
+        // Fetch the total number of chapters/pages in this book
+        int totalChapters = review.Book.Subjects.Count();
+
+        // Calculate how many chapters were covered in the last review
+        var lastReviewLength = (review.ToSubject.Ordinal ?? review.FromSubject.Ordinal) - review.FromSubject.Ordinal + 1;
+
+        // Set the new review range
+        FromChapter = (int)(review.ToSubject.Ordinal.HasValue ? review.ToSubject.Ordinal + 1 : review.FromSubject.Ordinal + 1);
+        ToChapter = FromChapter + (int)lastReviewLength - 1;
+
+        // Ensure `ToChapter` does not exceed the total chapters
+        if (ToChapter > totalChapters)
+        {
+            ToChapter = totalChapters;
+        }
+
+        // If we have reached the last chapter, set both to the last available chapter
+        if (FromChapter > totalChapters)
+        {
+            FromChapter = totalChapters;
+            ToChapter = totalChapters;
+        }
+    }
+
+
     private void UpdateChaptersRange(int selectedChapter)
     {
         IsSelectedChapter = true;
@@ -721,6 +894,13 @@
         _ => "לא ידוע"
     };
 
+    public class DeliberateReview
+    {
+        public int ExamExecutionId { get; set; }
+        public Book Book { get; set; }
+        public Subject FromSubject { get; set; }
+        public Subject ToSubject { get; set; }
+    }
 
     public class AdvancedSearchCriteria
     {

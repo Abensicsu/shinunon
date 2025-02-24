@@ -744,6 +744,7 @@
                     if (examExecution.ExamAnswers.Count == 0 && Permission)
                     {
                         ExamExecutionService.SelectQuestionsCreateExamAnswers(examExecution);
+                        examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
                         examAnswers = examExecution.ExamAnswers;
                     }
                     else
@@ -762,6 +763,7 @@
                     if (examExecution.ExamAnswers.Count == 0 && Permission)
                     {
                         ExamExecutionService.SelectQuestionsCreateExamAnswers(examExecution);
+                        examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
                         examAnswers = examExecution.ExamAnswers;
                     }
                     else
@@ -773,6 +775,7 @@
                         InitializeTimers(); // TimeSpan.Parse(remainingTime));
                 }
                 isFirstRender = false; // Update the flag
+                // StateHasChanged(); // Trigger a re-render
             }
             else
             {
@@ -790,6 +793,7 @@
                     if (examExecution.ExamAnswers.Count == 0 && Permission)
                     {
                         ExamExecutionService.SelectQuestionsCreateExamAnswers(examExecution);
+                        examExecution = await Http.GetAsync<ExamExecution>($"api/Exam/ExamExecution?ExamExecutionId={examExecutionId}");
                         examAnswers = examExecution.ExamAnswers;
                     }
                     else
@@ -830,7 +834,6 @@
             }
 
             subjects = await Http.GetAsync<Subject[]>("api/Subject/AllSubjects");
-
             StateHasChanged(); // Trigger a re-render
         }
     }

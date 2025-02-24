@@ -7,7 +7,7 @@ namespace DataModels.Models
     public class UserSettings
     {
         public MemoryLevelEnum MemoryLevel { get; set; }
-        public int DefaultQuestionCount { get; set; }
+        public int DefaultQuestionCount { get; set; } = 10;
         public int DefaultTimeExam { get; set; }
         public bool IsSingleChapterMode { get; set; } = false; // Chapter Mode: true = single, false = range,  Default - range mode
     }

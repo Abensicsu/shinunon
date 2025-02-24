@@ -47,7 +47,7 @@ namespace ShWeb.Controllers
             if (user == null || !await _userManager.CheckPasswordAsync(user, request.Password))
                 return Unauthorized("Invalid username or password.");
 
-            var token = _jwtTokenService.GenerateToken(user.UserName, user.Email, user.Id.ToString());
+            var token = _jwtTokenService.GenerateToken(user.UserName, user.Email, user.Id.ToString(), user.UserSettings);
             return Ok(new { Token = token });
         }
 
@@ -71,7 +71,11 @@ namespace ShWeb.Controllers
                 UserName = request.Email,
                 Email = request.Email,
                 UserFullName = request.UserFullName,
-                UserSettings = new UserSettings() // Initialize UserSettings when creating a new user
+                UserSettings = new UserSettings
+                {
+                    DefaultQuestionCount = 10,
+                    MemoryLevel = MemoryLevelEnum.Medium,
+                }
             };
 
             var result = await _userManager.CreateAsync(user, request.Password);
@@ -79,7 +83,7 @@ namespace ShWeb.Controllers
             if (result.Succeeded)
             {
                 // Generate JWT token
-                var token = _jwtTokenService.GenerateToken(user.UserName, user.Email, user.Id.ToString());
+                var token = _jwtTokenService.GenerateToken(user.UserName, user.Email, user.Id.ToString(), user.UserSettings);
 
                 // Return token in the response
                 return Ok(new { Token = token });
@@ -122,13 +126,12 @@ namespace ShWeb.Controllers
         {
             var userId = _userManager.GetUserId(User);
             var user = await _userManager.Users
-                .Include(u => u.UserSettings) // ✅ Ensure UserSettings is loaded
+                .Include(u => u.UserSettings) // Ensure UserSettings is loaded
                 .FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
 
             if (user == null)
                 return Unauthorized();
 
-            // ✅ Ensure UserSettings is not null before updating
             if (user.UserSettings == null)
             {
                 user.UserSettings = new UserSettings(); // Initialize if missing

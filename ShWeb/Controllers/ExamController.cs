@@ -193,5 +193,32 @@ namespace ShWeb.Controllers
             var result = await exams.ToListAsync();
             return Ok(result);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetDeliberateReviews()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("User not found");
+            }
+
+            var reviews = await Cx.ExamExecutions
+                .Where(ex => ex.UserId == currentUser.Id && ex.ExamType == ExamTypeEnum.ReviewExam)
+                .Include(ex => ex.FromSubject.Book)
+                    .ThenInclude(b => b.Subjects)
+                .OrderByDescending(ex => ex.StartTime)
+                .Select(ex => new
+                {
+                    ex.ExamExecutionId,
+                    ex.FromSubject.Book,
+                    ex.FromSubject,
+                    ex.ToSubject
+                })
+                .ToListAsync();
+
+            return Ok(reviews);
+        }
+
     }
 }
