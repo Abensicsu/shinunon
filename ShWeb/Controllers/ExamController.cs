@@ -189,7 +189,7 @@ namespace ShWeb.Controllers
                             e.EndTime.Value < currentExamEndTime)
                 .OrderByDescending(e => e.EndTime).Take(2);
 
-            // המרה לרשימה והחזרת התוצאה
+            
             var result = await exams.ToListAsync();
             return Ok(result);
         }
@@ -207,7 +207,8 @@ namespace ShWeb.Controllers
                 .Where(ex => ex.UserId == currentUser.Id && ex.ExamType == ExamTypeEnum.ReviewExam)
                 .Include(ex => ex.FromSubject.Book)
                     .ThenInclude(b => b.Subjects)
-                .OrderByDescending(ex => ex.StartTime)
+                .OrderBy(ex => ex.FromSubject.Book.HebrewBookName)  // By book-name
+                .ThenBy(ex => ex.FromSubject.Ordinal)               //than by fromChapter
                 .Select(ex => new
                 {
                     ex.ExamExecutionId,
