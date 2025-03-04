@@ -1,0 +1,73 @@
+﻿@rendermode InteractiveServer
+
+@* <PageTitle>חשבון</PageTitle> *@
+
+@inject CustomHttpClientService Http
+@inject NavigationManager Navigation
+
+@using DataModels.Data
+@using DataModels.Models
+@using DataModels.Services
+@using Newtonsoft.Json.Linq
+
+
+<div class="account-container">
+
+    <button @onclick="ToggleUsername" class="btn btn-primary">
+        <i class="bi bi-person-circle"></i>
+    </button>
+
+    @if (isModalVisible)
+    {
+        <div class="modal-overlay">
+            <div class="modal-content">
+                <button @onclick="CloseModal">סגור</button>
+                <div>@currentUser.UserFullName</div>
+                <div>@currentUser.Email</div>
+                <button @onclick="Logout">התנתקות מהמערכת</button>
+            </div>
+        </div>
+        @* <div>@currentUser.UserFullName</div> *@
+        @* <div>@currentUser.Email</div> *@
+
+    }
+</div>
+
+<style>
+    .modal-overlay {
+       margin-top:50px ;
+       margin-left:20px;
+        border-radius: 40px ;
+        align-items: flex-start;
+    }
+</style>
+
+@code {
+    private User currentUser;
+    private UserSettings userSettings;
+    private bool isModalVisible = false;
+    private void ToggleUsername()
+    {
+        isModalVisible = !isModalVisible;
+    }
+    private void CloseModal()
+    {
+        isModalVisible = false;
+    }
+    private void Logout()
+    {
+        Navigation.NavigateTo("/", forceLoad: true);
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+            currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+            if (currentUser == null)
+                Console.WriteLine("User not found.");
+
+            userSettings = await Http.GetAsync<UserSettings>("api/Auth/GetUserSettings");// Load user settings from API
+        }
+    }
+}

@@ -1,7 +1,7 @@
 ﻿@rendermode InteractiveServer
+@page "/account"
 
-<PageTitle>חשבון</PageTitle>
-
+<PageTitle> החשבון שלי</PageTitle>
 @inject CustomHttpClientService Http
 @inject NavigationManager Navigation
 
@@ -10,23 +10,36 @@
 @using DataModels.Services
 @using Newtonsoft.Json.Linq
 
-@page "/account"
 
-<h4>in account</h4>
+
+
+
+
+
+
+@if (currentUser != null)
+{
+    <input type="text" value="@currentUser.UserFullName" style="background-color: #f0f0f0; border: 1px solid #ccc;" />
+    <input type="email" value="@currentUser.Email" style="background-color: #f0f0f0; border: 1px solid #ccc;" disabled/>
+}
+
 
 @code {
     private User currentUser;
     private UserSettings userSettings;
+    
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
+
             currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
             if (currentUser == null)
                 Console.WriteLine("User not found.");
 
             userSettings = await Http.GetAsync<UserSettings>("api/Auth/GetUserSettings");// Load user settings from API
+            StateHasChanged();
         }
     }
 }

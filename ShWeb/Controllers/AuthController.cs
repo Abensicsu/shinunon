@@ -9,10 +9,12 @@ using System.Security.Claims;
 using System.Text;
 using DataModels.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace ShWeb.Controllers
 {
     [Route("api/[controller]/[action]")]
+    [AllowAnonymous]
     [ApiController]
     public class AuthController : ControllerBase
     {
