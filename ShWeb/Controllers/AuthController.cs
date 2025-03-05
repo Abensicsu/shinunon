@@ -10,6 +10,7 @@ using System.Text;
 using DataModels.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using NuGet.Common;
 
 namespace ShWeb.Controllers
 {
@@ -42,7 +43,7 @@ namespace ShWeb.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ChangePassword([FromBody] DataModels.Models.ChangePasswordRequest  request)
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null)
@@ -54,7 +55,8 @@ namespace ShWeb.Controllers
 
             if (result.Succeeded)
             {
-                return Ok("Password changed successfully.");
+
+                return Ok(new TokenResponse { Token = "Password changed successfully." });
             }
 
             return BadRequest(new { Errors = result.Errors.Select(e => e.Description).ToArray() });
