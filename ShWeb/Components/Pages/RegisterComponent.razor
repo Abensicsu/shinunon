@@ -11,8 +11,6 @@
 
 @page "/register"
 
-@* <h3>RegisterComponent</h3> *@
-
 <div class="auth-container" dir="rtl">
     <div class="form-container">
         <h1 class="form-title">הרשמה</h1>
@@ -132,12 +130,12 @@
 
     private string ValidatePassword(string password)
     {
-        // Regex for at least 6 characters, including both letters (a-z, A-Z) and numbers (0-9)
-        var regex = new System.Text.RegularExpressions.Regex(@"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$");
+        // Regex for at least 6 characters
+        var regex = new System.Text.RegularExpressions.Regex(@"^.{6,}$");
 
         if (!regex.IsMatch(password))
         {
-            return "הסיסמה חייבת לכלול לפחות 6 תווים, אותיות באנגלית ומספרים.";
+            return "הסיסמה חייבת לכלול לפחות 6 תווים.";
         }
 
         return null; // Password is valid

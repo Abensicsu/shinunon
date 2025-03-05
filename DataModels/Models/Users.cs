@@ -35,7 +35,7 @@ namespace DataModels.Models
         public string Email { get; set; }
 
         //[Required(ErrorMessage = "הסיסמה היא שדה חובה")]
-        //[MinLength(6, ErrorMessage = "הסיסמה חייבת להיות באורך של לפחות 8 תווים.")]
+        //[MinLength(6, ErrorMessage = "הסיסמה חייבת להיות באורך של לפחות 6 תווים.")]
         public string Password { get; set; }
     }
 
