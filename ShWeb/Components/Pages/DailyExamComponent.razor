@@ -212,7 +212,7 @@
         if (firstRender)
         {
             DailyExams = await Http.GetAsync<List<ExamExecution>>("api/exam/DailyExamExecutions");
-            PreviousExams = await Http.GetAsync<List<ExamExecution>>("api/exam/GetExamsForUser?period=past");
+            PreviousExams = await Http.GetAsync<List<ExamExecution>>("api/exam/GetExamsForUserByPeriod?period=past");
             FilteredPreviousExams = new List<ExamExecution>(PreviousExams); // Initialize filtered list
             StateHasChanged();
         }

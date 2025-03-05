@@ -119,7 +119,7 @@ namespace ShWeb.Controllers
 
         [HttpGet]
         [Produces("application/json")]
-        public async Task<ActionResult<List<ExamExecution>>> GetExamsForUserAsync(string period)
+        public async Task<ActionResult<List<ExamExecution>>> GetExamsForUserByPeriodAsync(string period)
         {
             var currentUser = await _userManager.GetUserAsync(User);
             if (currentUser == null)
@@ -189,7 +189,7 @@ namespace ShWeb.Controllers
                             e.EndTime.Value < currentExamEndTime)
                 .OrderByDescending(e => e.EndTime).Take(2);
 
-            
+
             var result = await exams.ToListAsync();
             return Ok(result);
         }
@@ -221,5 +221,32 @@ namespace ShWeb.Controllers
             return Ok(reviews);
         }
 
+        [HttpGet]
+        public async Task<List<ExamExecution>> ExamExecutionsByDay(DateTime day)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                //return Unauthorized("User not found");
+            }
+
+            //var startOfDay = day.Date;
+
+            // Retrieve all exams for today
+            var exams = await Cx.ExamExecutions
+                .Where(ex => ex.UserId == currentUser.Id
+                             && ex.ExamStatus == ExamStatusEnum.Completed
+                             //&& ex.StartTime.HasValue && ex.StartTime.Value.Date == day)
+                             && ex.StartTime.Value.Day == day.Month && ex.StartTime.Value.Month == day.Day && ex.StartTime.Value.Year == day.Year)
+                .Include(ex => ex.ExamAnswers)
+                    .ThenInclude(ea => ea.Answer)
+                    .ThenInclude(ea => ea.BaseQuestion)
+                    .ThenInclude(bq => bq.Answers)
+                .Include(ex => ex.FromSubject)
+                .Include(ex => ex.ToSubject)
+                .ToListAsync(); // Return a list of all today's exams
+
+            return exams;
+        }
     }
 }

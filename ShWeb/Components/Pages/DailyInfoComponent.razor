@@ -1,0 +1,460 @@
+﻿@rendermode InteractiveServer
+
+@page "/daily-info"
+@inject CustomHttpClientService Http
+@inject NavigationManager Navigation
+
+@using DataModels.Models
+
+
+<PageTitle>מידע יומי</PageTitle>
+<h3>DailyInfoComponent</h3>
+
+
+<div class="daily-info-container">
+    <button @onclick="NavigateBackToHome">
+        חזרה <span>↪</span>
+    </button>
+    <div>
+        <input type="date" @bind="Day" @bind:event="onchange" />
+    </div>
+
+    <!-- Statistic Cards -->
+    @if (ExamExecutions != null)
+    {
+        <div class="statistic-cards" style="display: flex; justify-content: space-between;margin-top: 30px;">
+            <div class="total-exams">
+                <p>@TotalExams</p>
+                <p>מבחנים</p>
+            </div>
+            <div class="correct-answers">
+                <p>@CorrectPercentage.ToString("F0")%</p>
+                <p>שאלות נענו נכון</p>
+            </div>
+            <div class="partially-correct-answers">
+                <p>@PartiallyCorrectPercentage.ToString("F0")%</p>
+                <p>שאלות נענו חלקית</p>
+            </div>
+            <div class="incorrect-answers">
+                <p>@InCorrectPercentage.ToString("F0")%</p>
+                <p>שאלות נענו שגוי</p>
+            </div>
+        </div>
+    }
+
+    <!-- Exams List -->
+    <div class="space-y-4">
+        @if (ExamExecutions != null && ExamExecutions.Any())
+        {
+            @foreach (var exam in ExamExecutions)
+            {
+                <div class="border rounded-xl shadow-sm mb-2">
+                    <button @onclick="() => ToggleExam(exam.ExamExecutionId)" class="flex justify-between w-full p-4 text-right text-gray-700 bg-white">
+                        <div>
+                            <span>@exam.FromSubject.SubjectName - @exam.ToSubject.SubjectName</span>
+                            <div class="text-sm text-gray-500 mt-1">
+                                <span>תשובות נכונות: @exam.ExamAnswers.Count(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Correct)</span> |
+                                <span>תשובות חלקיות: @exam.ExamAnswers.Count(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.PartiallyCorrect)</span> |
+                                <span>תשובות שגויות: @exam.ExamAnswers.Count(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Wrong)</span>
+                            </div>
+                        </div>
+                        <i class="bi @GetChevronIcon(IsExamExpanded(exam.ExamExecutionId))"></i>
+                    </button>
+
+                    @if (IsExamExpanded(exam.ExamExecutionId))
+                    {
+                        <div class="p-4 bg-gray-50">
+                            <!-- Correct Answers -->
+                            @if (exam.ExamAnswers.Any(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Correct))
+                            {
+                                <h4 class="text-gray-500 mb-2">תשובות נכונות</h4>
+                                <ul class="mb-4">
+                                    @foreach (var answer in exam.ExamAnswers.Where(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Correct))
+                                    {
+                                        <li class="cursor-pointer text-gray-600 hover:bg-gray-200 p-2 rounded-md"
+                                            @onclick="() => OpenAnswerModal(answer)">
+                                            @answer.BaseQuestion.QuestionText
+                                        </li>
+                                    }
+                                </ul>
+                            }
+
+                            <!-- PartiallyCorrect Answers -->
+                            @if (exam.ExamAnswers.Any(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.PartiallyCorrect))
+                            {
+                                <h4 class="text-gray-500 mb-2">תשובות חלקיות</h4>
+                                <ul class="mb-4">
+                                    @foreach (var answer in exam.ExamAnswers.Where(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.PartiallyCorrect))
+                                    {
+                                        <li class="cursor-pointer text-gray-600 hover:bg-gray-200 p-2 rounded-md"
+                                            @onclick="() => OpenAnswerModal(answer)">
+                                            @answer.BaseQuestion.QuestionText
+                                        </li>
+                                    }
+                                </ul>
+                            }
+
+                            <!-- Wrong Answers -->
+                            @if (exam.ExamAnswers.Any(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Wrong))
+                            {
+                                <h4 class="text-gray-500 mb-2">תשובות לא נכונות</h4>
+                                <ul class="mb-4">
+                                    @foreach (var answer in exam.ExamAnswers.Where(a => a.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Wrong))
+                                    {
+                                        <li class="cursor-pointer text-gray-600 hover:bg-gray-200 p-2 rounded-md"
+                                            @onclick="() => OpenAnswerModal(answer)">
+                                            @answer.BaseQuestion.QuestionText
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <p class="text-center text-gray-500">אין מבחנים ליום זה</p>
+        }
+    </div>
+
+    <!-- Modal for Specific Exam Answer -->
+    <!-- Modal for Specific Exam Answer -->
+    @if (SelectedExamAnswer != null)
+    {
+        <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white rounded-xl shadow-lg w-1/2 p-6 relative">
+                <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                        @onclick="CloseAnswerModal">
+                    <i class="bi bi-x text-2xl"></i>
+                </button>
+                <h3 class="text-lg font-bold mb-4">@SelectedExamAnswer.BaseQuestion.QuestionText</h3>
+
+                @if (SelectedExamAnswer.BaseQuestion.QuestionType == QuestionTypeEnum.SelectQuestion)
+                {
+                    <!-- שאלות סגורות -->
+                    <ul class="space-y-2">
+                        @foreach (var answer in SelectedExamAnswer.BaseQuestion.Answers)
+                        {
+                            <li class="flex items-center space-x-2">
+                                <label class="flex items-center space-x-2">
+                                    <input type="radio" disabled
+                                           class="@GetRadioClass(answer.AnswerId)"
+                                           checked="@((answer.AnswerId == SelectedExamAnswer.AnswerId))" />
+                                    <span class="@GetAnswerClass(answer.AnswerId)">
+                                        @answer.AnswerText
+                                    </span>
+                                </label>
+                            </li>
+                        }
+                    </ul>
+                }
+                else if (SelectedExamAnswer.BaseQuestion.QuestionType == QuestionTypeEnum.OpenQuestion)
+                {
+                    <!-- שאלות פתוחות -->
+                    <p class="@GetOpenQuestionClass()">@SelectedExamAnswer.TextAnswer</p>
+                }
+            </div>
+        </div>
+    }
+
+
+</div>
+
+<style>
+    .daily-info-container {
+        width: 90%;
+        padding: 40px;
+        direction: rtl;
+    }
+
+    @* .correct-radio:checked {
+    accent-color: #16a34a;
+    }
+
+    .wrong-radio:checked {
+    accent-color: #dc2626;
+    }
+
+    .partial-radio:checked {
+    accent-color: #ca8a04;
+    }
+
+    .correct-answer {
+    color: #16a34a;
+    font-weight: bold;
+    }
+
+    .wrong-answer {
+    color: #dc2626;
+    font-weight: bold;
+    }
+
+    .partial-answer {
+    color: #ca8a04;
+    font-weight: bold;
+    } *@
+
+    .correct-radio:checked {
+        accent-color: #16a34a;
+    }
+
+    .wrong-radio:checked {
+        accent-color: #dc2626;
+    }
+
+    .partial-radio:checked {
+        accent-color: #ca8a04;
+    }
+
+    .correct-answer {
+        color: #16a34a;
+        font-weight: bold;
+    }
+
+    .wrong-answer {
+        color: #dc2626;
+        font-weight: bold;
+    }
+
+    .partial-answer {
+        color: #ca8a04;
+        font-weight: bold;
+    }
+</style>
+
+@code {
+    private List<ExamExecution> ExamExecutions { get; set; }
+    public int TotalExams { get; set; } = 0;
+    public double CorrectPercentage { get; set; } = 0;
+    public double InCorrectPercentage { get; set; } = 0;
+    public double PartiallyCorrectPercentage { get; set; } = 0;
+    private DateTime? _day;
+    private DateTime? Day
+    {
+        get => _day;
+        set
+        {
+            _day = value;
+            CloseAnswerModal();
+            LoadData(); // if Day change
+        }
+    }
+
+    private User currentUser;
+    private ExamAnswer SelectedExamAnswer { get; set; }
+    private Dictionary<int, bool> ExpandedExams = new();
+    private bool IsExamExpanded(int examId) => ExpandedExams.ContainsKey(examId) && ExpandedExams[examId];
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
+            if (currentUser == null)
+                Console.WriteLine("User not found.");
+            Day = DateTime.Today;
+            TotalExams = 0;
+            CorrectPercentage = 0;
+            InCorrectPercentage = 0;
+
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        ExamExecutions = await Http.GetAsync<List<ExamExecution>>($"api/exam/ExamExecutionsByDay?day={Day}");
+        TotalExams = 0;
+        CorrectPercentage = 0;
+        PartiallyCorrectPercentage = 0;
+        InCorrectPercentage = 0;
+        GetExamsStatistic();
+    }
+
+    private void GetExamsStatistic()
+    {
+        int totalAnsweredQuestions = 0;
+        if (ExamExecutions.Count > 0)
+        {
+            TotalExams = ExamExecutions.Count();
+            totalAnsweredQuestions = ExamExecutions.Sum(ex => ex.QuestionsAnswered);
+            CorrectPercentage = Math.Ceiling((double)ExamExecutions.Sum(ex => ex.CorrectAnswersNum) / totalAnsweredQuestions * 100);
+            PartiallyCorrectPercentage = Math.Round((double)ExamExecutions.Sum(ex => ex.PartiallyCorrectAnswersNum) / totalAnsweredQuestions * 100);
+            InCorrectPercentage = Math.Floor((double)ExamExecutions.Sum(ex => ex.WrongAnswersNum) / totalAnsweredQuestions * 100);
+
+            var totalPercentage = CorrectPercentage + PartiallyCorrectPercentage + InCorrectPercentage;
+            if (totalPercentage > 100)
+            {
+                InCorrectPercentage -= (totalPercentage - 100);
+            }
+            else if (totalPercentage < 100)
+            {
+                InCorrectPercentage += (100 - totalPercentage);
+            }
+        }
+        else
+        {
+            TotalExams = 0;
+            CorrectPercentage = 0;
+            PartiallyCorrectPercentage = 0;
+            InCorrectPercentage = 0;
+        }
+        StateHasChanged(); // Trigger UI update
+    }
+
+    private void ToggleExam(int examId)
+    {
+        if (ExpandedExams.ContainsKey(examId))
+        {
+            ExpandedExams[examId] = !ExpandedExams[examId];
+        }
+        else
+        {
+            ExpandedExams[examId] = true;
+        }
+        StateHasChanged();
+    }
+
+    private void OpenAnswerModal(ExamAnswer answer)
+    {
+        SelectedExamAnswer = answer;
+        StateHasChanged();
+    }
+
+    private void CloseAnswerModal()
+    {
+        SelectedExamAnswer = null;
+        StateHasChanged();
+    }
+
+    private string GetChevronIcon(bool isExpanded) => isExpanded ? "bi-chevron-up" : "bi-chevron-down";
+
+    private string GetOpenQuestionClass()
+    {
+        if (SelectedExamAnswer != null)
+        {
+            switch (SelectedExamAnswer.AnswerCorrectnessLevel)
+            {
+                case AnswerCorrectnessLevelEnum.Correct:
+                    return "text-green-600 font-bold";
+                case AnswerCorrectnessLevelEnum.PartiallyCorrect:
+                    return "text-yellow-600 font-bold";
+                case AnswerCorrectnessLevelEnum.Wrong:
+                    return "text-red-600 font-bold";
+            }
+        }
+        return "text-gray-600";
+    }
+
+    private string GetRadioClass(int answerId)
+    {
+        var correctAnswerId = GetCorrectAnswerId();
+
+        if (correctAnswerId == answerId)
+            return "correct-radio";
+
+        if (SelectedExamAnswer != null && SelectedExamAnswer.AnswerId == answerId)
+        {
+            if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Wrong)
+                return "wrong-radio";
+            if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.PartiallyCorrect)
+                return "partial-radio";
+        }
+
+        return "";
+    }
+
+
+    private string GetAnswerClass(int answerId)
+    {
+        var correctAnswerId = GetCorrectAnswerId();
+
+        if (correctAnswerId == answerId)
+            return "correct-answer";
+
+        if (SelectedExamAnswer != null && SelectedExamAnswer.AnswerId == answerId)
+        {
+            if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Wrong)
+                return "wrong-answer";
+            if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.PartiallyCorrect)
+                return "partial-answer";
+        }
+
+        return "text-gray-600";
+    }
+
+
+    private int? GetCorrectAnswerId()
+    {
+        if (SelectedExamAnswer != null)
+        {
+            var correctAnswer = SelectedExamAnswer.BaseQuestion.Answers
+                .FirstOrDefault(a => a.IsCorrectAnswer);
+            return correctAnswer?.AnswerId;
+        }
+        return null;
+    }
+
+
+
+    // private int? GetCorrectAnswerId()
+    // {
+    //     if (SelectedExamAnswer != null)
+    //     {
+    //         var correctAnswer = SelectedExamAnswer.BaseQuestion.Answers
+    //             .FirstOrDefault(a => a.IsCorrectAnswer);
+    //         return correctAnswer?.AnswerId;
+    //     }
+    //     return null;
+    // }
+
+    // private string GetRadioClass(int answerId)
+    // {
+    //     var correctAnswerId = GetCorrectAnswerId();
+
+    //     if (correctAnswerId == answerId)
+    //         return "correct-radio";
+
+    //     if (SelectedExamAnswer != null && SelectedExamAnswer.AnswerId == answerId)
+    //     {
+    //         if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Correct)
+    //             return "correct-radio";
+    //         if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Wrong)
+    //             return "wrong-radio";
+    //         if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.PartiallyCorrect)
+    //             return "partial-radio";
+    //     }
+    //     return "";
+    // }
+
+
+    // private string GetAnswerClass(int answerId)
+    // {
+    //     var correctAnswerId = GetCorrectAnswerId();
+
+    //     if (correctAnswerId == answerId)
+    //         return "correct-answer";
+
+    //     if (SelectedExamAnswer != null)
+    //     {
+    //         if (SelectedExamAnswer.AnswerId == answerId)
+    //         {
+    //             if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Correct)
+    //                 return "correct-answer";
+    //             if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.Wrong)
+    //                 return "wrong-answer";
+    //             if (SelectedExamAnswer.AnswerCorrectnessLevel == AnswerCorrectnessLevelEnum.PartiallyCorrect)
+    //                 return "partial-answer";
+    //         }
+    //     }
+    //     return "text-gray-600";
+    // }
+
+    private async Task NavigateBackToHome()
+    {
+        Navigation.NavigateTo("/daily-exam");
+    }
+}
