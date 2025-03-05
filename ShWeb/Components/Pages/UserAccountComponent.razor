@@ -1,7 +1,6 @@
-﻿@rendermode InteractiveServer
-@page "/account"
+﻿@page "/account"
 
-<PageTitle> החשבון שלי</PageTitle>
+<PageTitle>החשבון שלי</PageTitle>
 @inject CustomHttpClientService Http
 @inject NavigationManager Navigation
 
@@ -10,36 +9,94 @@
 @using DataModels.Services
 @using Newtonsoft.Json.Linq
 
-
-
-
-
-
-
-
 @if (currentUser != null)
 {
     <input type="text" value="@currentUser.UserFullName" style="background-color: #f0f0f0; border: 1px solid #ccc;" />
-    <input type="email" value="@currentUser.Email" style="background-color: #f0f0f0; border: 1px solid #ccc;" disabled/>
+    <input type="email" value="@currentUser.Email" style="background-color: #f0f0f0; border: 1px solid #ccc;" disabled />
 }
 
+<h3>החלפת סיסמה</h3>
+
+@* <EditForm Model="changePasswordModel" OnValidSubmit="HandleValidSubmit"> *@
+@*  <DataAnnotationsValidator />
+    <ValidationSummary />
+ *@
+<div>
+
+    <div class="form-group">
+        <label for="oldPassword">סיסמה ישנה</label>
+        <input id="oldPassword" class="form-control" @bind="changePasswordModel.OldPassword" />
+    </div>
+
+    <div class="form-group">
+        <label for="newPassword">סיסמה חדשה</label>
+        <input id="newPassword" class="form-control" @bind="changePasswordModel.NewPassword" />
+    </div>
+
+    <div class="form-group">
+        <label for="confirmNewPassword">אישור סיסמה חדשה</label>
+        <input id="confirmNewPassword" class="form-control" @bind="changePasswordModel.ConfirmNewPassword" />
+    </div>
+
+    <button type="submit" class="btn btn-primary" onclick="@HandleValidSubmit()">שנה סיסמה</button>
+    k
+    k
+</div>
+
+@if (isPasswordChanged)
+{
+    <div class="alert alert-success mt-3">
+        הסיסמה שונתה בהצלחה!
+    </div>
+}
+
+@if (errorMessage != null)
+{
+    <div class="alert alert-danger mt-3">
+        @errorMessage
+    </div>
+}
 
 @code {
     private User currentUser;
     private UserSettings userSettings;
-    
+    private ChangePasswordRequest changePasswordModel { get; set; } = new ChangePasswordRequest();
+    private bool isPasswordChanged = false;
+    private string errorMessage;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-
             currentUser = await Http.GetAsync<User>("api/auth/GetCurrentUser");
             if (currentUser == null)
                 Console.WriteLine("User not found.");
 
-            userSettings = await Http.GetAsync<UserSettings>("api/Auth/GetUserSettings");// Load user settings from API
+            userSettings = await Http.GetAsync<UserSettings>("api/Auth/GetUserSettings");
             StateHasChanged();
         }
     }
+
+    private async Task HandleValidSubmit()
+    {
+        if (changePasswordModel.NewPassword != changePasswordModel.ConfirmNewPassword)
+        {
+            errorMessage = "הסיסמאות החדשות אינן תואמות!";
+            return;
+        }
+
+        var response = await Http.PostAsync<ChangePasswordRequest, TokenResponse>("api/auth/ChangePassword", changePasswordModel);
+
+        if (response != null && !string.IsNullOrEmpty(response.Token))
+        {
+            isPasswordChanged = true;
+            errorMessage = null;
+        }
+        else
+        {
+            isPasswordChanged = false;
+            errorMessage = "לא הצלחנו לשנות את הסיסמה. אנא נסה שוב.";
+        }
+    }
+
 }

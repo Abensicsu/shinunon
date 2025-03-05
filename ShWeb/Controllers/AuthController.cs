@@ -41,6 +41,25 @@ namespace ShWeb.Controllers
             return Ok(currentUser);
         }
 
+        [HttpPost]
+        public async Task<IActionResult> ChangePassword([FromBody] DataModels.Models.ChangePasswordRequest  request)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("User not authenticated.");
+            }
+
+            var result = await _userManager.ChangePasswordAsync(currentUser, request.OldPassword, request.NewPassword);
+
+            if (result.Succeeded)
+            {
+                return Ok("Password changed successfully.");
+            }
+
+            return BadRequest(new { Errors = result.Errors.Select(e => e.Description).ToArray() });
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> Login([FromBody] DataModels.Models.LoginRequest request)

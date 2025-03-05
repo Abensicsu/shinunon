@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
 
 
 <div class="page">
@@ -9,7 +10,10 @@
     <main>
         <div class="top-row px-4">
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">@* About *@</a>
-            <ShWeb.Components.Pages.MyAccount></ShWeb.Components.Pages.MyAccount>
+            @if (Navigation.Uri != Navigation.BaseUri)
+            {
+                <ShWeb.Components.Pages.MyAccount></ShWeb.Components.Pages.MyAccount>
+            }
         </div>
         <article class="content px-4">
             @Body
