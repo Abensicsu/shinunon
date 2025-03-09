@@ -44,6 +44,7 @@ namespace DataModels.Models
         public string Email { get; set; }
         public string Password { get; set; }
     }
+
     public class ChangePasswordRequest
     {
         public string OldPassword { get; set; }
@@ -56,20 +57,16 @@ namespace DataModels.Models
         public string Token { get; set; }
         public string Message { get; set; }
         public string Errors { get; set; }
-
-
-
-
     }
 
     public class ChangeUsernameRequest
     {
         public string NewUsername { get; set; }
     }
+
     public class ChangeFullnameRequest
     {
         public string NewFullName { get; set; }
         public string OldFullName { get; set; }
-
     }
 }

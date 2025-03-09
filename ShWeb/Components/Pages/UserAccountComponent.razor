@@ -50,21 +50,19 @@
     <button class="btn btn-primary" @onclick="HandleValidSubmit">שנה סיסמה</button>
 </div>
 
-@if (isPasswordChanged)
+@if (!string.IsNullOrEmpty(successMessage))
 {
-    <div class="alert alert-success mt-3">
-        הסיסמה שונתה בהצלחה!
-    </div>
+    <p class="alert alert-success mt-3">@successMessage</p>
 }
 
-@if (errorMessage != null)
+@if (!string.IsNullOrEmpty(errorMessage))
 {
     <div class="alert alert-danger mt-3">
         @errorMessage
     </div>
 }
 
-@if (errorMessageUser != null)
+@if (!string.IsNullOrEmpty(errorMessageUser))
 {
     <div class="alert alert-danger mt-3">
         @errorMessageUser
@@ -79,9 +77,10 @@
     private ChangeFullnameRequest changeFullNameModel { get; set; } = new ChangeFullnameRequest();
 
     private bool isPasswordChanged = false;
-    private string errorMessage;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
     private bool isUsernameChanged = false;
-    private string errorMessageUser;
+    private string errorMessageUser = string.Empty;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -106,10 +105,10 @@
 
         var response = await Http.PostAsync<ChangePasswordRequest, TokenResponse>("api/auth/ChangePassword", changePasswordModel);
 
-        if (response != null && !string.IsNullOrEmpty(response.Token))
+        if (!string.IsNullOrEmpty(response.Token))
         {
             isPasswordChanged = true;
-            errorMessage = null;
+            errorMessage = string.Empty;
         }
         else
         {
@@ -129,28 +128,35 @@
             return;
         }
 
-        // שליחה של הבקשה ל-API לשינוי שם המשתמש
-        var response = await Http.PostAsync<ChangeFullnameRequest, TokenResponse>("api/auth/ChangeFullName", changeFullNameModel);
-        if (response != null && response.Message == "שם מלא שונה בהצלחה.")
+        try
         {
-            isUsernameChanged = true;
-            errorMessageUser = null;
-            currentUser.UserFullName = changeFullNameModel.NewFullName;
-        }
-        else
-        {
-            isUsernameChanged = false;
-            errorMessageUser = response?.Errors != null && response.Errors.Length > 0
+            // שליחה של הבקשה ל-API לשינוי שם המשתמש
+            var response = await Http.PostAsync<ChangeFullnameRequest, TokenResponse>("api/auth/ChangeFullName", changeFullNameModel);
 
-        ? string.Join(", ", response.Errors)
-                : "לא הצלחנו לשנות את שם המשתמש. אנא נסה שוב.";
+            if (response != null)
+            {
+                isUsernameChanged = true;
+                errorMessageUser = string.Empty;
+                currentUser.UserFullName = changeFullNameModel.NewFullName;
+                successMessage = "שם משתמש עודכן בהצלחה!";
+            }
+            else
+            {
+                isUsernameChanged = false;
+                errorMessageUser = response?.Errors != null && response.Errors.Length > 0 ? string.Join(", ", response.Errors)
+                    : "לא הצלחנו לשנות את שם המשתמש. אנא נסה שוב.";
+
+            }
+        }
+        catch
+        {
+            errorMessageUser = "התרחשה שגיאה בשרת. נסה שוב מאוחר יותר.";
         }
     }
+
     private class ChangeFullnameResponse
     {
         public string Message { get; set; }
         public string Errors { get; set; }
     }
-    }
-}
 }
