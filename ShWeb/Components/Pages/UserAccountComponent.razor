@@ -13,16 +13,24 @@
 
 @if (currentUser != null)
 {
-    <input type="text" value="@currentUser.UserFullName" style="background-color: #f0f0f0; border: 1px solid #ccc;" />
-    <input type="email" value="@currentUser.Email" style="background-color: #f0f0f0; border: 1px solid #ccc;" disabled />
+    <div class="form-group">
+        <label for="currentUsername">שם מלא נוכחי</label>
+        <input type="text" id="currentUsername" class="form-control" value="@currentUser.UserFullName" readonly />
+    </div>
+
+    <div class="form-group">
+        <label for="newUsername">שם מלא חדש</label>
+        <input type="text" class="form-control" @bind="changeFullNameModel.NewFullName" />
+    </div>
+
+    <button class="btn btn-primary" @onclick="HandleSubmit">שנה שם מלא</button>
+    <div>
+        <label>שם משתמש</label>
+        <input type="email" class="form-control" value="@currentUser.Email" style="background-color: #f0f0f0; border: 1px solid #ccc;" disabled />
+    </div>
 }
 
 <h3>החלפת סיסמה</h3>
-
-@* <EditForm Model="changePasswordModel" OnValidSubmit="HandleValidSubmit"> *@
-@*  <DataAnnotationsValidator />
-    <ValidationSummary />
- *@
 <div>
     <div class="form-group">
         <label for="oldPassword">סיסמה ישנה</label>
@@ -39,7 +47,7 @@
         <input type="password" id="confirmNewPassword" class="form-control" @bind="changePasswordModel.ConfirmNewPassword" />
     </div>
 
-    <button type="submit" class="btn btn-primary" onclick="@HandleValidSubmit">שנה סיסמה</button>
+    <button class="btn btn-primary" @onclick="HandleValidSubmit">שנה סיסמה</button>
 </div>
 
 @if (isPasswordChanged)
@@ -56,12 +64,24 @@
     </div>
 }
 
+@if (errorMessageUser != null)
+{
+    <div class="alert alert-danger mt-3">
+        @errorMessageUser
+    </div>
+}
+
 @code {
     private User currentUser;
     private UserSettings userSettings;
     private ChangePasswordRequest changePasswordModel { get; set; } = new ChangePasswordRequest();
+    private ChangeUsernameRequest changeUserModel { get; set; } = new ChangeUsernameRequest();
+    private ChangeFullnameRequest changeFullNameModel { get; set; } = new ChangeFullnameRequest();
+
     private bool isPasswordChanged = false;
     private string errorMessage;
+    private bool isUsernameChanged = false;
+    private string errorMessageUser;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -98,4 +118,39 @@
         }
     }
 
+    private async Task HandleSubmit()
+    {
+        Console.WriteLine($"Trying to change full name to: {changeFullNameModel.NewFullName}");
+
+        // בדיקה אם שם המשתמש החדש ריק
+        if (string.IsNullOrWhiteSpace(changeFullNameModel.NewFullName))
+        {
+            errorMessageUser = "שם המשתמש לא יכול להיות ריק!";
+            return;
+        }
+
+        // שליחה של הבקשה ל-API לשינוי שם המשתמש
+        var response = await Http.PostAsync<ChangeFullnameRequest, TokenResponse>("api/auth/ChangeFullName", changeFullNameModel);
+        if (response != null && response.Message == "שם מלא שונה בהצלחה.")
+        {
+            isUsernameChanged = true;
+            errorMessageUser = null;
+            currentUser.UserFullName = changeFullNameModel.NewFullName;
+        }
+        else
+        {
+            isUsernameChanged = false;
+            errorMessageUser = response?.Errors != null && response.Errors.Length > 0
+
+        ? string.Join(", ", response.Errors)
+                : "לא הצלחנו לשנות את שם המשתמש. אנא נסה שוב.";
+        }
+    }
+    private class ChangeFullnameResponse
+    {
+        public string Message { get; set; }
+        public string Errors { get; set; }
+    }
+    }
+}
 }

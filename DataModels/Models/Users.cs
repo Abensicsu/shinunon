@@ -54,5 +54,22 @@ namespace DataModels.Models
     public class TokenResponse
     {
         public string Token { get; set; }
+        public string Message { get; set; }
+        public string Errors { get; set; }
+
+
+
+
+    }
+
+    public class ChangeUsernameRequest
+    {
+        public string NewUsername { get; set; }
+    }
+    public class ChangeFullnameRequest
+    {
+        public string NewFullName { get; set; }
+        public string OldFullName { get; set; }
+
     }
 }

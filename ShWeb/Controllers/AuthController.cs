@@ -115,7 +115,44 @@ namespace ShWeb.Controllers
             // If registration failed, return errors
             return BadRequest(new { Errors = result.Errors.Select(e => e.Description).ToArray() });
         }
+        [HttpPost]
+        public async Task<IActionResult> ChangeUsername([FromBody] ChangeUsernameRequest request)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("User not authenticated.");
+            }
 
+            currentUser.UserName = request.NewUsername;
+            var result = await _userManager.UpdateAsync(currentUser);
+
+            if (result.Succeeded)
+            {
+                return Ok(new { Message = "Username changed successfully." });
+            }
+
+            return BadRequest(new { Errors = result.Errors.Select(e => e.Description).ToArray() });
+        }
+        [HttpPost]
+        public async Task<IActionResult> ChangeFullName([FromBody] ChangeFullnameRequest request)
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
+            {
+                return Unauthorized("User not authenticated.");
+            }
+
+            currentUser.UserFullName = request.NewFullName;
+            var result = await _userManager.UpdateAsync(currentUser);
+
+            if (result.Succeeded)
+            {
+                return Ok(new { Message = "Username changed successfully." });
+            }
+
+            return BadRequest(new { Errors = result.Errors.Select(e => e.Description).ToArray() });
+        }
         [HttpGet("{userId}")]
         public async Task<IActionResult> GetUserById(int userId)
         {
